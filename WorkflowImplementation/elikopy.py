@@ -1,11 +1,6 @@
 """
  
 """
-import numpy as np
-from dipy.io.image import load_nifti, save_nifti
-from dipy.io.gradients import read_bvals_bvecs
-from dipy.core.gradients import gradient_table
-import dipy.reconst.dti as dti
 
 def dicom_to_nifti(folder_path):
     """Convert dicom data into nifti. Converted dicom are then moved to a sub-folder named original_data
@@ -105,7 +100,7 @@ def patient_list(folder_path):
 
 
 
-    def preproc(folder_path, eddy=False, denoising=False):
+def preproc(folder_path, eddy=False, denoising=False):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
     Parameters
@@ -186,37 +181,56 @@ def dti(folder_path):
     ----------
     folder_path: Path to root folder containing all the dicom
     """
-    
-    # load the data======================================
-    data, affine = load_nifti(hardi_fname)
-    bvals, bvecs = read_bvals_bvecs(hardi_bval_fname, hardi_bvec_fname)
-    # create the model===================================
-    gtab = gradient_table(bvals, bvecs)
-    tenmodel = dti.TensorModel(gtab)
-    tenfit = tenmodel.fit(maskdata)
-    # FA ================================================
-    FA = dti.fractional_anisotropy(tenfit.evals)
-    FA[np.isnan(FA)] = 0
-    FA = np.clip(FA, 0, 1)
-    save_nifti('name_fa.nii.gz', FA.astype(np.float32), affine)
-    # colored FA ========================================
-    RGB = dti.color_fa(FA, tenfit.evecs)
-    save_nifti('name_fargb.nii.gz', np.array(255 * RGB, 'uint8'), affine)
-    # Mean diffusivity ==================================
-    MD = dti.mean_diffusivity(tenfit.evals)
-    save_nifti('name_md.nii.gz', MD.astype(np.float32), affine)
-    # Radial diffusivity ==================================
-    RD = dti.radial_diffusivity(tenfit.evals)
-    save_nifti('name_rd.nii.gz', RD.astype(np.float32), affine)
-    # Axial diffusivity ==================================
-    AD = dti.axial_diffusivity(tenfit.evals)
-    save_nifti('name_ad.nii.gz', AD.astype(np.float32), affine)
-    # eigen vectors =====================================
-    save_nifti('name_evecs.nii.gz', tenfit.evecs.astype(np.float32), affine)
-    # eigen values ======================================
-    save_nifti('name_evals.nii.gz', tenfit.evals.astype(np.float32), affine)
-    # diffusion tensor ====================================
-    save_nifti('name_tensor.nii.gz', tenfit.quadratic_form.astype(np.float32), affine)
+    import numpy as np
+    from dipy.io.image import load_nifti, save_nifti
+    from dipy.io.gradients import read_bvals_bvecs
+    from dipy.core.gradients import gradient_table
+    import dipy.reconst.dti as dti
+    import os
+    import json
+
+    dti_path = ""
+    os.path.join(dti_path, folder_path, "/out/dti")
+    try:
+        os.mkdir(dti_path)
+    except OSError:
+        print("Creation of the directory %s failed" % dti_path)
+    else:
+        print("Successfully created the directory %s " % dti_path)
+
+    patient_list = json.load(folder_path + "/out/patient_list.json")
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        # load the data======================================
+        data, affine = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
+        bvals, bvecs = read_bvals_bvecs(folder_path + "/out/preproc/final" + "/" + patient_path + ".bval", folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
+        # create the model===================================
+        gtab = gradient_table(bvals, bvecs)
+        tenmodel = dti.TensorModel(gtab)
+        tenfit = tenmodel.fit(folder_path + "/out/preproc/final" + "/" + patient_path +"_mask" +".nii.gz")
+        # FA ================================================
+        FA = dti.fractional_anisotropy(tenfit.evals)
+        FA[np.isnan(FA)] = 0
+        FA = np.clip(FA, 0, 1)
+        save_nifti(folder_path + "/out/dti/" + patient_path + "_fa.nii.gz", FA.astype(np.float32), affine)
+        # colored FA ========================================
+        RGB = dti.color_fa(FA, tenfit.evecs)
+        save_nifti(folder_path + "/out/dti/" + patient_path + "_fargb.nii.gz", np.array(255 * RGB, 'uint8'), affine)
+        # Mean diffusivity ==================================
+        MD = dti.mean_diffusivity(tenfit.evals)
+        save_nifti(folder_path + "/out/dti/" + patient_path + "_md.nii.gz", MD.astype(np.float32), affine)
+        # Radial diffusivity ==================================
+        RD = dti.radial_diffusivity(tenfit.evals)
+        save_nifti(folder_path + "/out/dti/" + patient_path + "_rd.nii.gz", RD.astype(np.float32), affine)
+        # Axial diffusivity ==================================
+        AD = dti.axial_diffusivity(tenfit.evals)
+        save_nifti(folder_path + "/out/dti/" + patient_path + "_ad.nii.gz", AD.astype(np.float32), affine)
+        # eigen vectors =====================================
+        save_nifti(folder_path + "/out/dti/" + patient_path + "_evecs.nii.gz", tenfit.evecs.astype(np.float32), affine)
+        # eigen values ======================================
+        save_nifti(folder_path + "/out/dti/" + patient_path + "_evals.nii.gz", tenfit.evals.astype(np.float32), affine)
+        # diffusion tensor ====================================
+        save_nifti(folder_path + "/out/dti/" + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
 
 
 def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False, dti=False):
