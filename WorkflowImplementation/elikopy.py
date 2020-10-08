@@ -2,6 +2,7 @@
  
 """
 
+
 def dicom_to_nifti(folder_path):
     """Convert dicom data into nifti. Converted dicom are then moved to a sub-folder named original_data
     Parameters
@@ -37,10 +38,6 @@ def dicom_to_nifti(folder_path):
     for f in files:
         if f.find("mrdc") or f.find("MRDC"):
             shutil.move(f, dest)
-
-
-
-
 
 
 def patient_list(folder_path):
@@ -99,7 +96,6 @@ def patient_list(folder_path):
         json.dump(success, f)
 
 
-
 def preproc(folder_path, eddy=False, denoising=False):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
@@ -126,6 +122,8 @@ def preproc(folder_path, eddy=False, denoising=False):
     from dipy.data import get_fnames
     from dipy.io.image import load_nifti, save_nifti
     from dipy.segment.mask import median_otsu
+    import math
+    from dipy.denoise.localpca import mppca
 
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
@@ -137,15 +135,20 @@ def preproc(folder_path, eddy=False, denoising=False):
         save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
         save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
 
-    if denoising:
-        denoising_path = ""
-        os.path.join(denoising_path, folder_path, "/out/preproc/denoising")
-        try:
-            os.mkdir(denoising_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % denoising_path)
-        else:
-            print ("Successfully created the directory %s " % denoising_path)
+        if denoising:
+            denoising_path = ""
+            os.path.join(denoising_path, folder_path, "/out/preproc/denoising")
+            if not(os.path.exists(denoising_path)):
+                try:
+                    os.mkdir(denoising_path)
+                except OSError:
+                    print ("Creation of the directory %s failed" % denoising_path)
+                else:
+                    print ("Successfully created the directory %s " % denoising_path)
+
+            pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
+            denoised = mppca(b0_mask, patch_radius=pr)
+            save_nifti(denoising_path + '/' + patient_path + '_mask_denoised.nii.gz', denoised.astype(np.float32), affine)
 
     if eddy:
         eddy_path = ""
@@ -174,6 +177,7 @@ def preproc(folder_path, eddy=False, denoising=False):
         print ("Creation of the directory %s failed" % final_path)
     else:
         print ("Successfully created the directory %s " % final_path)
+
 
 def dti(folder_path):
     """Perform dti and store the data in the out/dti folder.
