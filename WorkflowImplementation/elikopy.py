@@ -57,41 +57,47 @@ def patient_list(folder_path):
 
     import os
 
-    directory = os.fsencode(folder_path)
-
     error = []
     success = []
 
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        if filename.endswith(".nii"):
-            # print(os.path.join(directory, filename))
-            name = os.path.splitext(filename)[0]
-            bvec = os.path.splitext(filename)[0] + ".bvec"
-            bval = os.path.splitext(filename)[0] + ".bval"
-            if bvec not in os.listdir(directory) or bval not in os.listdir(directory):
-                error = error.append(filename)
-            else:
-                success = success.append(name)
+    for file in os.listdir(folder_path):
 
-        if filename.endswith(".nii.gz"):
-            # print(os.path.join(directory, filename))
-            name = os.path.splitext(filename)[1]
-            bvec = os.path.splitext(filename)[1] + ".bvec"
-            bval = os.path.splitext(filename)[1] + ".bval"
-            if bvec not in os.listdir(directory) or bval not in os.listdir(directory):
-                error = error.append(filename)
+        if file.endswith(".nii"):
+            name = os.path.splitext(file)[0]
+            bvec = os.path.splitext(file)[0] + ".bvec"
+            bval = os.path.splitext(file)[0] + ".bval"
+            if bvec not in os.listdir(folder_path) or bval not in os.listdir(folder_path):
+                error.append(name)
             else:
-                success = success.append(name)
+                success.append(name)
+
+        if file.endswith(".nii.gz"):
+            name = os.path.splitext(os.path.splitext(file)[0])[0]
+            bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
+            bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
+            if bvec not in os.listdir(folder_path) or bval not in os.listdir(folder_path):
+                error.append(name)
+            else:
+                success.append(name)
+
+    error = list(dict.fromkeys(error))
+    success = list(dict.fromkeys(success))
+
+    dest = folder_path + '/out'
+    if not (os.path.exists(dest)):
+        try:
+            os.mkdir(dest)
+        except OSError:
+            print("Creation of the directory %s failed" % dest)
+        else:
+            print("Successfully created the directory %s " % dest)
 
     import json
-    dest_error = ""
-    os.path.join(dest_error, folder_path, "/out/patient_error.json")
+    dest_error = folder_path + "/out/patient_error.json"
     with open(dest_error, 'w') as f:
         json.dump(error, f)
 
-    dest_success = ""
-    os.path.join(dest_success, folder_path, "/out/patient_list.json")
+    dest_success = folder_path + "/out/patient_list.json"
     with open(dest_success, 'w') as f:
         json.dump(success, f)
 
@@ -114,30 +120,46 @@ def preproc(folder_path, eddy=False, denoising=False):
 
     import os
     import json
-    with open("JSON Directory") as BOB:
-        patient_list = json.load(folder_path + "/out/patient_list.json")
 
-    from os.path import join as pjoin
+    dest_success = folder_path + "/out/patient_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
     import numpy as np
-    from dipy.data import get_fnames
     from dipy.io.image import load_nifti, save_nifti
     from dipy.segment.mask import median_otsu
     import math
     from dipy.denoise.localpca import mppca
 
+    preproc_path = folder_path + "/out/preproc"
+    if not (os.path.exists(preproc_path)):
+        try:
+            os.mkdir(preproc_path)
+        except OSError:
+            print("Creation of the directory %s failed" % preproc_path)
+        else:
+            print("Successfully created the directory %s " % preproc_path)
+
+    bet_path = folder_path + "/out/preproc/bet"
+    if not (os.path.exists(bet_path)):
+        try:
+            os.mkdir(bet_path)
+        except OSError:
+            print("Creation of the directory %s failed" % bet_path)
+        else:
+            print("Successfully created the directory %s " % bet_path)
+
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
 
-        data, affine = load_nifti(folder_path + '/' + patient_path + '.nii')
-        data = np.squeeze(data)
+        data, affine = load_nifti(folder_path + '/' + patient_path + '.nii.gz')
 
-        b0_mask, mask = median_otsu(data, median_radius=2, numpass=1)
+        b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
         save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
         save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
 
         if denoising:
-            denoising_path = ""
-            os.path.join(denoising_path, folder_path, "/out/preproc/denoising")
+            denoising_path = folder_path + "/out/preproc/denoising"
             if not(os.path.exists(denoising_path)):
                 try:
                     os.mkdir(denoising_path)
@@ -150,6 +172,7 @@ def preproc(folder_path, eddy=False, denoising=False):
             denoised = mppca(b0_mask, patch_radius=pr)
             save_nifti(denoising_path + '/' + patient_path + '_mask_denoised.nii.gz', denoised.astype(np.float32), affine)
 
+    # need to had eddy to the loop =====================================================
     if eddy:
         eddy_path = ""
         os.path.join(eddy_path, folder_path, "/out/preproc/eddy")
@@ -168,9 +191,9 @@ def preproc(folder_path, eddy=False, denoising=False):
 
             #wait until eddy finish
             output, error = process.communicate()
+    # =============================================================================
 
-    final_path = ""
-    os.path.join(final_path, folder_path, "/out/preproc/final")
+    final_path = folder_path + "/out/preproc/final"
     try:
         os.mkdir(final_path)
     except OSError:
@@ -193,8 +216,7 @@ def dti(folder_path):
     import os
     import json
 
-    dti_path = ""
-    os.path.join(dti_path, folder_path, "/out/dti")
+    dti_path = folder_path + "/out/dti"
     try:
         os.mkdir(dti_path)
     except OSError:
@@ -202,7 +224,10 @@ def dti(folder_path):
     else:
         print("Successfully created the directory %s " % dti_path)
 
-    patient_list = json.load(folder_path + "/out/patient_list.json")
+    dest_success = folder_path + "/out/patient_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
         # load the data======================================
@@ -292,7 +317,6 @@ def fingerprinting(folder_path):
         MF_fit.write_nifti(outputbasename)
 
 
-
 def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False, dti=False):
     """Perform dti and store the data in the out/dti folder.
     Parameters
@@ -300,4 +324,6 @@ def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False,
     folder_path: Path to root folder containing all the dicom
     """
 
-import nibabel as nib
+
+if __name__ == "__main__":
+    preproc("C:/Users/SIMON MATHIEU/Desktop/thesis_code/python_dti/Tests/s16858", eddy=False, denoising=False)
