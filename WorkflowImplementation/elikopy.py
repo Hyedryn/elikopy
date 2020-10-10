@@ -237,9 +237,67 @@ def dti(folder_path):
         save_nifti(folder_path + "/out/dti/" + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
 
 
+def fingerprinting(folder_path):
+    """Perform fingerprinting and store the data in the out/fingerprinting folder.
+    Parameters
+    ----------
+    folder_path: Path to root folder containing all the dicom
+    """
+
+    import os
+
+    fingerprinting_path = ""
+    os.path.join(fingerprinting_path, folder_path, "/out/fingerprinting")
+    try:
+        os.mkdir(fingerprinting_path)
+    except OSError:
+        print("Creation of the directory %s failed" % fingerprinting_path)
+    else:
+        print("Successfully created the directory %s " % fingerprinting_path)
+
+
+    import os
+    import sys
+    import json
+
+    import microstructure_fingerprinting as mf
+    import microstructure_fingerprinting.mf_utils as mfu
+
+    dictionary_file = 'mf_dictionary.mat'
+
+    # Instantiate model:
+    mf_model = mf.MFModel(dictionary_file)
+
+    patient_list = json.load(folder_path + "/out/patient_list.json")
+
+    for p in patient_list:
+
+        patient_path = os.path.splitext(p)[0]
+
+        # Fit to data:
+        MF_fit = mf_model.fit(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz",  # help(mf_model.fit)
+                              maskfile,
+                              numfasc,  # all arguments after this MUST be named: argname=argvalue
+                              peaks=peaks,
+                              bvals=folder_path + "/out/preproc/final" + "/" + patient_path + ".bval",
+                              bvecs=folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec",
+                              csf_mask=csf_mask,
+                              ear_mask=ear_mask,
+                              verbose=3,
+                              parallel=False
+                              )
+
+        # Save estimated parameter maps as NIfTI files:
+        outputbasename = 'MF_' + patient_path
+        MF_fit.write_nifti(outputbasename)
+
+
+
 def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False, dti=False):
     """Perform dti and store the data in the out/dti folder.
     Parameters
     ----------
     folder_path: Path to root folder containing all the dicom
     """
+
+import nibabel as nib
