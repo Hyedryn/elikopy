@@ -119,6 +119,7 @@ def preproc(folder_path, eddy=False, denoising=False):
     """
 
     import os
+    import shutil
     import json
 
     dest_success = folder_path + "/out/patient_list.json"
@@ -149,6 +150,14 @@ def preproc(folder_path, eddy=False, denoising=False):
         else:
             print("Successfully created the directory %s " % bet_path)
 
+    final_path = folder_path + "/out/preproc/final"
+    try:
+        os.mkdir(final_path)
+    except OSError:
+        print("Creation of the directory %s failed" % final_path)
+    else:
+        print("Successfully created the directory %s " % final_path)
+
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
 
@@ -157,6 +166,12 @@ def preproc(folder_path, eddy=False, denoising=False):
         b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
         save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
         save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
+        if not(denoising) and not(eddy):
+            save_nifti(folder_path + '/out/preproc/final/' + patient_path + '.nii.gz', b0_mask.astype(np.float32),affine)
+            save_nifti(folder_path + '/out/preproc/final/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32),affine)
+            shutil.copyfile(folder_path + "/" + patient_path + ".bval", folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
+            shutil.copyfile(folder_path + "/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
+
 
         if denoising:
             denoising_path = folder_path + "/out/preproc/denoising"
@@ -171,6 +186,11 @@ def preproc(folder_path, eddy=False, denoising=False):
             pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
             denoised = mppca(b0_mask, patch_radius=pr)
             save_nifti(denoising_path + '/' + patient_path + '_mask_denoised.nii.gz', denoised.astype(np.float32), affine)
+            if not eddy:
+                save_nifti(folder_path + '/out/preproc/final/' + patient_path + '.nii.gz', denoised.astype(np.float32),affine)
+                save_nifti(folder_path + '/out/preproc/final/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
+                shutil.copyfile(folder_path + "/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
+                shutil.copyfile(folder_path + "/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
 
     # need to had eddy to the loop =====================================================
     if eddy:
@@ -192,14 +212,6 @@ def preproc(folder_path, eddy=False, denoising=False):
             #wait until eddy finish
             output, error = process.communicate()
     # =============================================================================
-
-    final_path = folder_path + "/out/preproc/final"
-    try:
-        os.mkdir(final_path)
-    except OSError:
-        print ("Creation of the directory %s failed" % final_path)
-    else:
-        print ("Successfully created the directory %s " % final_path)
 
 
 def dti(folder_path):
@@ -232,11 +244,12 @@ def dti(folder_path):
         patient_path = os.path.splitext(p)[0]
         # load the data======================================
         data, affine = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
+        mask, _ = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
         bvals, bvecs = read_bvals_bvecs(folder_path + "/out/preproc/final" + "/" + patient_path + ".bval", folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
         # create the model===================================
         gtab = gradient_table(bvals, bvecs)
         tenmodel = dti.TensorModel(gtab)
-        tenfit = tenmodel.fit(folder_path + "/out/preproc/final" + "/" + patient_path +"_mask" +".nii.gz")
+        tenfit = tenmodel.fit(data, mask=mask)
         # FA ================================================
         FA = dti.fractional_anisotropy(tenfit.evals)
         FA[np.isnan(FA)] = 0
@@ -323,7 +336,3 @@ def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False,
     ----------
     folder_path: Path to root folder containing all the dicom
     """
-
-
-if __name__ == "__main__":
-    preproc("C:/Users/SIMON MATHIEU/Desktop/thesis_code/python_dti/Tests/s16858", eddy=False, denoising=False)
