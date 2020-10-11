@@ -5,7 +5,21 @@ import os
 import json
 import math
 import time
-from WorkflowImplementation.utils import preproc_solo
+try:
+    from WorkflowImplementation.utils import preproc_solo
+    from WorkflowImplementation.utils import submit_job
+    print("Importation of WorkflowImplementation.utils is a success")
+except ImportError:
+    print("Warning: Importation of WorkflowImplementation.utils failed")
+    ## check whether in the source directory...
+try:
+    from utils import preproc_solo
+    from utils import submit_job
+    print("Importation of utils is a success")
+except ImportError:
+    ## check whether in the source directory...
+    print("Warning: during importation of utils failed")
+
 
 
 def dicom_to_nifti(folder_path):
@@ -149,6 +163,9 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
     preproc("C:\Memoire\example_data\")
     """
 
+    if slurm:
+        import pyslurm
+
     f=open(folder_path + "/out/logs.txt", "a+")
     f.write("[PREPROC] Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
     f.close()
@@ -208,23 +225,70 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
     f=open(folder_path + "/out/logs.txt", "a+")
     for p in patient_list:
         if slurm:
-            p_job = {
-                "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
-                "job_name": "preproc_" + p,
-                "ntasks": 1,
-                "cpus_per_task": 1,
-                "mem-per-cpu": 8096,
-                "time": "17:00:00",
-                "mail-user": "quentin.dessain@student.uclouvain.be",
-                "mail-type": "FAIL",
-            }
-            p_job_id = pyslurm.job().submit_batch_job(p_job)
+            if not denoising and not eddy:
+                p_job = {
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "01:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                }
+            elif denoising and eddy:
+                p_job = {
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "17:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                }
+            elif denoising and not eddy:
+                p_job = {
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "5:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                }
+            elif not denoising and eddy:
+                p_job = {
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "15:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                }
+            else:
+                p_job = {
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "1:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                }
+            #p_job_id = pyslurm.job().submit_batch_job(p_job)
+            p_job_id = submit_job(p_job)
             job_list.append(p_job_id)
             f.write("[PREPROC] Patient %s is ready to be processed\n" % p)
             f.write("[PREPROC] Successfully submited job %s using slurm\n" % p_job_id)
         else:
             preproc_solo(folder_path,p,eddy,denoising)
             f.write("[PREPROC] Successfully preproceced patient %s\n" % p)
+            f.flush()
     f.close()
 
     #Wait for all jobs to finish
@@ -235,27 +299,27 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " COMPLETED\n")
+                    f.write("[PREPROC] Job " + str(job_id) + " COMPLETED\n")
                     f.close()
                 if job_info["job_state"] == 'FAILED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " FAILED\n")
+                    f.write("[PREPROC] Job " + str(job_id) + " FAILED\n")
                     f.close()
                 if job_info["job_state"] == 'OUT_OF_MEMORY':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " OUT_OF_MEMORY\n")
+                    f.write("[PREPROC] Job " + str(job_id) + " OUT_OF_MEMORY\n")
                     f.close()
                 if job_info["job_state"] == 'TIMEOUT':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " TIMEOUT\n")
+                    f.write("[PREPROC] Job " + str(job_id) + " TIMEOUT\n")
                     f.close()
                 if job_info["job_state"] == 'CANCELLED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " CANCELLED\n")
+                    f.write("[PREPROC] Job " + str(job_id) + " CANCELLED\n")
                     f.close()
             time.sleep(30)
 
