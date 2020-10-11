@@ -17,7 +17,7 @@ try:
     print("Importation of utils is a success")
 except ImportError:
     ## check whether in the source directory...
-    print("Warning: during importation of utils failed")
+    print("Warning: Importation of utils failed")
 
 
 
@@ -298,27 +298,27 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + str(job_id) + " COMPLETED\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
                     f.close()
                 if job_info["job_state"] == 'FAILED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + str(job_id) + " FAILED\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
                     f.close()
                 if job_info["job_state"] == 'OUT_OF_MEMORY':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + str(job_id) + " OUT_OF_MEMORY\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
                     f.close()
                 if job_info["job_state"] == 'TIMEOUT':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + str(job_id) + " TIMEOUT\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
                     f.close()
                 if job_info["job_state"] == 'CANCELLED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + str(job_id) + " CANCELLED\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
                     f.close()
             time.sleep(30)
 
