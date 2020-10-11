@@ -208,16 +208,61 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
     f=open(folder_path + "/out/logs.txt", "a+")
     for p in patient_list:
         if slurm:
-            p_job = {
-                "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
-                "job_name": "preproc_" + p,
-                "ntasks": 1,
-                "cpus_per_task": 1,
-                "mem-per-cpu": 8096,
-                "time": "17:00:00",
-                "mail-user": "quentin.dessain@student.uclouvain.be",
-                "mail-type": "FAIL",
-            }
+            if not denoising and not eddy:
+                p_job = {
+                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem-per-cpu": 4096,
+                    "time": "01:00:00",
+                    "mail-user": "quentin.dessain@student.uclouvain.be",
+                    "mail-type": "FAIL",
+                }
+            elif denoising and eddy:
+                p_job = {
+                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem-per-cpu": 8096,
+                    "time": "17:00:00",
+                    "mail-user": "quentin.dessain@student.uclouvain.be",
+                    "mail-type": "FAIL",
+                }
+            elif denoising and not eddy:
+                p_job = {
+                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem-per-cpu": 8096,
+                    "time": "5:00:00",
+                    "mail-user": "quentin.dessain@student.uclouvain.be",
+                    "mail-type": "FAIL",
+                }
+            elif not denoising and eddy:
+                p_job = {
+                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem-per-cpu": 8096,
+                    "time": "15:00:00",
+                    "mail-user": "quentin.dessain@student.uclouvain.be",
+                    "mail-type": "FAIL",
+                }
+            else:
+                p_job = {
+                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem-per-cpu": 4096,
+                    "time": "1:00:00",
+                    "mail-user": "quentin.dessain@student.uclouvain.be",
+                    "mail-type": "FAIL",
+                }
             p_job_id = pyslurm.job().submit_batch_job(p_job)
             job_list.append(p_job_id)
             f.write("[PREPROC] Patient %s is ready to be processed\n" % p)
@@ -225,6 +270,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         else:
             preproc_solo(folder_path,p,eddy,denoising)
             f.write("[PREPROC] Successfully preproceced patient %s\n" % p)
+            f.flush()
     f.close()
 
     #Wait for all jobs to finish

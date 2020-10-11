@@ -34,8 +34,14 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
                 os.mkdir(denoising_path)
             except OSError:
                 print ("Creation of the directory %s failed" % denoising_path)
+                f=open(folder_path + "/out/logs.txt", "a+")
+                f.write("[PREPROC SOLO] Creation of the directory %s failed\n" % denoising_path)
+                f.close()
             else:
                 print ("Successfully created the directory %s " % denoising_path)
+                f=open(folder_path + "/out/logs.txt", "a+")
+                f.write("[PREPROC SOLO] Successfully created the directory %s \n" % denoising_path)
+                f.close()
 
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
         denoised = mppca(b0_mask, patch_radius=pr)
@@ -53,8 +59,15 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
                 os.mkdir(eddy_path)
             except OSError:
                 print ("Creation of the directory %s failed" % eddy_path)
+                f=open(folder_path + "/out/logs.txt", "a+")
+                f.write("[PREPROC SOLO] Creation of the directory %s failed\n" % eddy_path)
+                f.close()
             else:
                 print ("Successfully created the directory %s " % eddy_path)
+                f=open(folder_path + "/out/logs.txt", "a+")
+                f.write("[PREPROC SOLO] Successfully created the directory %s \n" % eddy_path)
+                f.close()
+
 
         if denoising:
             bashCommand = 'eddy --imain=' + folder_path  + '/out/preproc/denoising/' + patient_path + '_mask_denoised.nii.gz --mask=' + folder_path  + '/out/preproc/bet/' +  patient_path + '_bet.nii.gz --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
@@ -73,3 +86,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_bet_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
+
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[PREPROC SOLO] Successfully processing patient %s \n" % p)
+    f.close()
