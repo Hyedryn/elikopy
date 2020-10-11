@@ -94,6 +94,52 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
     f.write("[PREPROC SOLO] Successfully processed patient %s \n" % p)
     f.close()
 
+def dti_solo(folder_path, p):
+    print("[DTI SOLO] Beginning of individual DTI processing for patient %s \n" % p)
+
+    import numpy as np
+    from dipy.io.image import load_nifti, save_nifti
+    from dipy.io.gradients import read_bvals_bvecs
+    from dipy.core.gradients import gradient_table
+    import dipy.reconst.dti as dti
+
+    patient_path = os.path.splitext(p)[0]
+    # load the data======================================
+    data, affine = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
+    mask, _ = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(folder_path + "/out/preproc/final" + "/" + patient_path + ".bval", folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
+    # create the model===================================
+    gtab = gradient_table(bvals, bvecs)
+    tenmodel = dti.TensorModel(gtab)
+    tenfit = tenmodel.fit(data, mask=mask)
+    # FA ================================================
+    FA = dti.fractional_anisotropy(tenfit.evals)
+    FA[np.isnan(FA)] = 0
+    FA = np.clip(FA, 0, 1)
+    save_nifti(folder_path + "/out/dti/" + patient_path + "_fa.nii.gz", FA.astype(np.float32), affine)
+    # colored FA ========================================
+    RGB = dti.color_fa(FA, tenfit.evecs)
+    save_nifti(folder_path + "/out/dti/" + patient_path + "_fargb.nii.gz", np.array(255 * RGB, 'uint8'), affine)
+    # Mean diffusivity ==================================
+    MD = dti.mean_diffusivity(tenfit.evals)
+    save_nifti(folder_path + "/out/dti/" + patient_path + "_md.nii.gz", MD.astype(np.float32), affine)
+    # Radial diffusivity ==================================
+    RD = dti.radial_diffusivity(tenfit.evals)
+    save_nifti(folder_path + "/out/dti/" + patient_path + "_rd.nii.gz", RD.astype(np.float32), affine)
+    # Axial diffusivity ==================================
+    AD = dti.axial_diffusivity(tenfit.evals)
+    save_nifti(folder_path + "/out/dti/" + patient_path + "_ad.nii.gz", AD.astype(np.float32), affine)
+    # eigen vectors =====================================
+    save_nifti(folder_path + "/out/dti/" + patient_path + "_evecs.nii.gz", tenfit.evecs.astype(np.float32), affine)
+    # eigen values ======================================
+    save_nifti(folder_path + "/out/dti/" + patient_path + "_evals.nii.gz", tenfit.evals.astype(np.float32), affine)
+    # diffusion tensor ====================================
+    save_nifti(folder_path + "/out/dti/" + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
+
+    print("[DTI SOLO] Successfully processed patient %s \n" % p)
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[DTI SOLO] Successfully processed patient %s \n" % p)
+    f.close()
 
 from future.utils import iteritems
 import subprocess

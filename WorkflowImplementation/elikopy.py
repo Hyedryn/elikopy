@@ -6,15 +6,13 @@ import json
 import math
 import time
 try:
-    from WorkflowImplementation.utils import preproc_solo
-    from WorkflowImplementation.utils import submit_job
+    from WorkflowImplementation.utils import preproc_solo, dti_solo, submit_job
     print("Importation of WorkflowImplementation.utils is a success")
 except ImportError:
     print("Warning: Importation of WorkflowImplementation.utils failed")
     ## check whether in the source directory...
 try:
-    from utils import preproc_solo
-    from utils import submit_job
+    from utils import preproc_solo, dti_solo, submit_job
     print("Importation of utils is a success")
 except ImportError:
     ## check whether in the source directory...
@@ -337,13 +335,8 @@ def dti(folder_path, slurm=False):
     f.write("[DTI] Beginning of DTI with slurm:" + str(slurm) + "\n")
     f.close()
 
-    import numpy as np
-    from dipy.io.image import load_nifti, save_nifti
-    from dipy.io.gradients import read_bvals_bvecs
-    from dipy.core.gradients import gradient_table
-    import dipy.reconst.dti as dti
-    import os
-    import json
+    if slurm:
+        import pyslurm
 
     dti_path = folder_path + "/out/dti"
     try:
@@ -364,39 +357,62 @@ def dti(folder_path, slurm=False):
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
+    job_list = []
+    f=open(folder_path + "/out/logs.txt", "a+")
     for p in patient_list:
-        patient_path = os.path.splitext(p)[0]
-        # load the data======================================
-        data, affine = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
-        mask, _ = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
-        bvals, bvecs = read_bvals_bvecs(folder_path + "/out/preproc/final" + "/" + patient_path + ".bval", folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
-        # create the model===================================
-        gtab = gradient_table(bvals, bvecs)
-        tenmodel = dti.TensorModel(gtab)
-        tenfit = tenmodel.fit(data, mask=mask)
-        # FA ================================================
-        FA = dti.fractional_anisotropy(tenfit.evals)
-        FA[np.isnan(FA)] = 0
-        FA = np.clip(FA, 0, 1)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_fa.nii.gz", FA.astype(np.float32), affine)
-        # colored FA ========================================
-        RGB = dti.color_fa(FA, tenfit.evecs)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_fargb.nii.gz", np.array(255 * RGB, 'uint8'), affine)
-        # Mean diffusivity ==================================
-        MD = dti.mean_diffusivity(tenfit.evals)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_md.nii.gz", MD.astype(np.float32), affine)
-        # Radial diffusivity ==================================
-        RD = dti.radial_diffusivity(tenfit.evals)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_rd.nii.gz", RD.astype(np.float32), affine)
-        # Axial diffusivity ==================================
-        AD = dti.axial_diffusivity(tenfit.evals)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_ad.nii.gz", AD.astype(np.float32), affine)
-        # eigen vectors =====================================
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_evecs.nii.gz", tenfit.evecs.astype(np.float32), affine)
-        # eigen values ======================================
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_evals.nii.gz", tenfit.evals.astype(np.float32), affine)
-        # diffusion tensor ====================================
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
+        if slurm:
+            p_job = {
+                    "wrap": "python -c 'from utils import dti_solo; dti_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "1:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                }
+            #p_job_id = pyslurm.job().submit_batch_job(p_job)
+            p_job_id = submit_job(p_job)
+            job_list.append(p_job_id)
+            f.write("[DTI] Patient %s is ready to be processed\n" % p)
+            f.write("[DTI] Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            dti_solo(folder_path,p)
+            f.write("[DTI] Successfully applied DTI on patient %s\n" % p)
+            f.flush()
+    f.close()
+
+    #Wait for all jobs to finish
+    if slurm:
+        while job_list:
+            for job_id in job_list[:]:
+                job_info = pyslurm.job().find_id(job_id)[0]
+                if job_info["job_state"] == 'COMPLETED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] Job " + str(job_id) + " COMPLETED\n")
+                    f.close()
+                if job_info["job_state"] == 'FAILED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] Job " + str(job_id) + " FAILED\n")
+                    f.close()
+                if job_info["job_state"] == 'OUT_OF_MEMORY':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] Job " + str(job_id) + " OUT_OF_MEMORY\n")
+                    f.close()
+                if job_info["job_state"] == 'TIMEOUT':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] Job " + str(job_id) + " TIMEOUT\n")
+                    f.close()
+                if job_info["job_state"] == 'CANCELLED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] Job " + str(job_id) + " CANCELLED\n")
+                    f.close()
+            time.sleep(30)
 
     f=open(folder_path + "/out/logs.txt", "a+")
     f.write("[DTI] End of DTI\n")
