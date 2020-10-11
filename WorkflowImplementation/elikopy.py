@@ -1,6 +1,9 @@
 """
  
 """
+import os
+import json
+from WorkflowImplementation.utils import preproc_solo
 
 
 def dicom_to_nifti(folder_path):
@@ -18,10 +21,11 @@ def dicom_to_nifti(folder_path):
     --------
     dicom_to_nifti("C:\Memoire\example_data\")
     """
-
-    bashCommand = 'dcm2niix -f "%n_%p_%z_%i" -p y -z y -ba n ' + folder_path
+    bashCommand = 'dcm2niix -f "%i_%p_%z" -p y -z y -o ' + folder_path + ' ' + folder_path + ''
     import subprocess
-    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    bashcmd = bashCommand.split()
+    #print("Bash command is:\n{}\n".format(bashcmd))
+    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
 
     #wait until mricron finish
     output, error = process.communicate()
@@ -31,13 +35,19 @@ def dicom_to_nifti(folder_path):
     import shutil
     import os
 
-    dest = ""
-    os.path.join(dest, folder_path, "/dicom")
+    dest = folder_path + "/dicom"
     files = os.listdir(folder_path)
+    if not(os.path.exists(dest)):
+        try:
+            os.mkdir(dest)
+        except OSError:
+            print ("Creation of the directory %s failed" % dest)
+        else:
+            print ("Successfully created the directory %s " % dest)
 
     for f in files:
         if f.find("mrdc") or f.find("MRDC"):
-            shutil.move(f, dest)
+            shutil.move(folder_path + '/' + f, dest)
 
 
 def patient_list(folder_path):
@@ -118,19 +128,11 @@ def preproc(folder_path, eddy=False, denoising=False):
     preproc("C:\Memoire\example_data\")
     """
 
-    import os
-    import shutil
-    import json
+
 
     dest_success = folder_path + "/out/patient_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
-
-    import numpy as np
-    from dipy.io.image import load_nifti, save_nifti
-    from dipy.segment.mask import median_otsu
-    import math
-    from dipy.denoise.localpca import mppca
 
     preproc_path = folder_path + "/out/preproc"
     if not (os.path.exists(preproc_path)):
@@ -159,60 +161,7 @@ def preproc(folder_path, eddy=False, denoising=False):
         print("Successfully created the directory %s " % final_path)
 
     for p in patient_list:
-        patient_path = os.path.splitext(p)[0]
-
-        data, affine = load_nifti(folder_path + '/' + patient_path + '.nii.gz')
-
-        b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
-        save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
-        save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
-        if not(denoising) and not(eddy):
-            save_nifti(folder_path + '/out/preproc/final/' + patient_path + '.nii.gz', b0_mask.astype(np.float32),affine)
-            save_nifti(folder_path + '/out/preproc/final/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32),affine)
-            shutil.copyfile(folder_path + "/" + patient_path + ".bval", folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
-            shutil.copyfile(folder_path + "/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
-
-
-        if denoising:
-            denoising_path = folder_path + "/out/preproc/denoising"
-            if not(os.path.exists(denoising_path)):
-                try:
-                    os.mkdir(denoising_path)
-                except OSError:
-                    print ("Creation of the directory %s failed" % denoising_path)
-                else:
-                    print ("Successfully created the directory %s " % denoising_path)
-
-            pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
-            denoised = mppca(b0_mask, patch_radius=pr)
-            save_nifti(denoising_path + '/' + patient_path + '_mask_denoised.nii.gz', denoised.astype(np.float32), affine)
-            if not eddy:
-                save_nifti(folder_path + '/out/preproc/final/' + patient_path + '.nii.gz', denoised.astype(np.float32),affine)
-                save_nifti(folder_path + '/out/preproc/final/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
-                shutil.copyfile(folder_path + "/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
-                shutil.copyfile(folder_path + "/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
-
-    # need to had eddy to the loop =====================================================
-    if eddy:
-        eddy_path = ""
-        os.path.join(eddy_path, folder_path, "/out/preproc/eddy")
-        try:
-            os.mkdir(eddy_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % eddy_path)
-        else:
-            print ("Successfully created the directory %s " % eddy_path)
-
-        for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
-            bashCommand = 'eddy --imain=' + folder_path  + '/' + patient_path + '.nifti --mask=' + folder_path  + '/out/preproc/bet/' +  patient_path + '_bet.nifti --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
-            import subprocess
-            process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-
-            #wait until eddy finish
-            output, error = process.communicate()
-    # =============================================================================
-
+        preproc_solo(folder_path,p,eddy,denoising,)
 
 def dti(folder_path):
     """Perform dti and store the data in the out/dti folder.
