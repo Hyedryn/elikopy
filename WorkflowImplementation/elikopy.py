@@ -23,6 +23,10 @@ def dicom_to_nifti(folder_path):
     --------
     dicom_to_nifti("C:\Memoire\example_data\")
     """
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[DICOM TO NIFTI] Beginning sequential dicom convertion\n")
+    f.close()
+
     bashCommand = 'dcm2niix -f "%i_%p_%z" -p y -z y -o ' + folder_path + ' ' + folder_path + ''
     import subprocess
     bashcmd = bashCommand.split()
@@ -47,9 +51,13 @@ def dicom_to_nifti(folder_path):
         else:
             print ("Successfully created the directory %s " % dest)
 
+    f=open(folder_path + "/out/logs.txt", "a+")
     for f in files:
         if "mrdc" in f or "MRDC" in f:
             shutil.move(folder_path + '/' + f, dest)
+
+            f.write("[DICOM TO NIFTI] Moved " + f + " to " + dest + "\n")
+    f.close()
 
 
 def patient_list(folder_path):
@@ -101,8 +109,15 @@ def patient_list(folder_path):
             os.mkdir(dest)
         except OSError:
             print("Creation of the directory %s failed" % dest)
+            f=open(folder_path + "/out/logs.txt", "a+")
+            f.write("[PATIENT LIST] Creation of the directory %s failed\n" % dest)
+            f.close()
         else:
             print("Successfully created the directory %s " % dest)
+            f=open(folder_path + "/out/logs.txt", "a+")
+            f.write("[PATIENT LIST] Successfully created the directory %s \n" % dest)
+            f.close()
+
 
     import json
     dest_error = folder_path + "/out/patient_error.json"
@@ -112,6 +127,10 @@ def patient_list(folder_path):
     dest_success = folder_path + "/out/patient_list.json"
     with open(dest_success, 'w') as f:
         json.dump(success, f)
+
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[PATIENT LIST] Patient list generated\n")
+    f.close()
 
 
 def preproc(folder_path, eddy=False, denoising=False, slurm=False):
@@ -130,7 +149,9 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
     preproc("C:\Memoire\example_data\")
     """
 
-
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[PREPROC] Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
+    f.close()
 
     dest_success = folder_path + "/out/patient_list.json"
     with open(dest_success, 'r') as f:
@@ -142,8 +163,14 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
             os.mkdir(preproc_path)
         except OSError:
             print("Creation of the directory %s failed" % preproc_path)
+            f=open(folder_path + "/out/logs.txt", "a+")
+            f.write("[PREPROC] Creation of the directory %s failed\n" % preproc_path)
+            f.close()
         else:
             print("Successfully created the directory %s " % preproc_path)
+            f=open(folder_path + "/out/logs.txt", "a+")
+            f.write("[PREPROC] Successfully created the directory %s\n" % preproc_path)
+            f.close()
 
     bet_path = folder_path + "/out/preproc/bet"
     if not (os.path.exists(bet_path)):
@@ -151,8 +178,14 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
             os.mkdir(bet_path)
         except OSError:
             print("Creation of the directory %s failed" % bet_path)
+            f=open(folder_path + "/out/logs.txt", "a+")
+            f.write("[PREPROC] Creation of the directory %s failed\n" % bet_path)
+            f.close()
         else:
             print("Successfully created the directory %s " % bet_path)
+            f=open(folder_path + "/out/logs.txt", "a+")
+            f.write("[PREPROC] Successfully created the directory %s\n" % bet_path)
+            f.close()
 
     final_path = folder_path + "/out/preproc/final"
     if not (os.path.exists(final_path)):
@@ -160,10 +193,19 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
             os.mkdir(final_path)
         except OSError:
             print("Creation of the directory %s failed" % final_path)
+            f=open(folder_path + "/out/logs.txt", "a+")
+            f.write("[PREPROC] Creation of the directory %s failed\n" % final_path)
+            f.close()
         else:
             print("Successfully created the directory %s " % final_path)
+            f=open(folder_path + "/out/logs.txt", "a+")
+            f.write("[PREPROC] Successfully created the directory %s\n" % final_path)
+            f.close()
+
 
     job_list = []
+
+    f=open(folder_path + "/out/logs.txt", "a+")
     for p in patient_list:
         if slurm:
             p_job = {
@@ -178,8 +220,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
             }
             p_job_id = pyslurm.job().submit_batch_job(p_job)
             job_list.append(p_job_id)
+            f.write("[PREPROC] Patient %s is ready to be processed\n" % p)
+            f.write("[PREPROC] Successfully submited job %s using slurm\n" % p_job_id)
         else:
             preproc_solo(folder_path,p,eddy,denoising)
+            f.write("[PREPROC] Successfully preproceced patient %s\n" % p)
+    f.close()
 
     #Wait for all jobs to finish
     if slurm:
@@ -189,29 +235,33 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("PREPROC: Job " + job_id + " COMPLETED\n")
+                    f.write("[PREPROC] Job " + job_id + " COMPLETED\n")
                     f.close()
                 if job_info["job_state"] == 'FAILED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("PREPROC: Job " + job_id + " FAILED\n")
+                    f.write("[PREPROC] Job " + job_id + " FAILED\n")
                     f.close()
                 if job_info["job_state"] == 'OUT_OF_MEMORY':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("PREPROC: Job " + job_id + " OUT_OF_MEMORY\n")
+                    f.write("[PREPROC] Job " + job_id + " OUT_OF_MEMORY\n")
                     f.close()
                 if job_info["job_state"] == 'TIMEOUT':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("PREPROC: Job " + job_id + " TIMEOUT\n")
+                    f.write("[PREPROC] Job " + job_id + " TIMEOUT\n")
                     f.close()
                 if job_info["job_state"] == 'CANCELLED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("PREPROC: Job " + job_id + " CANCELLED\n")
+                    f.write("[PREPROC] Job " + job_id + " CANCELLED\n")
                     f.close()
             time.sleep(30)
+
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[PREPROC] All the preprocessing operation are finished!\n")
+    f.close()
 
 def dti(folder_path, slurm=False):
     """Perform dti and store the data in the out/dti folder.
@@ -219,6 +269,10 @@ def dti(folder_path, slurm=False):
     ----------
     folder_path: Path to root folder containing all the dicom
     """
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[DTI] Beginning of DTI with slurm:" + str(slurm) + "\n")
+    f.close()
+
     import numpy as np
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
@@ -232,8 +286,15 @@ def dti(folder_path, slurm=False):
         os.mkdir(dti_path)
     except OSError:
         print("Creation of the directory %s failed" % dti_path)
+        f=open(folder_path + "/out/logs.txt", "a+")
+        f.write("[DTI] Creation of the directory %s failed \n" % dti_path)
+        f.close()
     else:
         print("Successfully created the directory %s " % dti_path)
+        f=open(folder_path + "/out/logs.txt", "a+")
+        f.write("[DTI] Successfully created the directory %s \n" % dti_path)
+        f.close()
+
 
     dest_success = folder_path + "/out/patient_list.json"
     with open(dest_success, 'r') as f:
@@ -272,6 +333,10 @@ def dti(folder_path, slurm=False):
         save_nifti(folder_path + "/out/dti/" + patient_path + "_evals.nii.gz", tenfit.evals.astype(np.float32), affine)
         # diffusion tensor ====================================
         save_nifti(folder_path + "/out/dti/" + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
+
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[DTI] End of DTI\n")
+    f.close()
 
 
 def fingerprinting(folder_path):
