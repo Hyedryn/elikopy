@@ -3,6 +3,8 @@
 """
 import os
 import json
+import math
+import time
 from WorkflowImplementation.utils import preproc_solo
 
 
@@ -112,7 +114,7 @@ def patient_list(folder_path):
         json.dump(success, f)
 
 
-def preproc(folder_path, eddy=False, denoising=False):
+def preproc(folder_path, eddy=False, denoising=False, slurm=False):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
     Parameters
@@ -153,17 +155,65 @@ def preproc(folder_path, eddy=False, denoising=False):
             print("Successfully created the directory %s " % bet_path)
 
     final_path = folder_path + "/out/preproc/final"
-    try:
-        os.mkdir(final_path)
-    except OSError:
-        print("Creation of the directory %s failed" % final_path)
-    else:
-        print("Successfully created the directory %s " % final_path)
+    if not (os.path.exists(final_path)):
+        try:
+            os.mkdir(final_path)
+        except OSError:
+            print("Creation of the directory %s failed" % final_path)
+        else:
+            print("Successfully created the directory %s " % final_path)
 
+    job_list = []
     for p in patient_list:
-        preproc_solo(folder_path,p,eddy,denoising,)
+        if slurm:
+            p_job = {
+                "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                "job_name": "preproc_" + p,
+                "ntasks": 1,
+                "cpus_per_task": 1,
+                "mem-per-cpu": 8096,
+                "time": "17:00:00",
+                "mail-user": "quentin.dessain@student.uclouvain.be",
+                "mail-type": "FAIL",
+            }
+            p_job_id = pyslurm.job().submit_batch_job(p_job)
+            job_list.append(p_job_id)
+        else:
+            preproc_solo(folder_path,p,eddy,denoising)
 
-def dti(folder_path):
+    #Wait for all jobs to finish
+    if slurm:
+        while job_list:
+            for job_id in job_list[:]:
+                job_info = pyslurm.job().find_id(job_id)[0]
+                if job_info["job_state"] == 'COMPLETED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("PREPROC: Job " + job_id + " COMPLETED\n")
+                    f.close()
+                if job_info["job_state"] == 'FAILED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("PREPROC: Job " + job_id + " FAILED\n")
+                    f.close()
+                if job_info["job_state"] == 'OUT_OF_MEMORY':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("PREPROC: Job " + job_id + " OUT_OF_MEMORY\n")
+                    f.close()
+                if job_info["job_state"] == 'TIMEOUT':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("PREPROC: Job " + job_id + " TIMEOUT\n")
+                    f.close()
+                if job_info["job_state"] == 'CANCELLED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("PREPROC: Job " + job_id + " CANCELLED\n")
+                    f.close()
+            time.sleep(30)
+
+def dti(folder_path, slurm=False):
     """Perform dti and store the data in the out/dti folder.
     Parameters
     ----------

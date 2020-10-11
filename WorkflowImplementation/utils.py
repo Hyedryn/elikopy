@@ -14,7 +14,8 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
 
     patient_path = os.path.splitext(p)[0]
 
-    data, affine = load_nifti(folder_path + '/' + patient_path + '.nii.gz')
+    nifti_path = folder_path + '/' + patient_path + '.nii.gz'
+    data, affine = load_nifti(nifti_path)
 
     b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
     save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
