@@ -46,7 +46,7 @@ def dicom_to_nifti(folder_path):
             print ("Successfully created the directory %s " % dest)
 
     for f in files:
-        if f.find("mrdc") or f.find("MRDC"):
+        if "mrdc" in f or "MRDC" in f:
             shutil.move(folder_path + '/' + f, dest)
 
 
