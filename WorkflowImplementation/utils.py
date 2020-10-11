@@ -1,4 +1,4 @@
-
+import datetime
 import os
 import os
 import shutil
@@ -9,7 +9,7 @@ import math
 
 def preproc_solo(folder_path, p, eddy=False, denoising=False):
 
-    print("[PREPROC SOLO] Beginning of individual preprocessing for patient %s \n" % p)
+    print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
     from dipy.io.image import load_nifti, save_nifti
     from dipy.segment.mask import median_otsu
     from dipy.denoise.localpca import mppca
@@ -37,12 +37,12 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
             except OSError:
                 print ("Creation of the directory %s failed" % denoising_path)
                 f=open(folder_path + "/out/logs.txt", "a+")
-                f.write("[PREPROC SOLO] Creation of the directory %s failed\n" % denoising_path)
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % denoising_path)
                 f.close()
             else:
                 print ("Successfully created the directory %s " % denoising_path)
                 f=open(folder_path + "/out/logs.txt", "a+")
-                f.write("[PREPROC SOLO] Successfully created the directory %s \n" % denoising_path)
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % denoising_path)
                 f.close()
 
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
@@ -62,12 +62,12 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
             except OSError:
                 print ("Creation of the directory %s failed" % eddy_path)
                 f=open(folder_path + "/out/logs.txt", "a+")
-                f.write("[PREPROC SOLO] Creation of the directory %s failed\n" % eddy_path)
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % eddy_path)
                 f.close()
             else:
                 print ("Successfully created the directory %s " % eddy_path)
                 f=open(folder_path + "/out/logs.txt", "a+")
-                f.write("[PREPROC SOLO] Successfully created the directory %s \n" % eddy_path)
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % eddy_path)
                 f.close()
 
 
@@ -89,13 +89,13 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_bet_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
 
-    print("[PREPROC SOLO] Successfully processed patient %s \n" % p)
+    print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[PREPROC SOLO] Successfully processed patient %s \n" % p)
+    f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 def dti_solo(folder_path, p):
-    print("[DTI SOLO] Beginning of individual DTI processing for patient %s \n" % p)
+    print("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DTI processing for patient %s \n" % p)
 
     import numpy as np
     from dipy.io.image import load_nifti, save_nifti
@@ -136,9 +136,9 @@ def dti_solo(folder_path, p):
     # diffusion tensor ====================================
     save_nifti(folder_path + "/out/dti/" + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
 
-    print("[DTI SOLO] Successfully processed patient %s \n" % p)
+    print("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[DTI SOLO] Successfully processed patient %s \n" % p)
+    f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 from future.utils import iteritems
@@ -166,7 +166,7 @@ def submit_job(job_info):
         slurm_cmd.append("--%s=%s" % (key, value))
     if script:
         slurm_cmd.append(job_info["script"])
-    print("Generated slurm batch command: '%s'" % slurm_cmd)
+    print("[INFO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Generated slurm batch command: '%s'" % slurm_cmd)
 
     # Run sbatch command as subprocess.
     try:

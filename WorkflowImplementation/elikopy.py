@@ -1,6 +1,7 @@
 """
  
 """
+import datetime
 import os
 import json
 import math
@@ -36,7 +37,7 @@ def dicom_to_nifti(folder_path):
     dicom_to_nifti("C:\Memoire\example_data\")
     """
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[DICOM TO NIFTI] Beginning sequential dicom convertion\n")
+    f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning sequential dicom convertion\n")
     f.close()
 
     bashCommand = 'dcm2niix -f "%i_%p_%z" -p y -z y -o ' + folder_path + ' ' + folder_path + ''
@@ -68,7 +69,7 @@ def dicom_to_nifti(folder_path):
         if "mrdc" in f or "MRDC" in f:
             shutil.move(folder_path + '/' + f, dest)
 
-            f.write("[DICOM TO NIFTI] Moved " + f + " to " + dest + "\n")
+            f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Moved " + f + " to " + dest + "\n")
     f.close()
 
 
@@ -122,12 +123,12 @@ def patient_list(folder_path):
         except OSError:
             print("Creation of the directory %s failed" % dest)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PATIENT LIST] Creation of the directory %s failed\n" % dest)
+            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
             f.close()
         else:
             print("Successfully created the directory %s " % dest)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PATIENT LIST] Successfully created the directory %s \n" % dest)
+            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
             f.close()
 
 
@@ -141,7 +142,7 @@ def patient_list(folder_path):
         json.dump(success, f)
 
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[PATIENT LIST] Patient list generated\n")
+    f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
     f.close()
 
 
@@ -165,7 +166,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         import pyslurm
 
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[PREPROC] Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
+    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
     f.close()
 
     dest_success = folder_path + "/out/patient_list.json"
@@ -179,12 +180,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         except OSError:
             print("Creation of the directory %s failed" % preproc_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Creation of the directory %s failed\n" % preproc_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Creation of the directory %s failed\n" % preproc_path)
             f.close()
         else:
             print("Successfully created the directory %s " % preproc_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Successfully created the directory %s\n" % preproc_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s\n" % preproc_path)
             f.close()
 
     bet_path = folder_path + "/out/preproc/bet"
@@ -194,12 +195,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         except OSError:
             print("Creation of the directory %s failed" % bet_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Creation of the directory %s failed\n" % bet_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % bet_path)
             f.close()
         else:
             print("Successfully created the directory %s " % bet_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Successfully created the directory %s\n" % bet_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s\n" % bet_path)
             f.close()
 
     final_path = folder_path + "/out/preproc/final"
@@ -209,12 +210,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         except OSError:
             print("Creation of the directory %s failed" % final_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Creation of the directory %s failed\n" % final_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % final_path)
             f.close()
         else:
             print("Successfully created the directory %s " % final_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Successfully created the directory %s\n" % final_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s\n" % final_path)
             f.close()
 
 
@@ -281,11 +282,11 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
             job_list.append(p_job_id)
-            f.write("[PREPROC] Patient %s is ready to be processed\n" % p)
-            f.write("[PREPROC] Successfully submited job %s using slurm\n" % p_job_id)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
             preproc_solo(folder_path,p,eddy,denoising)
-            f.write("[PREPROC] Successfully preproceced patient %s\n" % p)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
             f.flush()
     f.close()
 
@@ -322,7 +323,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
             time.sleep(30)
 
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[PREPROC] All the preprocessing operation are finished!\n")
+    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
     f.close()
 
 def dti(folder_path, slurm=False):
@@ -332,7 +333,7 @@ def dti(folder_path, slurm=False):
     folder_path: Path to root folder containing all the dicom
     """
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[DTI] Beginning of DTI with slurm:" + str(slurm) + "\n")
+    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DTI with slurm:" + str(slurm) + "\n")
     f.close()
 
     if slurm:
@@ -344,12 +345,12 @@ def dti(folder_path, slurm=False):
     except OSError:
         print("Creation of the directory %s failed" % dti_path)
         f=open(folder_path + "/out/logs.txt", "a+")
-        f.write("[DTI] Creation of the directory %s failed \n" % dti_path)
+        f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed \n" % dti_path)
         f.close()
     else:
         print("Successfully created the directory %s " % dti_path)
         f=open(folder_path + "/out/logs.txt", "a+")
-        f.write("[DTI] Successfully created the directory %s \n" % dti_path)
+        f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
         f.close()
 
 
@@ -374,11 +375,11 @@ def dti(folder_path, slurm=False):
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
             job_list.append(p_job_id)
-            f.write("[DTI] Patient %s is ready to be processed\n" % p)
-            f.write("[DTI] Successfully submited job %s using slurm\n" % p_job_id)
+            f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+            f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
             dti_solo(folder_path,p)
-            f.write("[DTI] Successfully applied DTI on patient %s\n" % p)
+            f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied DTI on patient %s\n" % p)
             f.flush()
     f.close()
 
@@ -390,32 +391,32 @@ def dti(folder_path, slurm=False):
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[DTI] Job " + str(job_id) + " COMPLETED\n")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
                     f.close()
                 if job_info["job_state"] == 'FAILED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[DTI] Job " + str(job_id) + " FAILED\n")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
                     f.close()
                 if job_info["job_state"] == 'OUT_OF_MEMORY':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[DTI] Job " + str(job_id) + " OUT_OF_MEMORY\n")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
                     f.close()
                 if job_info["job_state"] == 'TIMEOUT':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[DTI] Job " + str(job_id) + " TIMEOUT\n")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
                     f.close()
                 if job_info["job_state"] == 'CANCELLED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[DTI] Job " + str(job_id) + " CANCELLED\n")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
                     f.close()
             time.sleep(30)
 
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[DTI] End of DTI\n")
+    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
     f.close()
 
 
