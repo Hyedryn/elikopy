@@ -56,7 +56,11 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
             else:
                 print ("Successfully created the directory %s " % eddy_path)
 
-        bashCommand = 'eddy --imain=' + folder_path  + '/' + patient_path + '.nifti --mask=' + folder_path  + '/out/preproc/bet/' +  patient_path + '_bet.nifti --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
+        if denoising:
+            bashCommand = 'eddy --imain=' + folder_path  + '/out/preproc/denoising/' + patient_path + '_mask_denoised.nii.gz --mask=' + folder_path  + '/out/preproc/bet/' +  patient_path + '_bet.nii.gz --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
+        else:
+            bashCommand = 'eddy --imain=' + folder_path  + '/' + patient_path + '.nii.gz --mask=' + folder_path  + '/out/preproc/bet/' +  patient_path + '_bet.nii.gz --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
+
         import subprocess
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
@@ -64,3 +68,8 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
 
         #wait until eddy finish
         output, error = process.communicate()
+
+        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
+        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
+        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
+        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_bet_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
