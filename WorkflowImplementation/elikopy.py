@@ -1,11 +1,24 @@
 """
  
 """
+import datetime
 import os
 import json
 import math
 import time
-from WorkflowImplementation.utils import preproc_solo
+try:
+    from WorkflowImplementation.utils import preproc_solo, dti_solo, submit_job
+    print("Importation of WorkflowImplementation.utils is a success")
+except ImportError:
+    print("Warning: Importation of WorkflowImplementation.utils failed")
+    ## check whether in the source directory...
+try:
+    from utils import preproc_solo, dti_solo, submit_job
+    print("Importation of utils is a success")
+except ImportError:
+    ## check whether in the source directory...
+    print("Warning: Importation of utils failed")
+
 
 
 def dicom_to_nifti(folder_path):
@@ -24,7 +37,7 @@ def dicom_to_nifti(folder_path):
     dicom_to_nifti("C:\Memoire\example_data\")
     """
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[DICOM TO NIFTI] Beginning sequential dicom convertion\n")
+    f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning sequential dicom convertion\n")
     f.close()
 
     bashCommand = 'dcm2niix -f "%i_%p_%z" -p y -z y -o ' + folder_path + ' ' + folder_path + ''
@@ -56,7 +69,7 @@ def dicom_to_nifti(folder_path):
         if "mrdc" in f or "MRDC" in f:
             shutil.move(folder_path + '/' + f, dest)
 
-            f.write("[DICOM TO NIFTI] Moved " + f + " to " + dest + "\n")
+            f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Moved " + f + " to " + dest + "\n")
     f.close()
 
 
@@ -110,12 +123,12 @@ def patient_list(folder_path):
         except OSError:
             print("Creation of the directory %s failed" % dest)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PATIENT LIST] Creation of the directory %s failed\n" % dest)
+            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
             f.close()
         else:
             print("Successfully created the directory %s " % dest)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PATIENT LIST] Successfully created the directory %s \n" % dest)
+            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
             f.close()
 
 
@@ -129,7 +142,7 @@ def patient_list(folder_path):
         json.dump(success, f)
 
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[PATIENT LIST] Patient list generated\n")
+    f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
     f.close()
 
 
@@ -149,8 +162,11 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
     preproc("C:\Memoire\example_data\")
     """
 
+    if slurm:
+        import pyslurm
+
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[PREPROC] Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
+    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
     f.close()
 
     dest_success = folder_path + "/out/patient_list.json"
@@ -164,12 +180,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         except OSError:
             print("Creation of the directory %s failed" % preproc_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Creation of the directory %s failed\n" % preproc_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Creation of the directory %s failed\n" % preproc_path)
             f.close()
         else:
             print("Successfully created the directory %s " % preproc_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Successfully created the directory %s\n" % preproc_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s\n" % preproc_path)
             f.close()
 
     bet_path = folder_path + "/out/preproc/bet"
@@ -179,12 +195,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         except OSError:
             print("Creation of the directory %s failed" % bet_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Creation of the directory %s failed\n" % bet_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % bet_path)
             f.close()
         else:
             print("Successfully created the directory %s " % bet_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Successfully created the directory %s\n" % bet_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s\n" % bet_path)
             f.close()
 
     final_path = folder_path + "/out/preproc/final"
@@ -194,12 +210,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         except OSError:
             print("Creation of the directory %s failed" % final_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Creation of the directory %s failed\n" % final_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % final_path)
             f.close()
         else:
             print("Successfully created the directory %s " % final_path)
             f=open(folder_path + "/out/logs.txt", "a+")
-            f.write("[PREPROC] Successfully created the directory %s\n" % final_path)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s\n" % final_path)
             f.close()
 
 
@@ -210,66 +226,67 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         if slurm:
             if not denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
-                    "mem-per-cpu": 4096,
+                    "mem_per_cpu": 8096,
                     "time": "01:00:00",
-                    "mail-user": "quentin.dessain@student.uclouvain.be",
-                    "mail-type": "FAIL",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
                 }
             elif denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
-                    "mem-per-cpu": 8096,
+                    "mem_per_cpu": 8096,
                     "time": "17:00:00",
-                    "mail-user": "quentin.dessain@student.uclouvain.be",
-                    "mail-type": "FAIL",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
                 }
             elif denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
-                    "mem-per-cpu": 8096,
+                    "mem_per_cpu": 8096,
                     "time": "5:00:00",
-                    "mail-user": "quentin.dessain@student.uclouvain.be",
-                    "mail-type": "FAIL",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
                 }
             elif not denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
-                    "mem-per-cpu": 8096,
+                    "mem_per_cpu": 8096,
                     "time": "15:00:00",
-                    "mail-user": "quentin.dessain@student.uclouvain.be",
-                    "mail-type": "FAIL",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
                 }
             else:
                 p_job = {
-                    "wrap": "python -c 'from WorkflowImplementation.utils import preproc_solo; preproc_solo('" + folder_path + "','" + p + "',eddy=" + eddy + ",denoising=" + denoising + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
-                    "mem-per-cpu": 4096,
+                    "mem_per_cpu": 8096,
                     "time": "1:00:00",
-                    "mail-user": "quentin.dessain@student.uclouvain.be",
-                    "mail-type": "FAIL",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
                 }
-            p_job_id = pyslurm.job().submit_batch_job(p_job)
+            #p_job_id = pyslurm.job().submit_batch_job(p_job)
+            p_job_id = submit_job(p_job)
             job_list.append(p_job_id)
-            f.write("[PREPROC] Patient %s is ready to be processed\n" % p)
-            f.write("[PREPROC] Successfully submited job %s using slurm\n" % p_job_id)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
             preproc_solo(folder_path,p,eddy,denoising)
-            f.write("[PREPROC] Successfully preproceced patient %s\n" % p)
+            f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
             f.flush()
     f.close()
 
@@ -281,32 +298,32 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " COMPLETED\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
                     f.close()
                 if job_info["job_state"] == 'FAILED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " FAILED\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
                     f.close()
                 if job_info["job_state"] == 'OUT_OF_MEMORY':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " OUT_OF_MEMORY\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
                     f.close()
                 if job_info["job_state"] == 'TIMEOUT':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " TIMEOUT\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
                     f.close()
                 if job_info["job_state"] == 'CANCELLED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/out/logs.txt", "a+")
-                    f.write("[PREPROC] Job " + job_id + " CANCELLED\n")
+                    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
                     f.close()
             time.sleep(30)
 
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[PREPROC] All the preprocessing operation are finished!\n")
+    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
     f.close()
 
 def dti(folder_path, slurm=False):
@@ -316,16 +333,11 @@ def dti(folder_path, slurm=False):
     folder_path: Path to root folder containing all the dicom
     """
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[DTI] Beginning of DTI with slurm:" + str(slurm) + "\n")
+    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DTI with slurm:" + str(slurm) + "\n")
     f.close()
 
-    import numpy as np
-    from dipy.io.image import load_nifti, save_nifti
-    from dipy.io.gradients import read_bvals_bvecs
-    from dipy.core.gradients import gradient_table
-    import dipy.reconst.dti as dti
-    import os
-    import json
+    if slurm:
+        import pyslurm
 
     dti_path = folder_path + "/out/dti"
     try:
@@ -333,12 +345,12 @@ def dti(folder_path, slurm=False):
     except OSError:
         print("Creation of the directory %s failed" % dti_path)
         f=open(folder_path + "/out/logs.txt", "a+")
-        f.write("[DTI] Creation of the directory %s failed \n" % dti_path)
+        f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed \n" % dti_path)
         f.close()
     else:
         print("Successfully created the directory %s " % dti_path)
         f=open(folder_path + "/out/logs.txt", "a+")
-        f.write("[DTI] Successfully created the directory %s \n" % dti_path)
+        f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
         f.close()
 
 
@@ -346,42 +358,65 @@ def dti(folder_path, slurm=False):
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
+    job_list = []
+    f=open(folder_path + "/out/logs.txt", "a+")
     for p in patient_list:
-        patient_path = os.path.splitext(p)[0]
-        # load the data======================================
-        data, affine = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
-        mask, _ = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
-        bvals, bvecs = read_bvals_bvecs(folder_path + "/out/preproc/final" + "/" + patient_path + ".bval", folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
-        # create the model===================================
-        gtab = gradient_table(bvals, bvecs)
-        tenmodel = dti.TensorModel(gtab)
-        tenfit = tenmodel.fit(data, mask=mask)
-        # FA ================================================
-        FA = dti.fractional_anisotropy(tenfit.evals)
-        FA[np.isnan(FA)] = 0
-        FA = np.clip(FA, 0, 1)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_fa.nii.gz", FA.astype(np.float32), affine)
-        # colored FA ========================================
-        RGB = dti.color_fa(FA, tenfit.evecs)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_fargb.nii.gz", np.array(255 * RGB, 'uint8'), affine)
-        # Mean diffusivity ==================================
-        MD = dti.mean_diffusivity(tenfit.evals)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_md.nii.gz", MD.astype(np.float32), affine)
-        # Radial diffusivity ==================================
-        RD = dti.radial_diffusivity(tenfit.evals)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_rd.nii.gz", RD.astype(np.float32), affine)
-        # Axial diffusivity ==================================
-        AD = dti.axial_diffusivity(tenfit.evals)
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_ad.nii.gz", AD.astype(np.float32), affine)
-        # eigen vectors =====================================
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_evecs.nii.gz", tenfit.evecs.astype(np.float32), affine)
-        # eigen values ======================================
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_evals.nii.gz", tenfit.evals.astype(np.float32), affine)
-        # diffusion tensor ====================================
-        save_nifti(folder_path + "/out/dti/" + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
+        if slurm:
+            p_job = {
+                    "wrap": "python -c 'from utils import dti_solo; dti_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "1:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                }
+            #p_job_id = pyslurm.job().submit_batch_job(p_job)
+            p_job_id = submit_job(p_job)
+            job_list.append(p_job_id)
+            f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+            f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            dti_solo(folder_path,p)
+            f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied DTI on patient %s\n" % p)
+            f.flush()
+    f.close()
+
+    #Wait for all jobs to finish
+    if slurm:
+        while job_list:
+            for job_id in job_list[:]:
+                job_info = pyslurm.job().find_id(job_id)[0]
+                if job_info["job_state"] == 'COMPLETED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
+                    f.close()
+                if job_info["job_state"] == 'FAILED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
+                    f.close()
+                if job_info["job_state"] == 'OUT_OF_MEMORY':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
+                    f.close()
+                if job_info["job_state"] == 'TIMEOUT':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
+                    f.close()
+                if job_info["job_state"] == 'CANCELLED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
+                    f.close()
+            time.sleep(30)
 
     f=open(folder_path + "/out/logs.txt", "a+")
-    f.write("[DTI] End of DTI\n")
+    f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
     f.close()
 
 
