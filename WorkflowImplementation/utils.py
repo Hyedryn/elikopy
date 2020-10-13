@@ -94,10 +94,14 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
         f=open(folder_path + "/out/logs.txt", "a+")
         f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command \n{}\n".format(bashcmd))
         f.close()
-        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        my_env = os.environ.copy()
+        my_env["PATH"] = "/home/ucl/elen/qdessain/Software/fsl/bin:" + my_env["PATH"]
+        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=my_env)
 
         #wait until eddy finish
         output, error = process.communicate()
+
 
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
