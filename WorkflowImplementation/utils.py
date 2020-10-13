@@ -22,6 +22,8 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
     b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
     save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
     save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
+    print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
+
     if not(denoising) and not(eddy):
         save_nifti(folder_path + '/out/preproc/final/' + patient_path + '.nii.gz', b0_mask.astype(np.float32),affine)
         save_nifti(folder_path + '/out/preproc/final/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32),affine)
@@ -30,6 +32,11 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
 
 
     if denoising:
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
+        f=open(folder_path + "/out/logs.txt", "a+")
+        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising launched for patient %s \n" % p)
+        f.close()
+
         denoising_path = folder_path + "/out/preproc/denoising"
         if not(os.path.exists(denoising_path)):
             try:
@@ -48,6 +55,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
         denoised = mppca(b0_mask, patch_radius=pr)
         save_nifti(denoising_path + '/' + patient_path + '_mask_denoised.nii.gz', denoised.astype(np.float32), affine)
+
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of denoising for patient %s \n" % p)
+
         if not eddy:
             save_nifti(folder_path + '/out/preproc/final/' + patient_path + '.nii.gz', denoised.astype(np.float32),affine)
             save_nifti(folder_path + '/out/preproc/final/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
@@ -55,6 +65,8 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
             shutil.copyfile(folder_path + "/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
 
     if eddy:
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of eddy for patient %s \n" % p)
+
         eddy_path = folder_path + "/out/preproc/eddy"
         if not(os.path.exists(eddy_path)):
             try:
@@ -78,8 +90,11 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
 
         import subprocess
         bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command \n{}\n".format(bashcmd))
+        f=open(folder_path + "/out/logs.txt", "a+")
+        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command \n{}\n".format(bashcmd))
+        f.close()
+        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         #wait until eddy finish
         output, error = process.communicate()
@@ -87,7 +102,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
-        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_bet_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
+        shutil.copyfile(folder_path + "/out/preproc/bet/" + patient_path + "_binary_mask.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
+
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
 
     print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + "/out/logs.txt", "a+")
