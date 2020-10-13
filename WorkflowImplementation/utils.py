@@ -84,9 +84,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
 
 
         if denoising:
-            bashCommand = 'eddy --imain="' + folder_path  + '/out/preproc/denoising/' + patient_path + '_mask_denoised.nii.gz" --mask="' + folder_path  + '/out/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
+            bashCommand = '/home/ucl/elen/qdessain/Software/fsl/bin/eddy --imain="' + folder_path  + '/out/preproc/denoising/' + patient_path + '_mask_denoised.nii.gz" --mask="' + folder_path  + '/out/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
         else:
-            bashCommand = 'eddy --imain="' + folder_path  + '/out/preproc/bet/' + patient_path + '_mask.nii.gz" --mask="' + folder_path  + '/out/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
+            bashCommand = '/home/ucl/elen/qdessain/Software/fsl/bin/eddy --imain="' + folder_path  + '/out/preproc/bet/' + patient_path + '_mask.nii.gz" --mask="' + folder_path  + '/out/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '.bval" --out="' + folder_path + '/out/preproc/eddy/' + patient_path + '_mfc" --verbose'
 
         import subprocess
         bashcmd = bashCommand.split()
@@ -95,9 +95,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
         f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command \n{}\n".format(bashcmd))
         f.close()
 
-        my_env = os.environ.copy()
-        my_env["PATH"] = "/home/ucl/elen/qdessain/Software/fsl/bin:" + my_env["PATH"]
-        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=my_env)
+        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         #wait until eddy finish
         output, error = process.communicate()
