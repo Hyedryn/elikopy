@@ -264,7 +264,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
                     "ntasks": 1,
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
-                    "time": "15:00:00",
+                    "time": "16:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
                 }
