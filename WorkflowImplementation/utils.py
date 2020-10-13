@@ -64,6 +64,17 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
             shutil.copyfile(folder_path + "/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
             shutil.copyfile(folder_path + "/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
 
+
+    #Explicitly freeing memory
+    import gc
+    denoised = None
+    b0_mask = None
+    mask = None
+    data= None
+    affine = None
+    gc.collect()
+
+
     if eddy:
         print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of eddy for patient %s \n" % p)
 
