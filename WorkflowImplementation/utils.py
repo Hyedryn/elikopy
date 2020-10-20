@@ -113,13 +113,18 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
         #wait until eddy finish
         output, error = process.communicate()
 
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
+        f=open(folder_path + "/out/logs.txt", "a+")
+        #f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command \n{}\n".format(bashcmd))
+        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
+        f.close()
 
-        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
-        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + ".bvec",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
+        shutil.copyfile(folder_path + "/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
+        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.eddy_rotated_bvecs",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
         shutil.copyfile(folder_path + "/out/preproc/bet/" + patient_path + "_binary_mask.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
 
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
+
 
     print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + "/out/logs.txt", "a+")
