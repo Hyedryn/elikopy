@@ -7,7 +7,7 @@ import numpy as np
 import math
 
 
-def preproc_solo(folder_path, p, eddy=False, denoising=False):
+def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
 
     print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
     from dipy.io.image import load_nifti, save_nifti
@@ -17,7 +17,14 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False):
     patient_path = os.path.splitext(p)[0]
 
     nifti_path = folder_path + '/' + patient_path + '.nii.gz'
-    data, affine = load_nifti(nifti_path)
+    data, affine, voxel_size = load_nifti(nifti_path, return_voxsize=True)
+
+    if reslice:
+        from dipy.align.reslice import reslice
+        new_voxel_size = (2., 2., 2.)
+        data, affine = reslice(data, affine, voxel_size, new_voxel_size)
+        save_nifti(folder_path + '/out/preproc/reslice/' + patient_path + '.nii.gz', data, affine)
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
 
     b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
     save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)

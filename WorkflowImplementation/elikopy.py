@@ -146,7 +146,7 @@ def patient_list(folder_path):
     f.close()
 
 
-def preproc(folder_path, eddy=False, denoising=False, slurm=False):
+def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
     Parameters
@@ -226,7 +226,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
         if slurm:
             if not denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -237,40 +237,40 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
                 }
             elif denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
-                    "cpus_per_task": 1,
-                    "mem_per_cpu": 14096,
-                    "time": "17:00:00",
+                    "cpus_per_task": 8,
+                    "mem_per_cpu": 6096,
+                    "time": "12:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
                 }
             elif denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
                     "mem_per_cpu": 9096,
-                    "time": "5:00:00",
+                    "time": "4:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
                 }
             elif not denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
-                    "cpus_per_task": 1,
-                    "mem_per_cpu": 12096,
-                    "time": "16:00:00",
+                    "cpus_per_task": 4,
+                    "mem_per_cpu": 6096,
+                    "time": "12:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
                 }
             else:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -285,7 +285,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False):
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            preproc_solo(folder_path,p,eddy,denoising)
+            preproc_solo(folder_path,p,eddy,denoising,reslice)
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
             f.flush()
     f.close()
