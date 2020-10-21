@@ -7,13 +7,13 @@ import json
 import math
 import time
 try:
-    from WorkflowImplementation.utils import preproc_solo, dti_solo, submit_job
+    from WorkflowImplementation.utils import preproc_solo, dti_solo, submit_job, white_mask_solo
     print("Importation of WorkflowImplementation.utils is a success")
 except ImportError:
     print("Warning: Importation of WorkflowImplementation.utils failed")
     ## check whether in the source directory...
 try:
-    from utils import preproc_solo, dti_solo, submit_job
+    from utils import preproc_solo, dti_solo, submit_job, white_mask_solo
     print("Importation of utils is a success")
 except ImportError:
     ## check whether in the source directory...
@@ -525,7 +525,7 @@ def white_mask(folder_path, slurm=False):
     for p in patient_list:
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from utils import dti_solo; white_mask_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                    "wrap": "python -c 'from utils import white_mask_solo; white_mask_solo(\"" + folder_path + "\",\"" + p + "\")'",
                     "job_name": "whitemask_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
