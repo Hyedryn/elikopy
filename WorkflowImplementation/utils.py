@@ -10,6 +10,9 @@ import math
 def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
 
     print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
+    f.close()
     from dipy.io.image import load_nifti, save_nifti
     from dipy.segment.mask import median_otsu
     from dipy.denoise.localpca import mppca
@@ -41,11 +44,17 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
         data, affine = reslice(data, affine, voxel_size, new_voxel_size)
         save_nifti(folder_path + '/out/preproc/reslice/' + patient_path + '.nii.gz', data, affine)
         print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
+        f=open(folder_path + "/out/logs.txt", "a+")
+        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
+        f.close()
 
     b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
     save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
     save_nifti(folder_path + '/out/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
     print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
+    f.close()
 
     if not(denoising) and not(eddy):
         save_nifti(folder_path + '/out/preproc/final/' + patient_path + '.nii.gz', b0_mask.astype(np.float32),affine)
