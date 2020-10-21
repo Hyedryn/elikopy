@@ -273,13 +273,13 @@ def white_mask_solo(folder_path, p):
     # Read the moving image ====================================
     anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
     bet_path = folder_path + '/out/whitemask/' + patient_path + '_T1_brain.nii.gz'
-    bashCommand = 'bet2 ' + anat_path + ' ' + bet_path +' -f 1 -g 3'
+    bashCommand = 'bet2 ' + anat_path + ' ' + bet_path +' -f 1 -g -3'
     bashcmd = bashCommand.split()
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
     output, error = process.communicate()
     anat_path = folder_path + '/out/whitemask/' + patient_path + '_T1_brain.nii.gz'
     bet_path = folder_path + '/out/whitemask/' + patient_path + '_T1_brain_brain.nii.gz'
-    bashCommand = 'bet2 ' + anat_path + ' ' + bet_path + ' -f 0.4 -g 0.2'
+    bashCommand = 'bet2 ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2'
     bashcmd = bashCommand.split()
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
     output, error = process.communicate()
