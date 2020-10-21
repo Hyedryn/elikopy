@@ -23,7 +23,6 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
     data, affine, voxel_size = load_nifti(nifti_path, return_voxsize=True)
 
     if reslice:
-
         reslice_path = folder_path + "/out/preproc/reslice"
         if not(os.path.exists(reslice_path)):
             try:
@@ -151,10 +150,15 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
         f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
         f.close()
 
+        data, affine = load_nifti(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.nii.gz")
+        b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
+        save_nifti(folder_path + '/out/preproc/final/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/out/preproc/final/' + patient_path + '.nii.gz', b0_mask.astype(np.float32), affine)
+
         shutil.copyfile(folder_path + "/" + patient_path + ".bval",folder_path + "/out/preproc/final" + "/" + patient_path + ".bval")
         shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.eddy_rotated_bvecs",folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec")
-        shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
-        shutil.copyfile(folder_path + "/out/preproc/bet/" + patient_path + "_binary_mask.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
+        #shutil.copyfile(folder_path + "/out/preproc/eddy/" + patient_path + "_mfc.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
+        #shutil.copyfile(folder_path + "/out/preproc/bet/" + patient_path + "_binary_mask.nii.gz",folder_path + "/out/preproc/final" + "/" + patient_path + "_binary_mask.nii.gz")
 
 
 
