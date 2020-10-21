@@ -20,7 +20,6 @@ except ImportError:
     print("Warning: Importation of utils failed")
 
 
-
 def dicom_to_nifti(folder_path):
     """Convert dicom data into nifti. Converted dicom are then moved to a sub-folder named original_data
     Parameters
@@ -326,6 +325,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
     f.close()
 
+
 def dti(folder_path, slurm=False):
     """Perform dti and store the data in the out/dti folder.
     Parameters
@@ -364,7 +364,7 @@ def dti(folder_path, slurm=False):
         if slurm:
             p_job = {
                     "wrap": "python -c 'from utils import dti_solo; dti_solo(\"" + folder_path + "\",\"" + p + "\")'",
-                    "job_name": "preproc_" + p,
+                    "job_name": "dti_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
@@ -481,3 +481,102 @@ def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False,
     ----------
     folder_path: Path to root folder containing all the dicom
     """
+
+
+
+def white_mask(folder_path, slurm=False):
+    """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes
+    Parameters
+    ----------
+    folder_path: Path to root folder containing all the dicom
+    Remark
+    ----------
+    The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
+    a folder named anat in the root folder
+    """
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of white with slurm:" + str(slurm) + "\n")
+    f.close()
+
+    if slurm:
+        import pyslurm
+
+    whitemask_path = folder_path + "/out/whitemask"
+    try:
+        os.mkdir(whitemask_path)
+    except OSError:
+        print("Creation of the directory %s failed" % whitemask_path)
+        f=open(folder_path + "/out/logs.txt", "a+")
+        f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed \n" % whitemask_path)
+        f.close()
+    else:
+        print("Successfully created the directory %s " % whitemask_path)
+        f=open(folder_path + "/out/logs.txt", "a+")
+        f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % whitemask_path)
+        f.close()
+
+
+    dest_success = folder_path + "/out/patient_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
+    job_list = []
+    f=open(folder_path + "/out/logs.txt", "a+")
+    for p in patient_list:
+        if slurm:
+            p_job = {
+                    "wrap": "python -c 'from utils import dti_solo; white_mask_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                    "job_name": "whitemask_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "3:00:00",
+                    "mail_user": "mathieu.simon@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                }
+            #p_job_id = pyslurm.job().submit_batch_job(p_job)
+            p_job_id = submit_job(p_job)
+            job_list.append(p_job_id)
+            f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+            f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            white_mask(folder_path,p)
+            f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
+            f.flush()
+    f.close()
+
+    #Wait for all jobs to finish
+    if slurm:
+        while job_list:
+            for job_id in job_list[:]:
+                job_info = pyslurm.job().find_id(job_id)[0]
+                if job_info["job_state"] == 'COMPLETED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
+                    f.close()
+                if job_info["job_state"] == 'FAILED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
+                    f.close()
+                if job_info["job_state"] == 'OUT_OF_MEMORY':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
+                    f.close()
+                if job_info["job_state"] == 'TIMEOUT':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
+                    f.close()
+                if job_info["job_state"] == 'CANCELLED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/out/logs.txt", "a+")
+                    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
+                    f.close()
+            time.sleep(30)
+
+    f=open(folder_path + "/out/logs.txt", "a+")
+    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of White mask\n")
+    f.close()
