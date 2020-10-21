@@ -20,6 +20,22 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
     data, affine, voxel_size = load_nifti(nifti_path, return_voxsize=True)
 
     if reslice:
+
+        reslice_path = folder_path + "/out/preproc/reslice"
+        if not(os.path.exists(reslice_path)):
+            try:
+                os.mkdir(reslice_path)
+            except OSError:
+                print ("Creation of the directory %s failed" % reslice_path)
+                f=open(folder_path + "/out/logs.txt", "a+")
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % reslice_path)
+                f.close()
+            else:
+                print ("Successfully created the directory %s " % reslice_path)
+                f=open(folder_path + "/out/logs.txt", "a+")
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % reslice_path)
+                f.close()
+
         from dipy.align.reslice import reslice
         new_voxel_size = (2., 2., 2.)
         data, affine = reslice(data, affine, voxel_size, new_voxel_size)
