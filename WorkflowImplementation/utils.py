@@ -268,12 +268,18 @@ def white_mask_solo(folder_path, p):
     from dipy.segment.tissue import TissueClassifierHMRF
     from dipy.io.image import load_nifti, save_nifti
     import subprocess
+    from dipy.denoise.gibbs import gibbs_removal
 
     patient_path = os.path.splitext(p)[0]
     # Read the moving image ====================================
     anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
+    data_gibbs, affine_gibbs = load_nifti(anat_path)
+    data_gibbs = gibbs_removal(data_gibbs)
+    corrected_path = folder_path + '/out/whitemask/' + patient_path + '_T1_gibbscorrected.nii.gz'
+    save_nifti(corrected_path, data_gibbs.astype(np.float32), affine_gibbs)
+    #anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
     bet_path = folder_path + '/out/whitemask/' + patient_path + '_T1_brain.nii.gz'
-    bashCommand = 'bet2 ' + anat_path + ' ' + bet_path +' -f 1 -g -3'
+    bashCommand = 'bet2 ' + corrected_path + ' ' + bet_path +' -f 1 -g -3'
     bashcmd = bashCommand.split()
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
     output, error = process.communicate()
