@@ -501,6 +501,8 @@ def white_mask(folder_path, slurm=False):
     if slurm:
         import pyslurm
 
+    import os
+
     whitemask_path = folder_path + "/out/whitemask"
     try:
         os.mkdir(whitemask_path)
@@ -523,26 +525,29 @@ def white_mask(folder_path, slurm=False):
     job_list = []
     f=open(folder_path + "/out/logs.txt", "a+")
     for p in patient_list:
-        if slurm:
-            p_job = {
-                    "wrap": "python -c 'from utils import white_mask_solo; white_mask_solo(\"" + folder_path + "\",\"" + p + "\")'",
-                    "job_name": "whitemask_" + p,
-                    "ntasks": 1,
-                    "cpus_per_task": 1,
-                    "mem_per_cpu": 8096,
-                    "time": "3:00:00",
-                    "mail_user": "mathieu.simon@student.uclouvain.be",
-                    "mail_type": "FAIL",
-                }
-            #p_job_id = pyslurm.job().submit_batch_job(p_job)
-            p_job_id = submit_job(p_job)
-            job_list.append(p_job_id)
-            f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
-            f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
-        else:
-            white_mask(folder_path,p)
-            f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
-            f.flush()
+        patient_path = os.path.splitext(p)[0]
+        anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
+        if os.path.isfile(anat_path):
+            if slurm:
+                p_job = {
+                        "wrap": "python -c 'from utils import white_mask_solo; white_mask_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                       "job_name": "whitemask_" + p,
+                        "ntasks": 1,
+                        "cpus_per_task": 1,
+                        "mem_per_cpu": 8096,
+                        "time": "3:00:00",
+                        "mail_user": "mathieu.simon@student.uclouvain.be",
+                        "mail_type": "FAIL",
+                    }
+                #p_job_id = pyslurm.job().submit_batch_job(p_job)
+                p_job_id = submit_job(p_job)
+                job_list.append(p_job_id)
+                f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+                f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+            else:
+                white_mask(folder_path,p)
+                f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
+                f.flush()
     f.close()
 
     #Wait for all jobs to finish
