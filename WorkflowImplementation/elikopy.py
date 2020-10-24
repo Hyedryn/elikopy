@@ -482,20 +482,6 @@ def white_mask(folder_path, slurm=False):
 
     import os
 
-    whitemask_path = folder_path + "/whitemask"
-    try:
-        os.mkdir(whitemask_path)
-    except OSError:
-        print("Creation of the directory %s failed" % whitemask_path)
-        f=open(folder_path + "/logs.txt", "a+")
-        f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed \n" % whitemask_path)
-        f.close()
-    else:
-        print("Successfully created the directory %s " % whitemask_path)
-        f=open(folder_path + "/logs.txt", "a+")
-        f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % whitemask_path)
-        f.close()
-
 
     dest_success = folder_path + "/patient_list.json"
     with open(dest_success, 'r') as f:
@@ -505,7 +491,7 @@ def white_mask(folder_path, slurm=False):
     f=open(folder_path + "/logs.txt", "a+")
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
-        anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
+        anat_path = folder_path + '/' + patient_path + '/T1/' + patient_path + '_T1.nii.gz'
         if os.path.isfile(anat_path):
             if slurm:
                 p_job = {

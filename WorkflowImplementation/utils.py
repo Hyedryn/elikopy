@@ -286,7 +286,7 @@ def submit_job(job_info):
 
 def white_mask_solo(folder_path, p):
 
-    print("[White maks solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
+    print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
 
     from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
     from dipy.align.transforms import (TranslationTransform3D, RigidTransform3D, AffineTransform3D)
@@ -297,19 +297,19 @@ def white_mask_solo(folder_path, p):
 
     patient_path = os.path.splitext(p)[0]
     # Read the moving image ====================================
-    anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
+    anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
     data_gibbs, affine_gibbs = load_nifti(anat_path)
     data_gibbs = gibbs_removal(data_gibbs)
-    corrected_path = folder_path + '/out/whitemask/' + patient_path + '_T1_gibbscorrected.nii.gz'
+    corrected_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_gibbscorrected.nii.gz'
     save_nifti(corrected_path, data_gibbs.astype(np.float32), affine_gibbs)
     #anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
-    bet_path = folder_path + '/out/whitemask/' + patient_path + '_T1_brain.nii.gz'
+    bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
     bashCommand = 'bet2 ' + corrected_path + ' ' + bet_path +' -f 1 -g -3'
     bashcmd = bashCommand.split()
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
     output, error = process.communicate()
-    anat_path = folder_path + '/out/whitemask/' + patient_path + '_T1_brain.nii.gz'
-    bet_path = folder_path + '/out/whitemask/' + patient_path + '_T1_brain_brain.nii.gz'
+    anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
+    bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain_brain.nii.gz'
     bashCommand = 'bet2 ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2'
     bashcmd = bashCommand.split()
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
@@ -318,7 +318,7 @@ def white_mask_solo(folder_path, p):
     moving = moving_data
     moving_grid2world = moving_affine
     # Read the static image ====================================
-    static_data, static_affine = load_nifti(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz")
+    static_data, static_affine = load_nifti(folder_path + "/" + patient_path + "/dMRI/preproc/" + patient_path + "_dmri_preproc.nii.gz")
     static = np.squeeze(static_data)[..., 0]
     static_grid2world = static_affine
     # Reslice the moving image ====================================
@@ -359,10 +359,26 @@ def white_mask_solo(folder_path, p):
     white_mask = PVE[..., 2]
     white_mask[white_mask >= 0.05] = 1
     white_mask[white_mask < 0.05] = 0
-    out_path = folder_path + '/out/whitemask/' + patient_path + '_whitemask.nii.gz'
+
+    mask_path = folder_path + '/' + patient_path + "/masks"
+    if not(os.path.exists(mask_path)):
+        try:
+            os.makedirs(mask_path)
+        except OSError:
+            print ("Creation of the directory %s failed" % mask_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % mask_path)
+            f.close()
+        else:
+            print ("Successfully created the directory %s " % mask_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mask_path)
+            f.close()
+
+    out_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
 
-    print("[White maks solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f = open(folder_path + "/out/logs.txt", "a+")
-    f.write("[White maks solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
+    f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
