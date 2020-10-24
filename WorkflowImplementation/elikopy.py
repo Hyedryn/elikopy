@@ -212,9 +212,6 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     preproc("C:\Memoire\example_data\")
     """
 
-    if slurm:
-        import pyslurm
-
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
     f.close()
@@ -296,6 +293,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
 
     #Wait for all jobs to finish
     if slurm:
+        import pyslurm
         while job_list:
             for job_id in job_list[:]:
                 job_info = pyslurm.job().find_id(job_id)[0]
@@ -341,10 +339,6 @@ def dti(folder_path, slurm=False):
     f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DTI with slurm:" + str(slurm) + "\n")
     f.close()
 
-    if slurm:
-        import pyslurm
-
-
     dest_success = folder_path + "/patient_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
@@ -376,6 +370,7 @@ def dti(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
+        import pyslurm
         while job_list:
             for job_id in job_list[:]:
                 job_info = pyslurm.job().find_id(job_id)[0]
@@ -477,9 +472,6 @@ def white_mask(folder_path, slurm=False):
     f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of white with slurm:" + str(slurm) + "\n")
     f.close()
 
-    if slurm:
-        import pyslurm
-
     import os
 
 
@@ -517,6 +509,7 @@ def white_mask(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
+        import pyslurm
         while job_list:
             for job_id in job_list[:]:
                 job_info = pyslurm.job().find_id(job_id)[0]
