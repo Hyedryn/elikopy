@@ -11,7 +11,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
 
     patient_path = os.path.splitext(p)[0]
 
-    preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc"
+    preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc/bet"
     if not(os.path.exists(preproc_path)):
         try:
             os.makedirs(preproc_path)
@@ -63,8 +63,8 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
         f.close()
 
     b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
-    save_nifti(folder_path + '/' + patient_path + '/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
-    save_nifti(folder_path + '/' + patient_path + '/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
     print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
     f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
@@ -73,8 +73,8 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
     if not(denoising) and not(eddy):
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32),affine)
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_binary_mask_dmri_preproc.nii.gz', mask.astype(np.float32),affine)
-        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + ".bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
-        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + ".bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
 
     if denoising:
@@ -107,8 +107,8 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
         if not eddy:
             save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32),affine)
             save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_binary_mask_dmri_preproc.nii.gz', mask.astype(np.float32),affine)
-            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + ".bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
-            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + ".bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
 
     #Explicitly freeing memory
@@ -168,7 +168,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
         b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32),affine)
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_binary_mask_dmri_preproc.nii.gz', mask.astype(np.float32),affine)
-        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + ".bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.eddy_rotated_bvecs",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
     print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
@@ -235,7 +235,7 @@ def dti_solo(folder_path, p):
     save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
 
     print("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f=open(folder_path + "/out/logs.txt", "a+")
+    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
     f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
