@@ -11,6 +11,21 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
 
     patient_path = os.path.splitext(p)[0]
 
+    preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc"
+    if not(os.path.exists(preproc_path)):
+        try:
+            os.makedirs(preproc_path)
+        except OSError:
+            print ("Creation of the directory %s failed" % preproc_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % preproc_path)
+            f.close()
+        else:
+            print ("Successfully created the directory %s " % preproc_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % preproc_path)
+            f.close()
+
     print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
     f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
@@ -171,7 +186,7 @@ def dti_solo(folder_path, p):
     import dipy.reconst.dti as dti
 
     patient_path = os.path.splitext(p)[0]
-    
+
     dti_path = folder_path + '/' + patient_path + "/dMRI/microstructure/dti"
     if not(os.path.exists(dti_path)):
         try:

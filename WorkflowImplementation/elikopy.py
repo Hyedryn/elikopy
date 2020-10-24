@@ -36,7 +36,7 @@ def dicom_to_nifti(folder_path):
     --------
     dicom_to_nifti("C:\Memoire\example_data\")
     """
-    f=open(folder_path + "/out/logs.txt", "a+")
+    f=open(folder_path + "/logs.txt", "a+")
     f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning sequential dicom convertion\n")
     f.close()
 
@@ -64,7 +64,7 @@ def dicom_to_nifti(folder_path):
         else:
             print ("Successfully created the directory %s " % dest)
 
-    f=open(folder_path + "/out/logs.txt", "a+")
+    f=open(folder_path + "/logs.txt", "a+")
     for f in files:
         if "mrdc" in f or "MRDC" in f:
             shutil.move(folder_path + '/' + f, dest)
@@ -110,7 +110,7 @@ def patient_list(folder_path):
             name = os.path.splitext(os.path.splitext(file)[0])[0]
             bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
             bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
-            if bvec not in os.listdir(folder_path) or bval not in os.listdir(folder_path):
+            if bvec not in os.listdir(folder_path + "/CONTROL") or bval not in os.listdir(folder_path + "/CONTROL"):
                 error.append(name)
             else:
                 success.append(name)
@@ -151,7 +151,7 @@ def patient_list(folder_path):
             name = os.path.splitext(os.path.splitext(file)[0])[0]
             bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
             bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
-            if bvec not in os.listdir(folder_path) or bval not in os.listdir(folder_path):
+            if bvec not in os.listdir(folder_path+ "/CASE") or bval not in os.listdir(folder_path+ "/CASE"):
                 error.append(name)
             else:
                 success.append(name)
