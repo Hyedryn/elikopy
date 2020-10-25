@@ -444,38 +444,62 @@ def noddi_solo(folder_path, p):
             f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
             f.close()
 
-    #set up of the NODDI-Watson model
+    # initialize the compartments model
     from dmipy.signal_models import cylinder_models, gaussian_models
     ball = gaussian_models.G1Ball()
     stick = cylinder_models.C1Stick()
     zeppelin = gaussian_models.G2Zeppelin()
 
+    # watson distribution of stick and Zepelin
     from dmipy.distributions.distribute_models import SD1WatsonDistributed
     watson_dispersed_bundle = SD1WatsonDistributed(models=[stick, zeppelin])
-
-    watson_dispersed_bundle.set_tortuous_parameter('G2Zeppelin_1_lambda_perp','C1Stick_1_lambda_par','partial_volume_0')
+    watson_dispersed_bundle.set_tortuous_parameter('G2Zeppelin_1_lambda_perp', 'C1Stick_1_lambda_par', 'partial_volume_0')
     watson_dispersed_bundle.set_equal_parameter('G2Zeppelin_1_lambda_par', 'C1Stick_1_lambda_par')
     watson_dispersed_bundle.set_fixed_parameter('G2Zeppelin_1_lambda_par', 1.7e-9)
 
+    # build the NODDI model
     from dmipy.core.modeling_framework import MultiCompartmentModel
     NODDI_mod = MultiCompartmentModel(models=[ball, watson_dispersed_bundle])
 
+    # fix the isotropic diffusivity
     NODDI_mod.set_fixed_parameter('G1Ball_1_lambda_iso', 3e-9)
 
-    # load the data======================================
+    # load the data
     data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
-    mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask=.nii.gz")
-    bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    if os.path.isfile(wm_path):
+        mask, _ = load_nifti(wm_path)
+    else:
+        mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask=.nii.gz")
 
+    # transform the bval, bvecs in a form suited for NODDI
     from dipy.core.gradients import gradient_table
     from dmipy.core.acquisition_scheme import gtab_dipy2dmipy
-
     gtab_dipy = gradient_table(bvals, bvecs)
     acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy)
-    acq_scheme_dmipy.print_acquisition_info
 
-    #Fitting to data
-    NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask[..., 0]>0)
+    # fit the model to the data
+    NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask)
+
+    # exctract the metrics
+    fitted_parameters = NODDI_fit.fitted_parameters
+    mu = fitted_parameters["SD1WatsonDistributed_1_SD1Watson_1_mu"]
+    odi = fitted_parameters["SD1WatsonDistributed_1_SD1Watson_1_odi"]
+    f_iso = fitted_parameters["partial_volume_0"]
+    f_bundle = fitted_parameters["partial_volume_1"]
+    f_intra = (fitted_parameters['SD1WatsonDistributed_1_partial_volume_0'] * fitted_parameters['partial_volume_1'])
+    f_extra = ((1 - fitted_parameters['SD1WatsonDistributed_1_partial_volume_0']) * fitted_parameters['partial_volume_1'])
+    mse = NODDI_fit.mean_squared_error(data)
+
+    # save the nifti
+    save_nifti(noddi_path + '/' + patient_path + '_noddi_mu.nii.gz', mu.astype(np.float32), affine)
+    save_nifti(noddi_path + '/' + patient_path + '_noddi_odi.nii.gz', odi.astype(np.float32), affine)
+    save_nifti(noddi_path + '/' + patient_path + '_noddi_fiso.nii.gz', f_iso.astype(np.float32), affine)
+    save_nifti(noddi_path + '/' + patient_path + '_noddi_fbundle.nii.gz', f_bundle.astype(np.float32), affine)
+    save_nifti(noddi_path + '/' + patient_path + '_noddi_fintra.nii.gz', f_intra.astype(np.float32), affine)
+    save_nifti(noddi_path + '/' + patient_path + '_noddi_fextra.nii.gz', f_extra.astype(np.float32), affine)
+    save_nifti(noddi_path + '/' + patient_path + '_noddi_mse.nii.gz', mse.astype(np.float32), affine)
 
     print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
