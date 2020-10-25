@@ -1,0 +1,56 @@
+subj_list.json  [contains subject IDs]
+subj_error.json  [contains invalid subject IDs]
+is_control.json 	[dictionnary of subject IDs: 0s and 1s]
+
+subjID/	
+		logs.txt
+		
+		T1/		subjID_T1.nii.gz
+				subjID_T1_gibbscorrected.nii.gz
+				subjID_T1_brain.nii.gz
+				subjID_T1_brain_brain.nii.gz
+
+		dMRI/	raw/		subjID_raw_dmri.nii.gz
+							subjID_raw_dmri.bval
+							subjID_raw_dmri.bvecs	
+							
+				preproc/ 	preproc_logs.txt
+							slurm-%j.out
+							slurm-%j.err
+							
+							reslice/		subjID_reslice.nii.gz
+							
+							bet/			subjID_binary_mask.nii.gz
+											subjID_mask.nii.gz
+							
+							mppca/			subjID_mppca.nii.gz
+							
+							eddy/ 			subjID_eddy_corr.nii.gz
+											subjID_eddy_corr.eddy_rotated_bvecs
+											eddy_logs.txt
+											subjID_eddy_corr.eddy_command_txt
+											subjID_eddy_corr.eddy_values_of_all_input_parameters
+							
+							subjID_dmri_preproc.nii.gz [final one for microstructure estimation, tracking, etc.]
+							subjID_dmri_preproc.bval
+							subjID_dmri_preproc.bvec
+							
+				masks/ 		subjID_wm_mask.nii.gz 
+							subjID_brain_mask.nii.gz
+							slurm-%j.out
+							slurm-%j.err
+
+				microstructure/ 	dti/  	dti_logs.txt
+											slurm-%j.out
+											slurm-%j.err
+											subjID_FA.nii.gz 
+											subjID_fargb.nii.gz
+											subjID_MD.nii.gz
+											subjID_RD.gz
+											subjID_AD.nii.gz
+											subjID_evecs.nii.gz
+											subjID_evals.nii.gz
+											subjID_dtensor.nii.gz
+											
+											
+											
