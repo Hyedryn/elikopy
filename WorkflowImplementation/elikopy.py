@@ -247,11 +247,11 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "ntasks": 1,
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
-                    "time": "01:00:00",
+                    "time": "00:30:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
+                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             elif denoising and eddy:
                 p_job = {
@@ -263,8 +263,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "12:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
+                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             elif denoising and not eddy:
                 p_job = {
@@ -273,11 +273,11 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "ntasks": 1,
                     "cpus_per_task": 1,
                     "mem_per_cpu": 9096,
-                    "time": "4:00:00",
+                    "time": "3:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
+                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             elif not denoising and eddy:
                 p_job = {
@@ -289,8 +289,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "12:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
+                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             else:
                 p_job = {
@@ -302,8 +302,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "1:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
+                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
@@ -398,8 +398,8 @@ def dti(folder_path, slurm=False):
                     "time": "1:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out\"",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err\"",
+                    "output": folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out",
+                    "error": folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err",
                 }
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
@@ -539,8 +539,8 @@ def white_mask(folder_path, slurm=False):
                         "time": "3:00:00",
                         "mail_user": "mathieu.simon@student.uclouvain.be",
                         "mail_type": "FAIL",
-                        "output": "\"" + folder_path + '/' + patient_path + '/T1/' + "slurm-%j.out\"",
-                        "error": "\"" + folder_path + '/' + patient_path + '/T1/' + "slurm-%j.err\"",
+                        "output": folder_path + '/' + patient_path + '/T1/' + "slurm-%j.out",
+                        "error": folder_path + '/' + patient_path + '/T1/' + "slurm-%j.err",
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job_id = submit_job(p_job)
