@@ -209,6 +209,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
     f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
+
 def dti_solo(folder_path, p):
     print("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DTI processing for patient %s \n" % p)
 
@@ -272,8 +273,10 @@ def dti_solo(folder_path, p):
     f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
+
 from future.utils import iteritems
 import subprocess
+
 
 def submit_job(job_info):
     # Construct sbatch command
@@ -415,7 +418,6 @@ def white_mask_solo(folder_path, p):
     f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
     f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
-
 
 
 def noddi_solo(folder_path, p):

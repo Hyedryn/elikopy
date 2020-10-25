@@ -137,6 +137,28 @@ def patient_list(folder_path):
                 shutil.copyfile(folder_path + "/CONTROL/" + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
                 shutil.copyfile(folder_path + "/CONTROL/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
 
+                anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
+                if os.path.isfile(anat_path):
+                    dest = folder_path + "/subjects/" + name + "/T1/"
+                    if not (os.path.exists(dest)):
+                        try:
+                            os.makedirs(dest)
+                        except OSError:
+                            print("Creation of the directory %s failed" % dest)
+                            f = open(folder_path + "/logs.txt", "a+")
+                            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
+                                "%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
+                            f.close()
+                        else:
+                            print("Successfully created the directory %s " % dest)
+                            f = open(folder_path + "/logs.txt", "a+")
+                            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
+                                "%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
+                            f.close()
+                    shutil.copyfile(folder_path + "/T1/" + name + "_T1.nii.gz", folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
+
+
+
 
     for file in os.listdir(folder_path + "/CASE"):
 
@@ -180,6 +202,26 @@ def patient_list(folder_path):
                 shutil.copyfile(folder_path + "/CASE/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
                 shutil.copyfile(folder_path + "/CASE/" + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
                 shutil.copyfile(folder_path + "/CASE/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
+
+                anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
+                if os.path.isfile(anat_path):
+                    dest = folder_path + "/subjects/" + name + "/T1/"
+                    if not (os.path.exists(dest)):
+                        try:
+                            os.makedirs(dest)
+                        except OSError:
+                            print("Creation of the directory %s failed" % dest)
+                            f = open(folder_path + "/logs.txt", "a+")
+                            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
+                                "%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
+                            f.close()
+                        else:
+                            print("Successfully created the directory %s " % dest)
+                            f = open(folder_path + "/logs.txt", "a+")
+                            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
+                                "%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
+                            f.close()
+                    shutil.copyfile(folder_path + "/T1/" + name + "_T1.nii.gz",folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
 
     error = list(dict.fromkeys(error))
     success = list(dict.fromkeys(success))
@@ -317,7 +359,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            preproc_solo(folder_path,p,eddy=eddy,denoising=denoising,reslice=reslice,gibbs=gibbs)
+            preproc_solo(folder_path + "/subjects",p,eddy=eddy,denoising=denoising,reslice=reslice,gibbs=gibbs)
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
             f.flush()
     f.close()
@@ -413,7 +455,7 @@ def dti(folder_path, slurm=False):
             f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            dti_solo(folder_path,p)
+            dti_solo(folder_path + "/subjects",p)
             f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied DTI on patient %s\n" % p)
             f.flush()
     f.close()
@@ -507,7 +549,6 @@ def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False,
     """
 
 
-
 def white_mask(folder_path, slurm=False):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes
     Parameters
@@ -533,12 +574,12 @@ def white_mask(folder_path, slurm=False):
     f=open(folder_path + "/logs.txt", "a+")
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
-        anat_path = folder_path + '/' + patient_path + '/T1/' + patient_path + '_T1.nii.gz'
+        anat_path = folder_path + '/subjects/' + patient_path + '/T1/' + patient_path + '_T1.nii.gz'
         if os.path.isfile(anat_path):
             if slurm:
                 p_job = {
                         "wrap": "python -c 'from utils import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
-                       "job_name": "whitemask_" + p,
+                        "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
                         "mem_per_cpu": 8096,
@@ -554,7 +595,7 @@ def white_mask(folder_path, slurm=False):
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                white_mask(folder_path,p)
+                white_mask_solo(folder_path + "/subjects", p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
     f.close()
@@ -650,7 +691,7 @@ def noddi(folder_path, slurm=False):
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            noddi_solo(folder_path,p)
+            noddi_solo(folder_path + "/subjects",p)
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
             f.flush()
     f.close()
