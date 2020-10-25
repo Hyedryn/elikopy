@@ -10,7 +10,6 @@ import math
 def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
 
     patient_path = os.path.splitext(p)[0]
-
     preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc/bet"
     if not(os.path.exists(preproc_path)):
         try:
@@ -153,10 +152,12 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
         f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
         f.close()
 
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
+        eddy_log = open(folder_path + '/' + patient_path + "/dMRI/preproc/eddy/eddy_logs.txt", "a+")
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=eddy_log, stderr=subprocess.STDOUT)
 
         #wait until eddy finish
         output, error = process.communicate()
+        eddy_log.close()
 
         print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
         f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
