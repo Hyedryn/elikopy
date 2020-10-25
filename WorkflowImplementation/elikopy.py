@@ -133,6 +133,9 @@ def patient_list(folder_path):
                 shutil.copyfile(folder_path + "/CONTROL/" + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
                 shutil.copyfile(folder_path + "/CONTROL/" + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
                 shutil.copyfile(folder_path + "/CONTROL/" + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
+                shutil.copyfile(folder_path + "/CONTROL/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
+                shutil.copyfile(folder_path + "/CONTROL/" + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                shutil.copyfile(folder_path + "/CONTROL/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
 
 
     for file in os.listdir(folder_path + "/CASE"):
@@ -174,6 +177,9 @@ def patient_list(folder_path):
                 shutil.copyfile(folder_path + "/CASE/" + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
                 shutil.copyfile(folder_path + "/CASE/" + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
                 shutil.copyfile(folder_path + "/CASE/" + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
+                shutil.copyfile(folder_path + "/CASE/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
+                shutil.copyfile(folder_path + "/CASE/" + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                shutil.copyfile(folder_path + "/CASE/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
 
     error = list(dict.fromkeys(error))
     success = list(dict.fromkeys(success))
@@ -196,7 +202,7 @@ def patient_list(folder_path):
     f.close()
 
 
-def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False):
+def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
     Parameters
@@ -213,7 +219,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     """
 
     f=open(folder_path + "/logs.txt", "a+")
-    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
+    f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + ", reslice:" + str(reslice) + ", gibbs:" + str(gibbs) +"\n")
     f.close()
 
     dest_success = folder_path + "/subjects/subj_list.json"
@@ -242,7 +248,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
         if slurm:
             if not denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -255,7 +261,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
@@ -268,7 +274,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -281,7 +287,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif not denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 4,
@@ -311,7 +317,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            preproc_solo(folder_path,p,eddy,denoising,reslice)
+            preproc_solo(folder_path,p,eddy=eddy,denoising=denoising,reslice=reslice,gibbs=gibbs)
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
             f.flush()
     f.close()
