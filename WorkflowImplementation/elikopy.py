@@ -231,14 +231,14 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 os.makedirs(preproc_path)
             except OSError:
                 print ("Creation of the directory %s failed" % preproc_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % preproc_path)
-                f.close()
+                f2=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % preproc_path)
+                f2.close()
             else:
                 print ("Successfully created the directory %s " % preproc_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % preproc_path)
-                f.close()
+                f2=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % preproc_path)
+                f2.close()
         if slurm:
             if not denoising and not eddy:
                 p_job = {
@@ -250,8 +250,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "01:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
+                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
                 }
             elif denoising and eddy:
                 p_job = {
@@ -263,8 +263,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "12:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
+                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
                 }
             elif denoising and not eddy:
                 p_job = {
@@ -276,8 +276,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "4:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
+                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
                 }
             elif not denoising and eddy:
                 p_job = {
@@ -289,8 +289,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "12:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
+                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
                 }
             else:
                 p_job = {
@@ -302,8 +302,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "1:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out\"",
+                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err\"",
                 }
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
@@ -379,14 +379,14 @@ def dti(folder_path, slurm=False):
                 os.makedirs(dti_path)
             except OSError:
                 print ("Creation of the directory %s failed" % dti_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
-                f.close()
+                f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+                f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
+                f2.close()
             else:
                 print ("Successfully created the directory %s " % dti_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
-                f.close()
+                f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+                f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
+                f2.close()
 
         if slurm:
             p_job = {
@@ -398,8 +398,8 @@ def dti(folder_path, slurm=False):
                     "time": "1:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out",
-                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err",
+                    "output": "\"" + folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out\"",
+                    "error": "\"" + folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err\"",
                 }
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
@@ -539,8 +539,8 @@ def white_mask(folder_path, slurm=False):
                         "time": "3:00:00",
                         "mail_user": "mathieu.simon@student.uclouvain.be",
                         "mail_type": "FAIL",
-                        "output": "\"" + folder_path + '/' + patient_path + '/T1/' + "slurm-%j.out",
-                        "error": "\"" + folder_path + '/' + patient_path + '/T1/' + "slurm-%j.err",
+                        "output": "\"" + folder_path + '/' + patient_path + '/T1/' + "slurm-%j.out\"",
+                        "error": "\"" + folder_path + '/' + patient_path + '/T1/' + "slurm-%j.err\"",
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job_id = submit_job(p_job)
