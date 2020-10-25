@@ -380,12 +380,12 @@ def dti(folder_path, slurm=False):
             except OSError:
                 print ("Creation of the directory %s failed" % dti_path)
                 f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-                f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
+                f2.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
                 f2.close()
             else:
                 print ("Successfully created the directory %s " % dti_path)
                 f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-                f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
+                f2.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
                 f2.close()
 
         if slurm:
@@ -588,4 +588,100 @@ def white_mask(folder_path, slurm=False):
 
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of White mask\n")
+    f.close()
+
+
+def noddi(folder_path, slurm=False):
+    """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
+    Parameters
+    ----------
+    folder_path: Path to root folder containing all the dicom
+    """
+    f=open(folder_path + "/logs.txt", "a+")
+    f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Noddi with slurm:" + str(slurm) + "\n")
+    f.close()
+
+    dest_success = folder_path + "/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
+    job_list = []
+    f=open(folder_path + "/logs.txt", "a+")
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+
+        dti_path = folder_path + '/' + patient_path + "/dMRI/microstructure/noddi"
+        if not(os.path.exists(dti_path)):
+            try:
+                os.makedirs(dti_path)
+            except OSError:
+                print ("Creation of the directory %s failed" % dti_path)
+                f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+                f2.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
+                f2.close()
+            else:
+                print ("Successfully created the directory %s " % dti_path)
+                f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+                f2.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
+                f2.close()
+
+        if slurm:
+            p_job = {
+                    "wrap": "python -c 'from utils import noddi_solo; noddi_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                    "job_name": "noddi_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "3:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                    "output": folder_path + '/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.out",
+                    "error": folder_path + '/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.err",
+                }
+            #p_job_id = pyslurm.job().submit_batch_job(p_job)
+            p_job_id = submit_job(p_job)
+            job_list.append(p_job_id)
+            f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+            f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            dti_solo(folder_path,p)
+            f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
+            f.flush()
+    f.close()
+
+    #Wait for all jobs to finish
+    if slurm:
+        import pyslurm
+        while job_list:
+            for job_id in job_list[:]:
+                job_info = pyslurm.job().find_id(job_id)[0]
+                if job_info["job_state"] == 'COMPLETED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
+                    f.close()
+                if job_info["job_state"] == 'FAILED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
+                    f.close()
+                if job_info["job_state"] == 'OUT_OF_MEMORY':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
+                    f.close()
+                if job_info["job_state"] == 'TIMEOUT':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
+                    f.close()
+                if job_info["job_state"] == 'CANCELLED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
+                    f.close()
+            time.sleep(30)
+
+    f=open(folder_path + "/logs.txt", "a+")
+    f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI\n")
     f.close()

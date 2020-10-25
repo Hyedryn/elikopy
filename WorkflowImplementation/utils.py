@@ -219,7 +219,7 @@ def dti_solo(folder_path, p):
 
     # load the data======================================
     data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
-    mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_binary_mask_dmri_preproc.nii.gz")
+    mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask=.nii.gz")
     bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     # create the model===================================
     gtab = gradient_table(bvals, bvecs)
@@ -396,4 +396,68 @@ def white_mask_solo(folder_path, p):
     print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
     f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.close()
+
+
+
+def noddi_solo(folder_path, p):
+    print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
+
+    import numpy as np
+    from dipy.io.image import load_nifti, save_nifti
+    from dipy.io.gradients import read_bvals_bvecs
+
+    patient_path = os.path.splitext(p)[0]
+
+    noddi_path = folder_path + '/' + patient_path + "/dMRI/microstructure/noddi"
+    if not(os.path.exists(noddi_path)):
+        try:
+            os.makedirs(noddi_path)
+        except OSError:
+            print ("Creation of the directory %s failed" % noddi_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % noddi_path)
+            f.close()
+        else:
+            print ("Successfully created the directory %s " % noddi_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
+            f.close()
+
+    #set up of the NODDI-Watson model
+    from dmipy.signal_models import cylinder_models, gaussian_models
+    ball = gaussian_models.G1Ball()
+    stick = cylinder_models.C1Stick()
+    zeppelin = gaussian_models.G2Zeppelin()
+
+    from dmipy.distributions.distribute_models import SD1WatsonDistributed
+    watson_dispersed_bundle = SD1WatsonDistributed(models=[stick, zeppelin])
+
+    watson_dispersed_bundle.set_tortuous_parameter('G2Zeppelin_1_lambda_perp','C1Stick_1_lambda_par','partial_volume_0')
+    watson_dispersed_bundle.set_equal_parameter('G2Zeppelin_1_lambda_par', 'C1Stick_1_lambda_par')
+    watson_dispersed_bundle.set_fixed_parameter('G2Zeppelin_1_lambda_par', 1.7e-9)
+
+    from dmipy.core.modeling_framework import MultiCompartmentModel
+    NODDI_mod = MultiCompartmentModel(models=[ball, watson_dispersed_bundle])
+
+    NODDI_mod.set_fixed_parameter('G1Ball_1_lambda_iso', 3e-9)
+
+    # load the data======================================
+    data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask=.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+
+    from dipy.core.gradients import gradient_table
+    from dmipy.core.acquisition_scheme import gtab_dipy2dmipy
+
+    gtab_dipy = gradient_table(bvals, bvecs)
+    acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy)
+    acq_scheme_dmipy.print_acquisition_info
+
+    #Fitting to data
+    NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask[..., 0]>0)
+
+    print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+    f.write("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
