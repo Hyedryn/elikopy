@@ -366,12 +366,12 @@ def white_mask_solo(folder_path, p):
             os.makedirs(mask_path)
         except OSError:
             print ("Creation of the directory %s failed" % mask_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+            f=open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
             f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % mask_path)
             f.close()
         else:
             print ("Successfully created the directory %s " % mask_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+            f=open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
             f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mask_path)
             f.close()
 

@@ -179,15 +179,15 @@ def patient_list(folder_path):
     success = list(dict.fromkeys(success))
 
     import json
-    dest_error = folder_path + "/patient_error.json"
+    dest_error = folder_path + "/subj_error.json"
     with open(dest_error, 'w') as f:
         json.dump(error, f)
 
-    dest_success = folder_path + "/patient_list.json"
+    dest_success = folder_path + "/subj_list.json"
     with open(dest_success, 'w') as f:
         json.dump(success, f)
 
-    dest_iscontrol = folder_path + "/iscontrol.json"
+    dest_iscontrol = folder_path + "/is_control.json"
     with open(dest_iscontrol, 'w') as f:
         json.dump(iscontrol, f)
 
@@ -216,7 +216,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
     f.close()
 
-    dest_success = folder_path + "/patient_list.json"
+    dest_success = folder_path + "/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
@@ -364,7 +364,7 @@ def dti(folder_path, slurm=False):
     f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DTI with slurm:" + str(slurm) + "\n")
     f.close()
 
-    dest_success = folder_path + "/patient_list.json"
+    dest_success = folder_path + "/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
@@ -469,7 +469,7 @@ def fingerprinting(folder_path):
     # Instantiate model:
     mf_model = mf.MFModel(dictionary_file)
 
-    patient_list = json.load(folder_path + "/patient_list.json")
+    patient_list = json.load(folder_path + "/subj_list.json")
 
     for p in patient_list:
 
@@ -519,7 +519,7 @@ def white_mask(folder_path, slurm=False):
     import os
 
 
-    dest_success = folder_path + "/patient_list.json"
+    dest_success = folder_path + "/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
