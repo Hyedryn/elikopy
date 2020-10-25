@@ -8,13 +8,13 @@ import math
 import shutil
 import time
 try:
-    from WorkflowImplementation.utils import preproc_solo, dti_solo, submit_job, white_mask_solo
+    from WorkflowImplementation.utils import preproc_solo, dti_solo, submit_job, white_mask_solo, noddi_solo
     print("Importation of WorkflowImplementation.utils is a success")
 except ImportError:
     print("Warning: Importation of WorkflowImplementation.utils failed")
     ## check whether in the source directory...
 try:
-    from utils import preproc_solo, dti_solo, submit_job, white_mask_solo
+    from utils import preproc_solo, dti_solo, submit_job, white_mask_solo, noddi_solo
     print("Importation of utils is a success")
 except ImportError:
     ## check whether in the source directory...
@@ -644,7 +644,7 @@ def noddi(folder_path, slurm=False):
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            dti_solo(folder_path,p)
+            noddi_solo(folder_path,p)
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
             f.flush()
     f.close()
