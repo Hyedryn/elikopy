@@ -101,6 +101,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
         denoised = mppca(b0_mask, patch_radius=pr)
         save_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz', denoised.astype(np.float32), affine)
+        #save_nifti(denoising_path + '/' + patient_path + '_mppca_mask.nii.gz', mask.astype(np.float32),affine)
 
         print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of denoising for patient %s \n" % p)
 
@@ -141,9 +142,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
 
 
         if denoising:
-            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mask_denoised.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
+            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
         else:
-            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
+            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/acqparams.txt" --index="' + folder_path + '/index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
 
         import subprocess
         bashcmd = bashCommand.split()
@@ -161,8 +162,6 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False):
         f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
         f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
         f.close()
-
-        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + ".bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
         data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.nii.gz")
         b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]))
