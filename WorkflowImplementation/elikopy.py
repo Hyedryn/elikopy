@@ -115,7 +115,7 @@ def patient_list(folder_path):
             else:
                 success.append(name)
                 iscontrol[name]=True
-                dest = folder_path + "/" + name + "/dMRI/raw/"
+                dest = folder_path + "/subjects/" + name + "/dMRI/raw/"
                 if not (os.path.exists(dest)):
                     try:
                         os.makedirs(dest)
@@ -130,9 +130,9 @@ def patient_list(folder_path):
                         f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
                         f.close()
 
-                shutil.copyfile(folder_path + "/CONTROL/" + name + ".bvec",folder_path + "/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
-                shutil.copyfile(folder_path + "/CONTROL/" + name + ".bval",folder_path + "/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
-                shutil.copyfile(folder_path + "/CONTROL/" + name + ".nii.gz",folder_path + "/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
+                shutil.copyfile(folder_path + "/CONTROL/" + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
+                shutil.copyfile(folder_path + "/CONTROL/" + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
+                shutil.copyfile(folder_path + "/CONTROL/" + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
 
 
     for file in os.listdir(folder_path + "/CASE"):
@@ -156,7 +156,7 @@ def patient_list(folder_path):
             else:
                 success.append(name)
                 iscontrol[name]=False
-                dest = folder_path + "/" + name + "/dMRI/raw/"
+                dest = folder_path + "/subjects/" + name + "/dMRI/raw/"
                 if not (os.path.exists(dest)):
                     try:
                         os.makedirs(dest)
@@ -171,23 +171,23 @@ def patient_list(folder_path):
                         f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
                         f.close()
 
-                shutil.copyfile(folder_path + "/CASE/" + name + ".bvec",folder_path + "/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
-                shutil.copyfile(folder_path + "/CASE/" + name + ".bval",folder_path + "/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
-                shutil.copyfile(folder_path + "/CASE/" + name + ".nii.gz",folder_path + "/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
+                shutil.copyfile(folder_path + "/CASE/" + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
+                shutil.copyfile(folder_path + "/CASE/" + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
+                shutil.copyfile(folder_path + "/CASE/" + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
 
     error = list(dict.fromkeys(error))
     success = list(dict.fromkeys(success))
 
     import json
-    dest_error = folder_path + "/subj_error.json"
+    dest_error = folder_path + "/subjects/subj_error.json"
     with open(dest_error, 'w') as f:
         json.dump(error, f)
 
-    dest_success = folder_path + "/subj_list.json"
+    dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'w') as f:
         json.dump(success, f)
 
-    dest_iscontrol = folder_path + "/is_control.json"
+    dest_iscontrol = folder_path + "/subjects/is_control.json"
     with open(dest_iscontrol, 'w') as f:
         json.dump(iscontrol, f)
 
@@ -216,7 +216,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + "\n")
     f.close()
 
-    dest_success = folder_path + "/subj_list.json"
+    dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
@@ -225,24 +225,24 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     f=open(folder_path + "/logs.txt", "a+")
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
-        preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc/bet"
+        preproc_path = folder_path + '/subjects/' + patient_path + "/dMRI/preproc/bet"
         if not(os.path.exists(preproc_path)):
             try:
                 os.makedirs(preproc_path)
             except OSError:
                 print ("Creation of the directory %s failed" % preproc_path)
-                f2=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
                 f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % preproc_path)
                 f2.close()
             else:
                 print ("Successfully created the directory %s " % preproc_path)
-                f2=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
                 f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % preproc_path)
                 f2.close()
         if slurm:
             if not denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -250,12 +250,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "00:30:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             elif denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
@@ -263,12 +263,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "12:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             elif denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -276,12 +276,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "3:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             elif not denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 4,
@@ -289,12 +289,12 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "12:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             else:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -302,8 +302,8 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "time": "1:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": folder_path + '/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
@@ -364,7 +364,7 @@ def dti(folder_path, slurm=False):
     f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DTI with slurm:" + str(slurm) + "\n")
     f.close()
 
-    dest_success = folder_path + "/subj_list.json"
+    dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
@@ -373,24 +373,24 @@ def dti(folder_path, slurm=False):
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
 
-        dti_path = folder_path + '/' + patient_path + "/dMRI/microstructure/dti"
+        dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti"
         if not(os.path.exists(dti_path)):
             try:
                 os.makedirs(dti_path)
             except OSError:
                 print ("Creation of the directory %s failed" % dti_path)
-                f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
                 f2.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
                 f2.close()
             else:
                 print ("Successfully created the directory %s " % dti_path)
-                f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
                 f2.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
                 f2.close()
 
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from utils import dti_solo; dti_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                    "wrap": "python -c 'from utils import dti_solo; dti_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
                     "job_name": "dti_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -398,8 +398,8 @@ def dti(folder_path, slurm=False):
                     "time": "1:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out",
-                    "error": folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err",
                 }
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
@@ -469,7 +469,7 @@ def fingerprinting(folder_path):
     # Instantiate model:
     mf_model = mf.MFModel(dictionary_file)
 
-    patient_list = json.load(folder_path + "/subj_list.json")
+    patient_list = json.load(folder_path + "/subjects/subj_list.json")
 
     for p in patient_list:
 
@@ -519,7 +519,7 @@ def white_mask(folder_path, slurm=False):
     import os
 
 
-    dest_success = folder_path + "/subj_list.json"
+    dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
@@ -531,7 +531,7 @@ def white_mask(folder_path, slurm=False):
         if os.path.isfile(anat_path):
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from utils import white_mask_solo; white_mask_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                        "wrap": "python -c 'from utils import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
                        "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -539,8 +539,8 @@ def white_mask(folder_path, slurm=False):
                         "time": "3:00:00",
                         "mail_user": "mathieu.simon@student.uclouvain.be",
                         "mail_type": "FAIL",
-                        "output": folder_path + '/' + patient_path + '/T1/' + "slurm-%j.out",
-                        "error": folder_path + '/' + patient_path + '/T1/' + "slurm-%j.err",
+                        "output": folder_path + '/subjects/' + patient_path + '/T1/' + "slurm-%j.out",
+                        "error": folder_path + '/subjects/' + patient_path + '/T1/' + "slurm-%j.err",
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job_id = submit_job(p_job)
@@ -610,24 +610,24 @@ def noddi(folder_path, slurm=False):
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
 
-        dti_path = folder_path + '/' + patient_path + "/dMRI/microstructure/noddi"
+        dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi"
         if not(os.path.exists(dti_path)):
             try:
                 os.makedirs(dti_path)
             except OSError:
                 print ("Creation of the directory %s failed" % dti_path)
-                f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
                 f2.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
                 f2.close()
             else:
                 print ("Successfully created the directory %s " % dti_path)
-                f2=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
                 f2.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
                 f2.close()
 
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from utils import noddi_solo; noddi_solo(\"" + folder_path + "\",\"" + p + "\")'",
+                    "wrap": "python -c 'from utils import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
                     "job_name": "noddi_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -635,8 +635,8 @@ def noddi(folder_path, slurm=False):
                     "time": "3:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": folder_path + '/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.out",
-                    "error": folder_path + '/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.err",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.err",
                 }
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
