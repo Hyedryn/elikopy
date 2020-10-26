@@ -1,5 +1,6 @@
 """
- 
+ Elikopy
+ @author: qdessain, msimon
 """
 import datetime
 import os
@@ -7,19 +8,10 @@ import json
 import math
 import shutil
 import time
-try:
-    from elikopy.utils import preproc_solo, dti_solo, submit_job, white_mask_solo, noddi_solo
-    print("Importation of elikopy.utils is a success")
-except ImportError:
-    print("Warning: Importation of elikopy.utils failed")
-    ## check whether in the source directory...
-try:
-    from utils import preproc_solo, dti_solo, submit_job, white_mask_solo, noddi_solo
-    print("Importation of utils is a success")
-except ImportError:
-    ## check whether in the source directory...
-    print("Warning: Importation of utils failed")
+import subprocess
 
+from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo
+from elikopy.utils import submit_job
 
 def dicom_to_nifti(folder_path):
     """Convert dicom data into nifti. Converted dicom are then moved to a sub-folder named original_data
@@ -41,7 +33,6 @@ def dicom_to_nifti(folder_path):
     f.close()
 
     bashCommand = 'dcm2niix -f "%i_%p_%z" -p y -z y -o ' + folder_path + ' ' + folder_path + ''
-    import subprocess
     bashcmd = bashCommand.split()
     #print("Bash command is:\n{}\n".format(bashcmd))
     process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
@@ -51,8 +42,6 @@ def dicom_to_nifti(folder_path):
 
 
     #Move all old dicom to dicom folder
-    import shutil
-    import os
 
     dest = folder_path + "/dicom"
     files = os.listdir(folder_path)
@@ -226,7 +215,6 @@ def patient_list(folder_path):
     error = list(dict.fromkeys(error))
     success = list(dict.fromkeys(success))
 
-    import json
     dest_error = folder_path + "/subjects/subj_error.json"
     with open(dest_error, 'w') as f:
         json.dump(error, f)
@@ -290,7 +278,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
         if slurm:
             if not denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -303,7 +291,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
@@ -316,7 +304,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -329,7 +317,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif not denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 4,
@@ -342,7 +330,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             else:
                 p_job = {
-                    "wrap": "python -c 'from utils import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -438,7 +426,7 @@ def dti(folder_path, slurm=False):
 
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from utils import dti_solo; dti_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
                     "job_name": "dti_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -505,9 +493,7 @@ def fingerprinting(folder_path):
     folder_path: Path to root folder containing all the dicom
     """
 
-    import os
     import sys
-    import json
 
     import microstructure_fingerprinting as mf
     import microstructure_fingerprinting.mf_utils as mfu
@@ -563,9 +549,6 @@ def white_mask(folder_path, slurm=False):
     f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of white with slurm:" + str(slurm) + "\n")
     f.close()
 
-    import os
-
-
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
@@ -578,7 +561,7 @@ def white_mask(folder_path, slurm=False):
         if os.path.isfile(anat_path):
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from utils import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -674,7 +657,7 @@ def noddi(folder_path, slurm=False):
 
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from utils import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
                     "job_name": "noddi_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,

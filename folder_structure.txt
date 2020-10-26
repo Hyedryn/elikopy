@@ -51,6 +51,3 @@ subjID/
 											subjID_evecs.nii.gz
 											subjID_evals.nii.gz
 											subjID_dtensor.nii.gz
-											
-											
-											
