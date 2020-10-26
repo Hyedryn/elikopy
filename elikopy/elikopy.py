@@ -8,10 +8,10 @@ import math
 import shutil
 import time
 try:
-    from WorkflowImplementation.utils import preproc_solo, dti_solo, submit_job, white_mask_solo, noddi_solo
-    print("Importation of WorkflowImplementation.utils is a success")
+    from elikopy.utils import preproc_solo, dti_solo, submit_job, white_mask_solo, noddi_solo
+    print("Importation of elikopy.utils is a success")
 except ImportError:
-    print("Warning: Importation of WorkflowImplementation.utils failed")
+    print("Warning: Importation of elikopy.utils failed")
     ## check whether in the source directory...
 try:
     from utils import preproc_solo, dti_solo, submit_job, white_mask_solo, noddi_solo
