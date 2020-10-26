@@ -472,12 +472,12 @@ def diamond_solo(folder_path, p):
         except OSError:
             print ("Creation of the directory %s failed" % diamond_path)
             f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % diamond_path)
+            f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % diamond_path)
             f.close()
         else:
             print ("Successfully created the directory %s " % diamond_path)
             f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % diamond_path)
+            f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % diamond_path)
             f.close()
 
     bashCommand = 'crlDCIEstimate -i ' + folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + ' -m ' + folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + '_brain_mask.nii.gz' + ' -n 3 --automose aicu --fascicle diamondcyl -o ' + folder_path + '/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + ' --bbox 0,0,38,128,128,1 -p 4'
@@ -498,4 +498,57 @@ def diamond_solo(folder_path, p):
     print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
     f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.close()
+
+
+def mf_solo(folder_path, p):
+    print("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
+    patient_path = os.path.splitext(p)[0]
+
+    mf_path = folder_path + '/' + patient_path + "/dMRI/microstructure/mf"
+    if not(os.path.exists(mf_path)):
+        try:
+            os.makedirs(mf_path)
+        except OSError:
+            print ("Creation of the directory %s failed" % mf_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
+            f.write("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % mf_path)
+            f.close()
+        else:
+            print ("Successfully created the directory %s " % mf_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
+            f.write("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mf_path)
+            f.close()
+
+    ##TODO
+    import sys
+
+    import microstructure_fingerprinting as mf
+    import microstructure_fingerprinting.mf_utils as mfu
+
+    dictionary_file = 'mf_dictionary.mat'
+
+    # Instantiate model:
+    mf_model = mf.MFModel(dictionary_file)
+
+    # Fit to data:
+    MF_fit = mf_model.fit(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz",  # help(mf_model.fit)
+                              maskfile,
+                              numfasc,  # all arguments after this MUST be named: argname=argvalue
+                              peaks=peaks,
+                              bvals=folder_path + "/out/preproc/final" + "/" + patient_path + ".bval",
+                              bvecs=folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec",
+                              csf_mask=csf_mask,
+                              ear_mask=ear_mask,
+                              verbose=3,
+                              parallel=False
+                              )
+
+    # Save estimated parameter maps as NIfTI files:
+    outputbasename = 'MF_' + patient_path
+    MF_fit.write_nifti(outputbasename)
+
+    print("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
+    f.write("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()

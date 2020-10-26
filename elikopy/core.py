@@ -10,7 +10,7 @@ import shutil
 import time
 import subprocess
 
-from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo
+from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, mf_solo
 from elikopy.utils import submit_job
 
 def dicom_to_nifti(folder_path):
@@ -486,45 +486,100 @@ def dti(folder_path, slurm=False):
     f.close()
 
 
-def fingerprinting(folder_path):
-    """Perform fingerprinting and store the data in the out/fingerprinting folder.
+def fingerprinting(folder_path, slurm=False):
+    """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
+    folder_path: Path to root folder containing all the nifti
     """
+    f=open(folder_path + "/logs.txt", "a+")
+    f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Microstructure Fingerprinting with slurm:" + str(slurm) + "\n")
+    f.close()
 
-    import sys
+    dest_success = folder_path + "/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
 
-    import microstructure_fingerprinting as mf
-    import microstructure_fingerprinting.mf_utils as mfu
-
-    dictionary_file = 'mf_dictionary.mat'
-
-    # Instantiate model:
-    mf_model = mf.MFModel(dictionary_file)
-
-    patient_list = json.load(folder_path + "/subjects/subj_list.json")
-
+    job_list = []
+    f=open(folder_path + "/logs.txt", "a+")
     for p in patient_list:
-
         patient_path = os.path.splitext(p)[0]
 
-        # Fit to data:
-        MF_fit = mf_model.fit(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz",  # help(mf_model.fit)
-                              maskfile,
-                              numfasc,  # all arguments after this MUST be named: argname=argvalue
-                              peaks=peaks,
-                              bvals=folder_path + "/out/preproc/final" + "/" + patient_path + ".bval",
-                              bvecs=folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec",
-                              csf_mask=csf_mask,
-                              ear_mask=ear_mask,
-                              verbose=3,
-                              parallel=False
-                              )
+        mf_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/mf"
+        if not(os.path.exists(mf_path)):
+            try:
+                os.makedirs(mf_path)
+            except OSError:
+                print ("Creation of the directory %s failed" % mf_path)
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
+                f2.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % mf_path)
+                f2.close()
+            else:
+                print ("Successfully created the directory %s " % mf_path)
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
+                f2.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mf_path)
+                f2.close()
 
-        # Save estimated parameter maps as NIfTI files:
-        outputbasename = 'MF_' + patient_path
-        MF_fit.write_nifti(outputbasename)
+        if slurm:
+            p_job = {
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                    "job_name": "mf_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 4,
+                    "mem_per_cpu": 2096,
+                    "time": "2:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/mf/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/mf/' + "slurm-%j.err",
+                }
+            #p_job_id = pyslurm.job().submit_batch_job(p_job)
+            p_job_id = submit_job(p_job)
+            job_list.append(p_job_id)
+            f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+            f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            mf_solo(folder_path + "/subjects",p)
+            f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
+            f.flush()
+    f.close()
+
+    #Wait for all jobs to finish
+    if slurm:
+        import pyslurm
+        while job_list:
+            for job_id in job_list[:]:
+                job_info = pyslurm.job().find_id(job_id)[0]
+                if job_info["job_state"] == 'COMPLETED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
+                    f.close()
+                if job_info["job_state"] == 'FAILED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
+                    f.close()
+                if job_info["job_state"] == 'OUT_OF_MEMORY':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
+                    f.close()
+                if job_info["job_state"] == 'TIMEOUT':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
+                    f.close()
+                if job_info["job_state"] == 'CANCELLED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
+                    f.close()
+            time.sleep(30)
+
+    f=open(folder_path + "/logs.txt", "a+")
+    f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
+    f.close()
 
 
 def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False, dti=False):
@@ -640,19 +695,19 @@ def noddi(folder_path, slurm=False):
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
 
-        dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi"
-        if not(os.path.exists(dti_path)):
+        noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi"
+        if not(os.path.exists(noddi_path)):
             try:
-                os.makedirs(dti_path)
+                os.makedirs(noddi_path)
             except OSError:
-                print ("Creation of the directory %s failed" % dti_path)
+                print ("Creation of the directory %s failed" % noddi_path)
                 f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-                f2.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
+                f2.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % noddi_path)
                 f2.close()
             else:
-                print ("Successfully created the directory %s " % dti_path)
+                print ("Successfully created the directory %s " % noddi_path)
                 f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-                f2.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
+                f2.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
                 f2.close()
 
         if slurm:
@@ -736,19 +791,19 @@ def diamond(folder_path, slurm=False):
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
 
-        dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
-        if not(os.path.exists(dti_path)):
+        diamond_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
+        if not(os.path.exists(diamond_path)):
             try:
-                os.makedirs(dti_path)
+                os.makedirs(diamond_path)
             except OSError:
-                print ("Creation of the directory %s failed" % dti_path)
+                print ("Creation of the directory %s failed" % diamond_path)
                 f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-                f2.write("[DIAMOND] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
+                f2.write("[DIAMOND] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % diamond_path)
                 f2.close()
             else:
-                print ("Successfully created the directory %s " % dti_path)
+                print ("Successfully created the directory %s " % diamond_path)
                 f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-                f2.write("[DIAMOND] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
+                f2.write("[DIAMOND] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % diamond_path)
                 f2.close()
 
         if slurm:
