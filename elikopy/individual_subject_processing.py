@@ -134,6 +134,22 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
     if gibbs:
+
+        gibbs_path = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs'
+        if not(os.path.exists(gibbs_path)):
+            try:
+                os.mkdir(gibbs_path)
+            except OSError:
+                print ("Creation of the directory %s failed" % gibbs_path)
+                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % gibbs_path)
+                f.close()
+            else:
+                print ("Successfully created the directory %s " % gibbs_path)
+                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % gibbs_path)
+                f.close()
+
         data = gibbs_removal(b0_mask)
         corrected_path = folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/" + patient_path + '_gibbscorrected.nii.gz'
         save_nifti(corrected_path, data.astype(np.float32), affine)
