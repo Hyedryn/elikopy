@@ -296,7 +296,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "ntasks": 1,
                     "cpus_per_task": 8,
                     "mem_per_cpu": 6096,
-                    "time": "12:00:00",
+                    "time": "14:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
