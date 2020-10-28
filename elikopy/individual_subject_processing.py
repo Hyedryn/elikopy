@@ -11,6 +11,7 @@ import subprocess
 
 from dipy.denoise.gibbs import gibbs_removal
 
+
 def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gibbs=False):
 
     patient_path = os.path.splitext(p)[0]
@@ -290,6 +291,7 @@ def dti_solo(folder_path, p):
     f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
+
 def white_mask_solo(folder_path, p):
 
     print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
@@ -389,6 +391,7 @@ def white_mask_solo(folder_path, p):
     f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
+
 def noddi_solo(folder_path, p):
     print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
 
@@ -478,7 +481,6 @@ def noddi_solo(folder_path, p):
     f.close()
 
 
-
 def diamond_solo(folder_path, p, box):
     print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
@@ -542,33 +544,90 @@ def mf_solo(folder_path, p):
             f.write("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mf_path)
             f.close()
 
-    ##TODO
-    import sys
-
+    # imports
     import microstructure_fingerprinting as mf
     import microstructure_fingerprinting.mf_utils as mfu
+    from dipy.io.image import load_nifti, save_nifti
+    from dipy.io import read_bvals_bvecs
+    from dipy.core.gradients import gradient_table
+    from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel, auto_response)
+    from dipy.direction import peaks_from_model
+    from dipy.data import default_sphere
 
-    dictionary_file = 'mf_dictionary.mat'
+    # load the data
+    data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    gtab = gradient_table(bvals, bvecs)
+    wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    if os.path.isfile(wm_path):
+        mask, _ = load_nifti(wm_path)
+    else:
+        mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask=.nii.gz")
 
-    # Instantiate model:
+    # compute numfasc and peaks
+    diamond_path = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond"
+    if os.path.exists(diamond_path):
+        tensor_files0 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t0.nii.gz'
+        tensor_files1 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t1.nii.gz'
+        fracs_file = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nii.gz'
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,peakmode='tensor', mask=mask, frac12=fracs_file)
+    else:
+        response, ratio = auto_response(gtab, data, roi_radius=10, fa_thr=0.7)
+        csd_model = ConstrainedSphericalDeconvModel(gtab, response, sh_order=6)
+        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data, sphere=default_sphere,relative_peak_threshold=.15, min_separation_angle=25, parallel=True, mask=mask,normalize_peaks=True)
+        normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
+        normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
+        for i in range(np.shape(csd_peaks.peak_dirs)[0]):
+            for j in range(np.shape(csd_peaks.peak_dirs)[1]):
+                for k in range(np.shape(csd_peaks.peak_dirs)[2]):
+                    norm = np.sqrt(np.sum(normPeaks0[i, j, k, :] ** 2))
+                    normPeaks0[i, j, k, :] = normPeaks0[i, j, k, :] / norm
+                    norm = np.sqrt(np.sum(normPeaks1[i, j, k, :] ** 2))
+                    normPeaks1[i, j, k, :] = normPeaks1[i, j, k, :] / norm
+        mu1 = normPeaks0
+        mu2 = normPeaks1
+        frac1 = csd_peaks.peak_values[..., 0]
+        frac2 = csd_peaks.peak_values[..., 1]
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',mask=mask, frac12=None)
+
+    # get the dictionary
+    dictionary_file = mf_path + '/fixed_rad_dist.mat'
     mf_model = mf.MFModel(dictionary_file)
 
-    # Fit to data:
-    MF_fit = mf_model.fit(folder_path + "/out/preproc/final" + "/" + patient_path + ".nii.gz",  # help(mf_model.fit)
-                              maskfile,
-                              numfasc,  # all arguments after this MUST be named: argname=argvalue
-                              peaks=peaks,
-                              bvals=folder_path + "/out/preproc/final" + "/" + patient_path + ".bval",
-                              bvecs=folder_path + "/out/preproc/final" + "/" + patient_path + ".bvec",
-                              csf_mask=csf_mask,
-                              ear_mask=ear_mask,
-                              verbose=3,
-                              parallel=False
-                              )
+    # compute csf_mask and ear_mask
+    csf_mask = False
+    ear_mask = (numfasc >= 1)  # (numfasc == 1)
 
-    # Save estimated parameter maps as NIfTI files:
-    outputbasename = 'MF_' + patient_path
-    MF_fit.write_nifti(outputbasename)
+    # Fit to data:
+    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask, ear_mask=ear_mask, verbose=3, parallel=True)
+
+    # extract info
+    M0 = MF_fit.M0
+    frac_f0 = MF_fit.frac_f0
+    DIFF_ex_f0 = MF_fit.DIFF_ex_f0
+    fvf_f0 = MF_fit.fvf_f0
+    frac_f1 = MF_fit.frac_f1
+    DIFF_ex_f1 = MF_fit.DIFF_ex_f1
+    fvf_f1 = MF_fit.fvf_f1
+    fvf_tot = MF_fit.fvf_tot
+    frac_ear = MF_fit.frac_ear
+    D_ear = MF_fit.D_ear
+    MSE = MF_fit.MSE
+    R2 = MF_fit.R2
+
+    # Save nifti
+    save_nifti(mf_path + '/' + patient_path + '_mf_M0.nii.gz', M0.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_frac_f0.nii.gz', frac_f0.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_DIFF_ex_f0.nii.gz', DIFF_ex_f0.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_fvf_f0.nii.gz', fvf_f0.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_frac_f1.nii.gz', frac_f1.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_DIFF_ex_f1.nii.gz', DIFF_ex_f1.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_fvf_f1.nii.gz', fvf_f1.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_fvf_tot.nii.gz', fvf_tot.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_frac_ear.nii.gz', frac_ear.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_D_ear.nii.gz', D_ear.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_MSE.nii.gz', MSE.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_R2.nii.gz', R2.astype(np.float32), affine)
 
     print("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")

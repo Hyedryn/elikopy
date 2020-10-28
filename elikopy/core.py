@@ -13,6 +13,7 @@ import subprocess
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, mf_solo
 from elikopy.utils import submit_job
 
+
 def dicom_to_nifti(folder_path):
     """Convert dicom data into nifti. Converted dicom are then moved to a sub-folder named original_data
     Parameters
@@ -491,6 +492,9 @@ def fingerprinting(folder_path, slurm=False):
     Parameters
     ----------
     folder_path: Path to root folder containing all the nifti
+    Remark
+    ----------
+    need the dictionary in the CASE and CONTROL directory
     """
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Microstructure Fingerprinting with slurm:" + str(slurm) + "\n")
@@ -519,6 +523,7 @@ def fingerprinting(folder_path, slurm=False):
                 f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
                 f2.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mf_path)
                 f2.close()
+        shutil.copyfile(folder_path + '/CASE/fixed_rad_dist.mat', mf_path + '/fixed_rad_dist.mat')
 
         if slurm:
             p_job = {
