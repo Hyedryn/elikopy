@@ -596,7 +596,7 @@ def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False,
 
 
 def white_mask(folder_path, slurm=False):
-    """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes
+    """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if T1 is not available
     Parameters
     ----------
     folder_path: Path to root folder containing all the dicom
