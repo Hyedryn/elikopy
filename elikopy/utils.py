@@ -1,8 +1,11 @@
 import datetime
 import os
+import json
+import shutil
 
 from future.utils import iteritems
 import subprocess
+
 
 def submit_job(job_info):
     # Construct sbatch command
@@ -44,6 +47,7 @@ def submit_job(job_info):
             job_id = int(s)
             return job_id
             #break
+
 
 def anonymise_nifti(rootdir,anonymize_json,rename):
     import json
@@ -102,3 +106,34 @@ def anonymise_nifti(rootdir,anonymize_json,rename):
 
                 print()
 
+
+def export_files(folder_path, step):
+    """
+    Create an export folder in the root folder containing the results of step for each patient in a single folder
+    :param folder_path: root folder
+    :param step: step to export
+    :return: nothing
+
+    example : export_files('user/my_rootfolder', 'dMRI/microstructure/dti')
+    """
+
+    export_path = folder_path + "/export_" + step.rsplit('/',1)[1]
+    if not (os.path.exists(export_path)):
+        try:
+            os.makedirs(export_path)
+        except OSError:
+            print("Creation of the directory %s failed" % export_path)
+        else:
+            print("Successfully created the directory %s " % export_path)
+
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
+    for p in patient_list:
+        copy_path = folder_path + '/subjects/' + os.path.splitext(p)[0] + '/' + step
+        shutil.copytree(copy_path, export_path, dirs_exist_ok=True)
+
+    shutil.copyfile(folder_path + "/subjects/subj_list.json", export_path + "/subj_list.json")
+    shutil.copyfile(folder_path + "/subjects/subj_error.json", export_path + "/subj_error.json")
+    shutil.copyfile(folder_path + "/subjects/is_control.json", export_path + "/is_control.json")
