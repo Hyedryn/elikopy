@@ -686,7 +686,7 @@ def noddi(folder_path, slurm=False):
     f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Noddi with slurm:" + str(slurm) + "\n")
     f.close()
 
-    dest_success = folder_path + "/subj_list.json"
+    dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
