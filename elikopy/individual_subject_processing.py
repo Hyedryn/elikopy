@@ -255,7 +255,7 @@ def dti_solo(folder_path, p):
 
     # load the data======================================
     data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
-    mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask=.nii.gz")
+    mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask.nii.gz")
     bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     # create the model===================================
     gtab = gradient_table(bvals, bvecs)
