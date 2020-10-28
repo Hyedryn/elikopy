@@ -493,9 +493,6 @@ def fingerprinting(folder_path, dictionary_path, slurm=False):
     ----------
     folder_path: Path to root folder containing all the nifti
     dictionary_path: Path to the dictionary to use
-    Remark
-    ----------
-    need the dictionary in the CASE and CONTROL directory
     """
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Microstructure Fingerprinting with slurm:" + str(slurm) + "\n")

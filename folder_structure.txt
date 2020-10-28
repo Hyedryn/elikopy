@@ -1,5 +1,7 @@
 CASE/
 CONTROL/
+T1/
+EXPORT_**/
 logs.txt
 subjects/
 	subj_list.json  [contains subject IDs]
@@ -82,3 +84,15 @@ subjects/
 									mf/			mf_logs.txt
 												slurm-%j.out
 												slurm-%j.err
+												subjID_mf_M0.nii.gz
+    												subjID_mf_frac_f0.nii.gz
+    												subjID_mf_DIFF_ex_f0.nii.gz
+    												subjID_mf_fvf_f0.nii.gz
+    												subjID_mf_frac_f1.nii.gz
+    												subjID_mf_DIFF_ex_f1.nii.gz
+    												subjID_mf_fvf_f1.nii.gz
+    												subjID_mf_fvf_tot.nii.gz
+    												subjID_mf_frac_ear.nii.gz
+    												subjID_mf_D_ear.nii.gz
+    												subjID_mf_MSE.nii.gz
+    												subjID_mf_R2.nii.gz
