@@ -545,7 +545,7 @@ def diamond_solo(folder_path, p, box):
     f.close()
 
 
-def mf_solo(folder_path, p):
+def mf_solo(folder_path, p, dictionary_path):
     print("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
@@ -611,8 +611,7 @@ def mf_solo(folder_path, p):
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',mask=mask, frac12=None)
 
     # get the dictionary
-    dictionary_file = mf_path + '/fixed_rad_dist.mat'
-    mf_model = mf.MFModel(dictionary_file)
+    mf_model = mf.MFModel(dictionary_path)
 
     # compute csf_mask and ear_mask
     csf_mask = False

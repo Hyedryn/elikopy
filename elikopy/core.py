@@ -487,11 +487,12 @@ def dti(folder_path, slurm=False):
     f.close()
 
 
-def fingerprinting(folder_path, slurm=False):
+def fingerprinting(folder_path, dictionary_path, slurm=False):
     """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
     Parameters
     ----------
     folder_path: Path to root folder containing all the nifti
+    dictionary_path: Path to the dictionary to use
     Remark
     ----------
     need the dictionary in the CASE and CONTROL directory
@@ -523,16 +524,15 @@ def fingerprinting(folder_path, slurm=False):
                 f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
                 f2.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mf_path)
                 f2.close()
-        shutil.copyfile(folder_path + '/CASE/fixed_rad_dist.mat', mf_path + '/fixed_rad_dist.mat')
 
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\", \"" + dictionary_path + "\")'",
                     "job_name": "mf_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 4,
                     "mem_per_cpu": 2096,
-                    "time": "2:00:00",
+                    "time": "3:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/mf/' + "slurm-%j.out",
@@ -544,7 +544,7 @@ def fingerprinting(folder_path, slurm=False):
             f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            mf_solo(folder_path + "/subjects",p)
+            mf_solo(folder_path + "/subjects", p, dictionary_path)
             f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
             f.flush()
     f.close()
