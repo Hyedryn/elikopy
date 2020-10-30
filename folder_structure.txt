@@ -97,3 +97,4 @@ subjects/
     												subjID_mf_D_ear.nii.gz
     												subjID_mf_MSE.nii.gz
     												subjID_mf_R2.nii.gz
+												subjID_mf_peaks.nii.gz

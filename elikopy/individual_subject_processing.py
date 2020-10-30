@@ -591,12 +591,14 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
         fracs_file = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nrrd'
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,peakmode='tensor', mask=mask, frac12=fracs_file)
     else:
-        sel_b = np.logical_or(bvals == 0, bvals == CSD_bvalue)
+        sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue-5) <= bvals, bvals <= (CSD_bvalue+5)))
         data_CSD = data[..., sel_b]
         gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
         response, ratio = auto_response(gtab_CSD, data_CSD, roi_radius=10, fa_thr=0.7)
         csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
         csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,relative_peak_threshold=.15, min_separation_angle=25, parallel=True, mask=mask,normalize_peaks=True)
+        save_nifti(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz', csd_peaks.peak_dirs, affine)
+        save_nifti(mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz', csd_peaks.peak_values, affine)
         normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
         normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
         for i in range(np.shape(csd_peaks.peak_dirs)[0]):
@@ -637,6 +639,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     R2 = MF_fit.R2
 
     # Save nifti
+    save_nifti(mf_path + '/' + patient_path + '_mf_peaks.nii.gz', peaks.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_M0.nii.gz', M0.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_frac_f0.nii.gz', frac_f0.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_DIFF_ex_f0.nii.gz', DIFF_ex_f0.astype(np.float32), affine)
