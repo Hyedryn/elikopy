@@ -487,7 +487,7 @@ def dti(folder_path, slurm=False):
     f.close()
 
 
-def fingerprinting(folder_path, dictionary_path, slurm=False):
+def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False):
     """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
     Parameters
     ----------
@@ -524,7 +524,7 @@ def fingerprinting(folder_path, dictionary_path, slurm=False):
 
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\", \"" + dictionary_path + "\")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + CSD_bvalue + ")'",
                     "job_name": "mf_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 4,
@@ -541,7 +541,7 @@ def fingerprinting(folder_path, dictionary_path, slurm=False):
             f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            mf_solo(folder_path + "/subjects", p, dictionary_path)
+            mf_solo(folder_path + "/subjects", p, dictionary_path, CSD_bvalue = CSD_bvalue)
             f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
             f.flush()
     f.close()

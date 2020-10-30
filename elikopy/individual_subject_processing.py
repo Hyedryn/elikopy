@@ -545,7 +545,7 @@ def diamond_solo(folder_path, p, box):
     f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path):
+def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     print("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
@@ -577,7 +577,6 @@ def mf_solo(folder_path, p, dictionary_path):
     # load the data
     data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
     bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
-    gtab = gradient_table(bvals, bvecs)
     wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     if os.path.isfile(wm_path):
         mask, _ = load_nifti(wm_path)
@@ -592,9 +591,12 @@ def mf_solo(folder_path, p, dictionary_path):
         fracs_file = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nrrd'
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,peakmode='tensor', mask=mask, frac12=fracs_file)
     else:
-        response, ratio = auto_response(gtab, data, roi_radius=10, fa_thr=0.7)
-        csd_model = ConstrainedSphericalDeconvModel(gtab, response, sh_order=6)
-        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data, sphere=default_sphere,relative_peak_threshold=.15, min_separation_angle=25, parallel=True, mask=mask,normalize_peaks=True)
+        sel_b = np.logical_or(bvals == 0, bvals == CSD_bvalue)
+        data_CSD = data[..., sel_b]
+        gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
+        response, ratio = auto_response(gtab_CSD, data_CSD, roi_radius=10, fa_thr=0.7)
+        csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
+        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,relative_peak_threshold=.15, min_separation_angle=25, parallel=True, mask=mask,normalize_peaks=True)
         normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
         normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
         for i in range(np.shape(csd_peaks.peak_dirs)[0]):
