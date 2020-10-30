@@ -654,3 +654,85 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
     f.write("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
+
+
+def tbss_utils(controlroot, patientroot, outputdir, corrected = False):
+
+    # transfer control_Fa into outputdir
+    dest_success = controlroot + "/out/patient_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+    i = 0
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        shutil.copyfile(controlroot + "/out/dti/" + patient_path + "_fa.nii.gz", outputdir + "/control" + i + "_" + patient_path + "_fa.nii.gz")
+        i += 1
+    numcontrol = i
+
+    # transfer patient_Fa into outputdir
+    dest_success = patientroot + "/out/patient_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+    i = 0
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        shutil.copyfile(patientroot + "/out/dti/" + patient_path + "_fa.nii.gz", outputdir + "/patient" + i + "_" + patient_path + "_fa.nii.gz")
+        i += 1
+    numpatient = i
+
+    import subprocess
+
+    bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
+    bashcmd = bashCommand.split()
+    print("Bash command is:\n{}\n".format(bashcmd))
+    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    output, error = process.communicate()
+
+    bashCommand = 'cd ' + outputdir + ' && tbss_2_reg -T'
+    bashcmd = bashCommand.split()
+    print("Bash command is:\n{}\n".format(bashcmd))
+    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    output, error = process.communicate()
+
+    bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg -S'
+    bashcmd = bashCommand.split()
+    print("Bash command is:\n{}\n".format(bashcmd))
+    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    output, error = process.communicate()
+
+    bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats 0.2'
+    bashcmd = bashCommand.split()
+    print("Bash command is:\n{}\n".format(bashcmd))
+    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    output, error = process.communicate()
+
+    bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + numcontrol + ' ' + numpatient
+    bashcmd = bashCommand.split()
+    print("Bash command is:\n{}\n".format(bashcmd))
+    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    output, error = process.communicate()
+
+    if corrected:
+        bashCommand = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2'
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+        output, error = process.communicate()
+
+        bashCommand = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+        output, error = process.communicate()
+    else:
+        bashCommand = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+        output, error = process.communicate()
+
+        bashCommand = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+        output, error = process.communicate()

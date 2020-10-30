@@ -866,3 +866,89 @@ def diamond(folder_path, slurm=False):
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[DIAMOND] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DIAMOND\n")
     f.close()
+
+
+def tbss(controlroot, patientroot, outputdir, corrected=False, slurm=False):
+    """ Perform tract base spatial statistics between the data in controlroot and the data in patientroot
+    Parameters
+    ----------
+    controlroot: root directory of the control data
+    patientroot: root directory of the patients
+    outputdir: directory for the output of tbss
+    corrected: whether the p value must be FWE corrected
+    slurm: whether to use slurm
+    Remark
+    ----------
+    DTI needs to have been performed on the data first !!
+    """
+
+    f = open(outputdir + "/logs.txt", "a+")
+    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of TBSS with slurm:" + str(
+        slurm) + "\n")
+    f.close()
+
+    if slurm:
+        import pyslurm
+
+    job_list = []
+    f = open(outputdir + "/logs.txt", "a+")
+    if slurm:
+        job = {
+            "wrap": "python -c 'from utils import tbss_utils; tbss_utils(" + controlroot + ", " + patientroot + ", " + outputdir + ",corrected =" + corrected + ")'",
+            "job_name": "tbss",
+            "ntasks": 8,
+            "cpus_per_task": 1,
+            "mem_per_cpu": 8096,
+            "time": "20:00:00",
+            "mail_user": "quentin.dessain@student.uclouvain.be",
+            "mail_type": "FAIL",
+        }
+        p_job_id = submit_job(job)
+        job_list.append(p_job_id)
+        f.write("[TBSS] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+    else:
+        tbss_utils(controlroot, patientroot, outputdir, corrected=corrected)
+        f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied TBSS \n")
+        f.flush()
+    f.close()
+
+    if slurm:
+        while job_list:
+            for job_id in job_list[:]:
+                job_info = pyslurm.job().find_id(job_id)[0]
+                if job_info["job_state"] == 'COMPLETED':
+                    job_list.remove(job_id)
+                    f = open(outputdir + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                        job_id) + " COMPLETED\n")
+                    f.close()
+                if job_info["job_state"] == 'FAILED':
+                    job_list.remove(job_id)
+                    f = open(outputdir + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                        job_id) + " FAILED\n")
+                    f.close()
+                if job_info["job_state"] == 'OUT_OF_MEMORY':
+                    job_list.remove(job_id)
+                    f = open(outputdir + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                        job_id) + " OUT_OF_MEMORY\n")
+                    f.close()
+                if job_info["job_state"] == 'TIMEOUT':
+                    job_list.remove(job_id)
+                    f = open(outputdir + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                        job_id) + " TIMEOUT\n")
+                    f.close()
+                if job_info["job_state"] == 'CANCELLED':
+                    job_list.remove(job_id)
+                    f = open(outputdir + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                        job_id) + " CANCELLED\n")
+                    f.close()
+            time.sleep(30)
+
+    f = open(outputdir + "/logs.txt", "a+")
+    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of TBSS\n")
+    f.close()
