@@ -513,7 +513,7 @@ def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False)
     f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Microstructure Fingerprinting with slurm:" + str(slurm) + "\n")
     f.close()
 
-    dest_success = folder_path + "/subj_list.json"
+    dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
@@ -639,8 +639,8 @@ def white_mask(folder_path, slurm=False):
                     "time": "3:00:00",
                     "mail_user": "mathieu.simon@student.uclouvain.be",
                     "mail_type": "FAIL",
-                    "output": folder_path + '/subjects/' + patient_path + '/T1/' + "slurm-%j.out",
-                    "error": folder_path + '/subjects/' + patient_path + '/T1/' + "slurm-%j.err",
+                    "output": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.err",
                 }
             #p_job_id = pyslurm.job().submit_batch_job(p_job)
             p_job_id = submit_job(p_job)
