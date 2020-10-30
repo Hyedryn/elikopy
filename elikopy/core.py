@@ -123,9 +123,16 @@ def patient_list(folder_path):
                 shutil.copyfile(folder_path + "/CONTROL/" + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
                 shutil.copyfile(folder_path + "/CONTROL/" + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
                 shutil.copyfile(folder_path + "/CONTROL/" + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
-                shutil.copyfile(folder_path + "/CONTROL/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
-                shutil.copyfile(folder_path + "/CONTROL/" + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
-                shutil.copyfile(folder_path + "/CONTROL/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
+                try:
+                    shutil.copyfile(folder_path + "/CONTROL/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
+                except:
+                    print('WARNING: JSON missing for patient', name)
+
+                try:
+                    shutil.copyfile(folder_path + "/CONTROL/" + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                    shutil.copyfile(folder_path + "/CONTROL/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
+                except:
+                    print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
 
                 anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
                 if os.path.isfile(anat_path):
@@ -189,9 +196,17 @@ def patient_list(folder_path):
                 shutil.copyfile(folder_path + "/CASE/" + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
                 shutil.copyfile(folder_path + "/CASE/" + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
                 shutil.copyfile(folder_path + "/CASE/" + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
-                shutil.copyfile(folder_path + "/CASE/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
-                shutil.copyfile(folder_path + "/CASE/" + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
-                shutil.copyfile(folder_path + "/CASE/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
+                try:
+                    shutil.copyfile(folder_path + "/CASE/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
+                except:
+                    print('WARNING: JSON missing for patient', name)
+
+                try:
+                    shutil.copyfile(folder_path + "/CASE/" + "index.txt", folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                    shutil.copyfile(folder_path + "/CASE/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
+                except:
+                    print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
+
 
                 anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
                 if os.path.isfile(anat_path):
