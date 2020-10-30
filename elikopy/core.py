@@ -10,7 +10,7 @@ import shutil
 import time
 import subprocess
 
-from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, mf_solo
+from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, mf_solo, tbss_utils
 from elikopy.utils import submit_job
 
 
@@ -868,13 +868,11 @@ def diamond(folder_path, slurm=False):
     f.close()
 
 
-def tbss(controlroot, patientroot, outputdir, corrected=False, slurm=False):
-    """ Perform tract base spatial statistics between the data in controlroot and the data in patientroot
+def tbss(folder_path, corrected=False, slurm=False):
+    """ Perform tract base spatial statistics between the control data and case data
     Parameters
     ----------
-    controlroot: root directory of the control data
-    patientroot: root directory of the patients
-    outputdir: directory for the output of tbss
+    folder_path: root directory
     corrected: whether the p value must be FWE corrected
     slurm: whether to use slurm
     Remark
@@ -882,73 +880,81 @@ def tbss(controlroot, patientroot, outputdir, corrected=False, slurm=False):
     DTI needs to have been performed on the data first !!
     """
 
-    f = open(outputdir + "/logs.txt", "a+")
-    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of TBSS with slurm:" + str(
-        slurm) + "\n")
+    f = open(folder_path + "/logs.txt", "a+")
+    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of TBSS with slurm:" + str(slurm) + "\n")
     f.close()
 
-    if slurm:
-        import pyslurm
+    tbss_path = folder_path + "/TBSS"
+    if not (os.path.exists(tbss_path)):
+        try:
+            os.makedirs(tbss_path)
+        except OSError:
+            print("Creation of the directory %s failed" % tbss_path)
+            f = open(folder_path + "/logs.txt", "a+")
+            f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % tbss_path)
+            f.close()
+        else:
+            print("Successfully created the directory %s " % tbss_path)
+            f = open(folder_path + "/logs.txt", "a+")
+            f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % tbss_path)
+            f.close()
 
     job_list = []
-    f = open(outputdir + "/logs.txt", "a+")
+    f = open(folder_path + "/logs.txt", "a+")
     if slurm:
         job = {
-            "wrap": "python -c 'from utils import tbss_utils; tbss_utils(" + controlroot + ", " + patientroot + ", " + outputdir + ",corrected =" + corrected + ")'",
+            "wrap": "python -c 'from utils import tbss_utils; tbss_utils(" + folder_path + ",corrected =" + corrected + ")'",
             "job_name": "tbss",
             "ntasks": 8,
             "cpus_per_task": 1,
             "mem_per_cpu": 8096,
             "time": "20:00:00",
-            "mail_user": "quentin.dessain@student.uclouvain.be",
+            "mail_user": "mathieu.simon@student.uclouvain.be",
             "mail_type": "FAIL",
+            "output": tbss_path + '/' + "slurm-%j.out",
+            "error": tbss_path + '/' + "slurm-%j.err",
         }
         p_job_id = submit_job(job)
         job_list.append(p_job_id)
-        f.write("[TBSS] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
     else:
-        tbss_utils(controlroot, patientroot, outputdir, corrected=corrected)
+        tbss_utils(folder_path, corrected=corrected)
         f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied TBSS \n")
         f.flush()
     f.close()
 
     if slurm:
+        import pyslurm
         while job_list:
             for job_id in job_list[:]:
                 job_info = pyslurm.job().find_id(job_id)[0]
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
-                    f = open(outputdir + "/logs.txt", "a+")
-                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                        job_id) + " COMPLETED\n")
+                    f = open(folder_path + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
                     f.close()
                 if job_info["job_state"] == 'FAILED':
                     job_list.remove(job_id)
-                    f = open(outputdir + "/logs.txt", "a+")
-                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                        job_id) + " FAILED\n")
+                    f = open(folder_path + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
                     f.close()
                 if job_info["job_state"] == 'OUT_OF_MEMORY':
                     job_list.remove(job_id)
-                    f = open(outputdir + "/logs.txt", "a+")
-                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                        job_id) + " OUT_OF_MEMORY\n")
+                    f = open(folder_path + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
                     f.close()
                 if job_info["job_state"] == 'TIMEOUT':
                     job_list.remove(job_id)
-                    f = open(outputdir + "/logs.txt", "a+")
-                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                        job_id) + " TIMEOUT\n")
+                    f = open(folder_path + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
                     f.close()
                 if job_info["job_state"] == 'CANCELLED':
                     job_list.remove(job_id)
-                    f = open(outputdir + "/logs.txt", "a+")
-                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                        job_id) + " CANCELLED\n")
+                    f = open(folder_path + "/logs.txt", "a+")
+                    f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
                     f.close()
             time.sleep(30)
 
-    f = open(outputdir + "/logs.txt", "a+")
+    f = open(folder_path + "/logs.txt", "a+")
     f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of TBSS\n")
     f.close()

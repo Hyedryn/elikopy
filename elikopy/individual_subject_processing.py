@@ -656,29 +656,45 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     f.close()
 
 
-def tbss_utils(controlroot, patientroot, outputdir, corrected = False):
+def tbss_utils(folder_path, corrected = False):
 
-    # transfer control_Fa into outputdir
-    dest_success = controlroot + "/out/patient_list.json"
+    # create the output directory
+    outputdir = folder_path + "/TBSS"
+    if not (os.path.exists(outputdir)):
+        try:
+            os.makedirs(outputdir)
+        except OSError:
+            print("Creation of the directory %s failed" % outputdir)
+            f = open(folder_path + "/logs.txt", "a+")
+            f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % outputdir)
+            f.close()
+        else:
+            print("Successfully created the directory %s " % outputdir)
+            f = open(folder_path + "/logs.txt", "a+")
+            f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % outputdir)
+            f.close()
+
+    # open the subject and is_control lists
+    dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
-    i = 0
-    for p in patient_list:
-        patient_path = os.path.splitext(p)[0]
-        shutil.copyfile(controlroot + "/out/dti/" + patient_path + "_fa.nii.gz", outputdir + "/control" + i + "_" + patient_path + "_fa.nii.gz")
-        i += 1
-    numcontrol = i
+    dest_iscontrol = folder_path + "/subjects/is_control.json"
+    with open(dest_iscontrol, 'r') as f:
+        is_control = json.load(f)
 
-    # transfer patient_Fa into outputdir
-    dest_success = patientroot + "/out/patient_list.json"
-    with open(dest_success, 'r') as f:
-        patient_list = json.load(f)
-    i = 0
-    for p in patient_list:
+    # transfer the FA files to the TBSS directory
+    numpatient = 0
+    numcontrol = 0
+    for index, p in patient_list:
         patient_path = os.path.splitext(p)[0]
-        shutil.copyfile(patientroot + "/out/dti/" + patient_path + "_fa.nii.gz", outputdir + "/patient" + i + "_" + patient_path + "_fa.nii.gz")
-        i += 1
-    numpatient = i
+        control_info = is_control[index]
+        if control_info:
+            shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz", outputdir + "/control" + numcontrol + "_" + patient_path + "_fa.nii.gz")
+            numcontrol += 1
+        else:
+            shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz", outputdir + "/case" + numpatient + "_" + patient_path + "_fa.nii.gz")
+            numpatient += 1
+
 
     import subprocess
 
