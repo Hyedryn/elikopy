@@ -2,6 +2,7 @@ CASE/
 CONTROL/
 T1/
 EXPORT_**/
+TBSS/	tbss_outputs
 logs.txt
 subjects/
 	subj_list.json  [contains subject IDs]
