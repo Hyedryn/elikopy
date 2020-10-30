@@ -464,7 +464,7 @@ def noddi_solo(folder_path, p):
     if os.path.isfile(wm_path):
         mask, _ = load_nifti(wm_path)
     else:
-        mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask=.nii.gz")
+        mask, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + "_brain_mask.nii.gz")
 
     # transform the bval, bvecs in a form suited for NODDI
     from dipy.core.gradients import gradient_table
