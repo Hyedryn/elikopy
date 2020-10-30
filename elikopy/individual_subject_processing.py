@@ -387,6 +387,7 @@ def white_mask_solo(folder_path, p):
         hmrf = TissueClassifierHMRF()
         initial_segmentation, final_segmentation, PVE = hmrf.classify(ap, nclass, beta)
         white_mask = np.where(final_segmentation == 3, 1, 0)
+        anat_affine = affine
 
     mask_path = folder_path + '/' + patient_path + "/masks"
     if not(os.path.exists(mask_path)):
