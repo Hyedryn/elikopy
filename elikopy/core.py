@@ -539,7 +539,7 @@ def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False)
 
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + CSD_bvalue + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + str(CSD_bvalue) + ")'",
                     "job_name": "mf_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 4,
