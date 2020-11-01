@@ -582,7 +582,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     if os.path.isfile(wm_path):
         mask, _ = load_nifti(wm_path)
     else:
-        mask, _ = load_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + "_brain_mask=.nii.gz")
+        mask, _ = load_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     # compute numfasc and peaks
     diamond_path = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond"
