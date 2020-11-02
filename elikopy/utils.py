@@ -140,7 +140,7 @@ def export_files(folder_path, step):
 
 
 def get_job_state(job_id):
-    cmd = "sacct --jobs=" + job_id + " -n -o state"
+    cmd = "sacct --jobs=" + str(job_id) + " -n -o state"
 
     proc = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
