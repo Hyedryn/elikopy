@@ -137,3 +137,11 @@ def export_files(folder_path, step):
     shutil.copyfile(folder_path + "/subjects/subj_list.json", export_path + "/subj_list.json")
     shutil.copyfile(folder_path + "/subjects/subj_error.json", export_path + "/subj_error.json")
     shutil.copyfile(folder_path + "/subjects/is_control.json", export_path + "/is_control.json")
+
+
+def get_job_state(job_id):
+    cmd = "sacct --jobs=" + job_id + " -n -o state"
+
+    proc = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    return (out.partition('\n')[0]).rstrip().strip()

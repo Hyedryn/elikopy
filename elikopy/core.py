@@ -11,7 +11,7 @@ import time
 import subprocess
 
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, mf_solo, tbss_utils
-from elikopy.utils import submit_job
+from elikopy.utils import submit_job, get_job_state
 
 
 def dicom_to_nifti(folder_path):
@@ -370,10 +370,11 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
 
     #Wait for all jobs to finish
     if slurm:
-        import pyslurm
+        #import pyslurm
+        job_info = []
         while job_list:
             for job_id in job_list[:]:
-                job_info = pyslurm.job().find_id(job_id)[0]
+                job_info["job_state"] = get_job_state(job_id)
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/logs.txt", "a+")
@@ -466,10 +467,10 @@ def dti(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
-        import pyslurm
+        job_info = []
         while job_list:
             for job_id in job_list[:]:
-                job_info = pyslurm.job().find_id(job_id)[0]
+                job_info["job_state"] = get_job_state(job_id)
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/logs.txt", "a+")
@@ -563,10 +564,10 @@ def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False)
 
     #Wait for all jobs to finish
     if slurm:
-        import pyslurm
+        job_info = []
         while job_list:
             for job_id in job_list[:]:
-                job_info = pyslurm.job().find_id(job_id)[0]
+                job_info["job_state"] = get_job_state(job_id)
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/logs.txt", "a+")
@@ -655,10 +656,10 @@ def white_mask(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
-        import pyslurm
+        job_info = []
         while job_list:
             for job_id in job_list[:]:
-                job_info = pyslurm.job().find_id(job_id)[0]
+                job_info["job_state"] = get_job_state(job_id)
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/logs.txt", "a+")
@@ -751,10 +752,10 @@ def noddi(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
-        import pyslurm
+        job_info = []
         while job_list:
             for job_id in job_list[:]:
-                job_info = pyslurm.job().find_id(job_id)[0]
+                job_info["job_state"] = get_job_state(job_id)
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/logs.txt", "a+")
@@ -847,10 +848,10 @@ def diamond(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
-        import pyslurm
+        job_info = []
         while job_list:
             for job_id in job_list[:]:
-                job_info = pyslurm.job().find_id(job_id)[0]
+                job_info["job_state"] = get_job_state(job_id)
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f=open(folder_path + "/logs.txt", "a+")
@@ -939,10 +940,10 @@ def tbss(folder_path, corrected=False, slurm=False):
     f.close()
 
     if slurm:
-        import pyslurm
+        job_info = []
         while job_list:
             for job_id in job_list[:]:
-                job_info = pyslurm.job().find_id(job_id)[0]
+                job_info["job_state"] = get_job_state(job_id)
                 if job_info["job_state"] == 'COMPLETED':
                     job_list.remove(job_id)
                     f = open(folder_path + "/logs.txt", "a+")
