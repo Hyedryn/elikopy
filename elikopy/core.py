@@ -371,7 +371,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     #Wait for all jobs to finish
     if slurm:
         #import pyslurm
-        job_info = []
+        job_info = {}
         while job_list:
             for job_id in job_list[:]:
                 job_info["job_state"] = get_job_state(job_id)
@@ -467,7 +467,7 @@ def dti(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
-        job_info = []
+        job_info = {}
         while job_list:
             for job_id in job_list[:]:
                 job_info["job_state"] = get_job_state(job_id)
@@ -564,7 +564,7 @@ def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False)
 
     #Wait for all jobs to finish
     if slurm:
-        job_info = []
+        job_info = {}
         while job_list:
             for job_id in job_list[:]:
                 job_info["job_state"] = get_job_state(job_id)
@@ -656,7 +656,7 @@ def white_mask(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
-        job_info = []
+        job_info = {}
         while job_list:
             for job_id in job_list[:]:
                 job_info["job_state"] = get_job_state(job_id)
@@ -752,7 +752,7 @@ def noddi(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
-        job_info = []
+        job_info = {}
         while job_list:
             for job_id in job_list[:]:
                 job_info["job_state"] = get_job_state(job_id)
@@ -848,7 +848,7 @@ def diamond(folder_path, slurm=False):
 
     #Wait for all jobs to finish
     if slurm:
-        job_info = []
+        job_info = {}
         while job_list:
             for job_id in job_list[:]:
                 job_info["job_state"] = get_job_state(job_id)
@@ -940,7 +940,7 @@ def tbss(folder_path, corrected=False, slurm=False):
     f.close()
 
     if slurm:
-        job_info = []
+        job_info = {}
         while job_list:
             for job_id in job_list[:]:
                 job_info["job_state"] = get_job_state(job_id)
