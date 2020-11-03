@@ -144,4 +144,13 @@ def get_job_state(job_id):
 
     proc = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
-    return (out.partition('\n')[0]).rstrip().strip()
+    try:
+        state = (out.partition('\n')[0]).rstrip().strip()
+    except Exception:
+        try:
+            state = out.rstrip().strip()
+        except Exception:
+            print("Double error" + out)
+            state = "NOSTATE"
+    return state
+            
