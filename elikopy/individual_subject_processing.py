@@ -597,7 +597,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
         gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
         response, ratio = auto_response(gtab_CSD, data_CSD, roi_radius=10, fa_thr=0.7)
         csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
-        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,relative_peak_threshold=.15, min_separation_angle=25, parallel=True, mask=mask,normalize_peaks=True)
+        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,relative_peak_threshold=.15, min_separation_angle=25, parallel=False, mask=mask,normalize_peaks=True)
         save_nifti(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz', csd_peaks.peak_dirs, affine)
         save_nifti(mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz', csd_peaks.peak_values, affine)
         normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
@@ -619,11 +619,11 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     mf_model = mf.MFModel(dictionary_path)
 
     # compute csf_mask and ear_mask
-    csf_mask = False
-    ear_mask = (numfasc >= 1)  # (numfasc == 1)
+    csf_mask = (numfasc >= 1)
+    ear_mask = False  # (numfasc == 1)
 
     # Fit to data:
-    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask, ear_mask=ear_mask, verbose=3, parallel=True)
+    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask, ear_mask=ear_mask, verbose=3, parallel=False)
 
     # extract info
     M0 = MF_fit.M0
