@@ -361,6 +361,7 @@ def white_mask_solo(folder_path, p):
         params0 = None
         starting_affine = rigid.affine
         affine = affreg.optimize(static, moving, transform, params0, static_grid2world, moving_grid2world, starting_affine=starting_affine)
+        """"
         transformed = affine.transform(moving)
         # final result of registration ==========================================
         anat = transformed
@@ -372,6 +373,18 @@ def white_mask_solo(folder_path, p):
         initial_segmentation, final_segmentation, PVE = hmrf.classify(anat, nclass, beta)
         # save the white matter mask ============================================
         white_mask = np.where(final_segmentation == 3, 1, 0)
+        """
+        # make the white matter segmentation ===================================
+        anat = moving
+        nclass = 3
+        beta = 0.1
+        hmrf = TissueClassifierHMRF()
+        initial_segmentation, final_segmentation, PVE = hmrf.classify(anat, nclass, beta)
+        # save the white matter mask ============================================
+        white_mask = np.where(final_segmentation == 3, 1, 0)
+        # transform the white matter mask ======================================
+        white_mask = affine.transform(white_mask)
+        anat_affine = static_grid2world
     else:
         # compute the white matter mask with the Anisotropic power map
         data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
