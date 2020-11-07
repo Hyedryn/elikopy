@@ -381,9 +381,12 @@ def white_mask_solo(folder_path, p):
         hmrf = TissueClassifierHMRF()
         initial_segmentation, final_segmentation, PVE = hmrf.classify(anat, nclass, beta)
         # save the white matter mask ============================================
-        white_mask = np.where(final_segmentation == 3, 1, 0)
+        white_mask = PVE[..., 2]
+        white_mask[white_mask >= 0.01] = 1
+        white_mask[white_mask < 0.01] = 0
         # transform the white matter mask ======================================
         white_mask = affine.transform(white_mask)
+        white_mask[white_mask != 0] = 1
         anat_affine = static_grid2world
     else:
         # compute the white matter mask with the Anisotropic power map
@@ -399,7 +402,9 @@ def white_mask_solo(folder_path, p):
         beta = 0.1
         hmrf = TissueClassifierHMRF()
         initial_segmentation, final_segmentation, PVE = hmrf.classify(ap, nclass, beta)
-        white_mask = np.where(final_segmentation == 3, 1, 0)
+        white_mask = PVE[..., 2]
+        white_mask[white_mask >= 0.01] = 1
+        white_mask[white_mask < 0.01] = 0
         anat_affine = affine
 
     mask_path = folder_path + '/' + patient_path + "/masks"
