@@ -499,7 +499,8 @@ def noddi_solo(folder_path, p):
     acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy)
 
     # fit the model to the data
-    NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask)
+    # NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask)
+    NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask, solver='mix', maxiter=300)
 
     # exctract the metrics
     fitted_parameters = NODDI_fit.fitted_parameters
@@ -511,6 +512,7 @@ def noddi_solo(folder_path, p):
     f_icvf = fitted_parameters['SD1WatsonDistributed_1_partial_volume_0']
     f_extra = ((1 - fitted_parameters['SD1WatsonDistributed_1_partial_volume_0']) * fitted_parameters['partial_volume_1'])
     mse = NODDI_fit.mean_squared_error(data)
+    R2 = NODDI_fit.R2_coefficient_of_determination(data)
 
     # save the nifti
     save_nifti(noddi_path + '/' + patient_path + '_noddi_mu.nii.gz', mu.astype(np.float32), affine)
@@ -521,6 +523,7 @@ def noddi_solo(folder_path, p):
     save_nifti(noddi_path + '/' + patient_path + '_noddi_icvf.nii.gz', f_icvf.astype(np.float32), affine)
     save_nifti(noddi_path + '/' + patient_path + '_noddi_fextra.nii.gz', f_extra.astype(np.float32), affine)
     save_nifti(noddi_path + '/' + patient_path + '_noddi_mse.nii.gz', mse.astype(np.float32), affine)
+    save_nifti(noddi_path + '/' + patient_path + '_noddi_R2.nii.gz', R2.astype(np.float32), affine)
 
     print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
