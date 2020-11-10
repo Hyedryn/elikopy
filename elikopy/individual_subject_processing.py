@@ -645,7 +645,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     mf_model = mf.MFModel(dictionary_path)
 
     # compute csf_mask and ear_mask
-    csf_mask = (numfasc >= 1)
+    csf_mask = True
     ear_mask = False  # (numfasc == 1)
 
     # Fit to data:
