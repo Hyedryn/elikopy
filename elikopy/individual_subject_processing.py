@@ -311,6 +311,10 @@ def white_mask_solo(folder_path, p):
     patient_path = os.path.splitext(p)[0]
     anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
     if os.path.isfile(anat_path):
+        print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
+        f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
+        f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
+        f.close()
         # Read the moving image ====================================
         anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
         data_gibbs, affine_gibbs = load_nifti(anat_path)
@@ -389,6 +393,10 @@ def white_mask_solo(folder_path, p):
         white_mask[white_mask != 0] = 1
         anat_affine = static_grid2world
     else:
+        print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
+        f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
+        f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
+        f.close()
         # compute the white matter mask with the Anisotropic power map
         data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
         mask, _ = load_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
