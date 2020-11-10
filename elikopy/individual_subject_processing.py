@@ -528,7 +528,7 @@ def noddi_solo(folder_path, p):
     f.close()
 
 
-def diamond_solo(folder_path, p, box):
+def diamond_solo(folder_path, p, box=None):
     print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
