@@ -829,7 +829,7 @@ def diamond(folder_path, slurm=False):
                     "ntasks": 1,
                     "cpus_per_task": 4,
                     "mem_per_cpu": 6096,
-                    "time": "10:00:00",
+                    "time": "14:00:00",
                     "mail_user": "quentin.dessain@student.uclouvain.be",
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + "slurm-%j.out",
