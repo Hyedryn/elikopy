@@ -10,7 +10,8 @@ import shutil
 import time
 import subprocess
 
-from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, mf_solo, tbss_utils
+from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
+    mf_solo, tbss_utils, noddi_amico_solo
 from elikopy.utils import submit_job, get_job_state
 
 
@@ -787,6 +788,100 @@ def noddi(folder_path, slurm=False):
     f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI\n")
     f.close()
 
+def noddi_amico(folder_path, slurm=False):
+    """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
+    Parameters
+    ----------
+    folder_path: Path to root folder containing all the dicom
+    """
+    f=open(folder_path + "/logs.txt", "a+")
+    f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Noddi AMICO with slurm:" + str(slurm) + "\n")
+    f.close()
+
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
+    job_list = []
+    f=open(folder_path + "/logs.txt", "a+")
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+
+        noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi_amico"
+        if not(os.path.exists(noddi_path)):
+            try:
+                os.makedirs(noddi_path)
+            except OSError:
+                print ("Creation of the directory %s failed" % noddi_path)
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
+                f2.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % noddi_path)
+                f2.close()
+            else:
+                print ("Successfully created the directory %s " % noddi_path)
+                f2=open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
+                f2.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
+                f2.close()
+
+        if slurm:
+            p_job = {
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_amico_solo; noddi_amico_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                    "job_name": "noddi_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 1,
+                    "mem_per_cpu": 8096,
+                    "time": "10:00:00",
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi_amico/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi_amico/' + "slurm-%j.err",
+                }
+            #p_job_id = pyslurm.job().submit_batch_job(p_job)
+            p_job_id = submit_job(p_job)
+            job_list.append(p_job_id)
+            f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+            f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            noddi_amico_solo(folder_path + "/subjects",p)
+            f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI AMICO on patient %s\n" % p)
+            f.flush()
+    f.close()
+
+    #Wait for all jobs to finish
+    if slurm:
+        job_info = {}
+        while job_list:
+            for job_id in job_list[:]:
+                job_info["job_state"] = get_job_state(job_id)
+                if job_info["job_state"] == 'COMPLETED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " COMPLETED\n")
+                    f.close()
+                if job_info["job_state"] == 'FAILED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " FAILED\n")
+                    f.close()
+                if job_info["job_state"] == 'OUT_OF_MEMORY':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " OUT_OF_MEMORY\n")
+                    f.close()
+                if job_info["job_state"] == 'TIMEOUT':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " TIMEOUT\n")
+                    f.close()
+                if job_info["job_state"] == 'CANCELLED':
+                    job_list.remove(job_id)
+                    f=open(folder_path + "/logs.txt", "a+")
+                    f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(job_id) + " CANCELLED\n")
+                    f.close()
+            time.sleep(30)
+
+    f=open(folder_path + "/logs.txt", "a+")
+    f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
+    f.close()
 
 def diamond(folder_path, slurm=False):
     """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.

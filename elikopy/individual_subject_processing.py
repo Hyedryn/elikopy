@@ -246,12 +246,12 @@ def dti_solo(folder_path, p):
         except OSError:
             print ("Creation of the directory %s failed" % dti_path)
             f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
+            f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
             f.close()
         else:
             print ("Successfully created the directory %s " % dti_path)
             f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
+            f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
             f.close()
 
     # load the data======================================
@@ -455,12 +455,12 @@ def noddi_solo(folder_path, p):
         except OSError:
             print ("Creation of the directory %s failed" % noddi_path)
             f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % noddi_path)
+            f.write("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % noddi_path)
             f.close()
         else:
             print ("Successfully created the directory %s " % noddi_path)
             f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
+            f.write("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
             f.close()
 
     # initialize the compartments model
@@ -530,6 +530,56 @@ def noddi_solo(folder_path, p):
     f.write("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
+def noddi_amico_solo(folder_path, p):
+    print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI AMICO processing for patient %s \n" % p)
+
+    import numpy as np
+    from dipy.io.image import load_nifti, save_nifti
+    from dipy.io.gradients import read_bvals_bvecs
+
+    patient_path = os.path.splitext(p)[0]
+
+    noddi_path = folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico"
+    if not(os.path.exists(noddi_path)):
+        try:
+            os.makedirs(noddi_path)
+        except OSError:
+            print ("Creation of the directory %s failed" % noddi_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
+            f.write("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % noddi_path)
+            f.close()
+        else:
+            print ("Successfully created the directory %s " % noddi_path)
+            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
+            f.write("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
+            f.close()
+
+    wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    if os.path.isfile(wm_path):
+        mask, _ = load_nifti(wm_path)
+    else:
+        mask, _ = load_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
+
+    import amico
+    amico.core.setup()
+    ae = amico.Evaluation(folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/', folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/', output_path=folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/')
+
+    schemeFile = folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/' + patient_path + "_NODDI_protocol.scheme"
+    dwi_preproc = folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc"
+
+    amico.util.fsl2scheme(dwi_preproc + ".bval", dwi_preproc + ".bvec", schemeFilename=schemeFile)
+
+    ae.load_data(dwi_filename = dwi_preproc + "nii.gz", scheme_filename = schemeFile, mask_filename = wm_path, b0_thr = 0)
+    ae.set_model("NODDI")
+    ae.generate_kernels()
+    ae.load_kernels()
+    ae.fit()
+    ae.save_results(path_suffix = patient_path)
+
+    print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
+    f.write("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.close()
 
 def diamond_solo(folder_path, p, box=None):
     print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
