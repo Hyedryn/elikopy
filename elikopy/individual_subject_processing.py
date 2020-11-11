@@ -569,7 +569,7 @@ def noddi_amico_solo(folder_path, p):
 
     amico.util.fsl2scheme(dwi_preproc + ".bval", dwi_preproc + ".bvec", schemeFilename=schemeFile)
 
-    ae.load_data(dwi_filename = dwi_preproc + "nii.gz", scheme_filename = schemeFile, mask_filename = wm_path, b0_thr = 0)
+    ae.load_data(dwi_filename = dwi_preproc + ".nii.gz", scheme_filename = schemeFile, mask_filename = wm_path, b0_thr = 0)
     ae.set_model("NODDI")
     ae.generate_kernels()
     ae.load_kernels()

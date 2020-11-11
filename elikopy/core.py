@@ -825,7 +825,7 @@ def noddi_amico(folder_path, slurm=False):
         if slurm:
             p_job = {
                     "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_amico_solo; noddi_amico_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
-                    "job_name": "noddi_" + p,
+                    "job_name": "noddi_amico_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
