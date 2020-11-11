@@ -562,7 +562,7 @@ def noddi_amico_solo(folder_path, p):
 
     import amico
     amico.core.setup()
-    ae = amico.Evaluation(folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/', folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/', output_path=folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/')
+    ae = amico.Evaluation(study_path = folder_path + '/noddi_AMICO/', subject = folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/', output_path=folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/')
 
     schemeFile = folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/' + patient_path + "_NODDI_protocol.scheme"
     dwi_preproc = folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc"

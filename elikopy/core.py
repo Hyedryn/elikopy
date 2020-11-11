@@ -798,6 +798,21 @@ def noddi_amico(folder_path, slurm=False):
     f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Noddi AMICO with slurm:" + str(slurm) + "\n")
     f.close()
 
+    kernel_path = folder_path + '/noddi_AMICO/'
+    if not(os.path.exists(kernel_path)):
+        try:
+            os.makedirs(kernel_path)
+        except OSError:
+            print ("Creation of the directory %s failed" % kernel_path)
+            f2=open(folder_path + "/logs.txt", "a+")
+            f2.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % kernel_path)
+            f2.close()
+        else:
+            print ("Successfully created the directory %s " % kernel_path)
+            f2=open(folder_path + "/logs.txt", "a+")
+            f2.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % kernel_path)
+            f2.close()
+
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
