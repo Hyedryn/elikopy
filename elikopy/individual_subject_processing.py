@@ -727,8 +727,9 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     DIFF_ex_f1 = MF_fit.DIFF_ex_f1
     fvf_f1 = MF_fit.fvf_f1
     fvf_tot = MF_fit.fvf_tot
-    frac_ear = MF_fit.frac_ear
-    D_ear = MF_fit.D_ear
+    # frac_ear = MF_fit.frac_ear
+    # D_ear = MF_fit.D_ear
+    frac_csf = MF_fit.frac_csf
     MSE = MF_fit.MSE
     R2 = MF_fit.R2
 
@@ -742,8 +743,9 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     save_nifti(mf_path + '/' + patient_path + '_mf_DIFF_ex_f1.nii.gz', DIFF_ex_f1.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_fvf_f1.nii.gz', fvf_f1.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_fvf_tot.nii.gz', fvf_tot.astype(np.float32), affine)
-    save_nifti(mf_path + '/' + patient_path + '_mf_frac_ear.nii.gz', frac_ear.astype(np.float32), affine)
-    save_nifti(mf_path + '/' + patient_path + '_mf_D_ear.nii.gz', D_ear.astype(np.float32), affine)
+    # save_nifti(mf_path + '/' + patient_path + '_mf_frac_ear.nii.gz', frac_ear.astype(np.float32), affine)
+    # save_nifti(mf_path + '/' + patient_path + '_mf_D_ear.nii.gz', D_ear.astype(np.float32), affine)
+    save_nifti(mf_path + '/' + patient_path + '_mf_frac_csf.nii.gz', frac_csf.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_MSE.nii.gz', MSE.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_R2.nii.gz', R2.astype(np.float32), affine)
 
