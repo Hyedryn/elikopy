@@ -898,7 +898,7 @@ def noddi_amico(folder_path, slurm=False):
     f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
     f.close()
 
-def diamond(folder_path, slurm=False):
+def diamond(folder_path, slurm=False, patient_list_m=None):
     """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
     Parameters
     ----------
@@ -912,6 +912,9 @@ def diamond(folder_path, slurm=False):
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
+    if patient_list_m:
+        patient_list = patient_list_m
+        
     job_list = []
     f=open(folder_path + "/logs.txt", "a+")
     for p in patient_list:
