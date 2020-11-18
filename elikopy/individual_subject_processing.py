@@ -680,9 +680,9 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     # compute numfasc and peaks
     diamond_path = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond"
     if os.path.exists(diamond_path):
-        tensor_files0 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t0.nrrd'
-        tensor_files1 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t1.nrrd'
-        fracs_file = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nrrd'
+        tensor_files0 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t0.nii.gz'
+        tensor_files1 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t1.nii.gz'
+        fracs_file = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nii.gz'
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,peakmode='tensor', mask=mask, frac12=fracs_file)
     else:
         sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue-5) <= bvals, bvals <= (CSD_bvalue+5)))
