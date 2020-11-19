@@ -249,7 +249,7 @@ def patient_list(folder_path):
     f.close()
 
 
-def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False):
+def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False, timeout=None):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
     Parameters
@@ -293,7 +293,20 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 f2.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % preproc_path)
                 f2.close()
         if slurm:
-            if not denoising and not eddy:
+            if timeout:
+                p_job = {
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "job_name": "preproc_" + p,
+                    "ntasks": 1,
+                    "cpus_per_task": 8,
+                    "mem_per_cpu": 6096,
+                    "time": timeout,
+                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_type": "FAIL",
+                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                }
+            elif not denoising and not eddy:
                 p_job = {
                     "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
                     "job_name": "preproc_" + p,
