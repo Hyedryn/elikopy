@@ -397,6 +397,9 @@ def white_mask_solo(folder_path, p):
         f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
         f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
         f.close()
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Warning: Mask done from AP for patient %s \n" % p)
+        f.close()
         # compute the white matter mask with the Anisotropic power map
         data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
         mask, _ = load_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
