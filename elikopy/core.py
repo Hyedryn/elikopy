@@ -249,7 +249,7 @@ def patient_list(folder_path):
     f.close()
 
 
-def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False, timeout=None):
+def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False, timeout=None, patient_list_m=None):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
     Parameters
@@ -272,6 +272,9 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
+
+    if patient_list_m:
+        patient_list = patient_list_m
 
     job_list = []
 
@@ -421,7 +424,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     f.close()
 
 
-def dti(folder_path, slurm=False):
+def dti(folder_path, slurm=False, patient_list_m=None):
     """Perform dti and store the data in the out/dti folder.
     Parameters
     ----------
@@ -434,6 +437,9 @@ def dti(folder_path, slurm=False):
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
+
+    if patient_list_m:
+        patient_list = patient_list_m
 
     job_list = []
     f=open(folder_path + "/logs.txt", "a+")
@@ -517,7 +523,7 @@ def dti(folder_path, slurm=False):
     f.close()
 
 
-def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False):
+def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False, patient_list_m=None):
     """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
     Parameters
     ----------
@@ -531,6 +537,9 @@ def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False)
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
+
+    if patient_list_m:
+        patient_list = patient_list_m
 
     job_list = []
     f=open(folder_path + "/logs.txt", "a+")
@@ -622,7 +631,7 @@ def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False,
     """
 
 
-def white_mask(folder_path, slurm=False):
+def white_mask(folder_path, slurm=False, patient_list_m=None):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if T1 is not available
     Parameters
     ----------
@@ -639,6 +648,9 @@ def white_mask(folder_path, slurm=False):
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
+
+    if patient_list_m:
+        patient_list = patient_list_m
 
     job_list = []
     f=open(folder_path + "/logs.txt", "a+")
@@ -706,7 +718,7 @@ def white_mask(folder_path, slurm=False):
     f.close()
 
 
-def noddi(folder_path, slurm=False):
+def noddi(folder_path, slurm=False, patient_list_m=None):
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
     Parameters
     ----------
@@ -719,6 +731,9 @@ def noddi(folder_path, slurm=False):
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
+
+    if patient_list_m:
+        patient_list = patient_list_m
 
     job_list = []
     f=open(folder_path + "/logs.txt", "a+")
@@ -801,7 +816,7 @@ def noddi(folder_path, slurm=False):
     f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI\n")
     f.close()
 
-def noddi_amico(folder_path, slurm=False):
+def noddi_amico(folder_path, slurm=False, patient_list_m=None):
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
     Parameters
     ----------
@@ -829,6 +844,9 @@ def noddi_amico(folder_path, slurm=False):
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
+
+    if patient_list_m:
+        patient_list = patient_list_m
 
     job_list = []
     f=open(folder_path + "/logs.txt", "a+")
@@ -927,7 +945,7 @@ def diamond(folder_path, slurm=False, patient_list_m=None):
 
     if patient_list_m:
         patient_list = patient_list_m
-        
+
     job_list = []
     f=open(folder_path + "/logs.txt", "a+")
     for p in patient_list:
