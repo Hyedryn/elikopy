@@ -502,8 +502,8 @@ def noddi_solo(folder_path, p):
     acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy)
 
     # fit the model to the data
-    # NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask)
-    NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask, solver='mix', maxiter=300)
+    NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask)
+    #NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask, solver='mix', maxiter=300)
 
     # exctract the metrics
     fitted_parameters = NODDI_fit.fitted_parameters
