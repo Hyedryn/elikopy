@@ -249,7 +249,7 @@ def patient_list(folder_path):
     f.close()
 
 
-def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False, timeout=None, patient_list_m=None):
+def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False, timeout=None, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
     Parameters
@@ -304,7 +304,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "cpus_per_task": 8,
                     "mem_per_cpu": 6096,
                     "time": timeout,
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
@@ -317,7 +317,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
                     "time": "00:30:00",
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
@@ -330,7 +330,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "cpus_per_task": 8,
                     "mem_per_cpu": 6096,
                     "time": "14:00:00",
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
@@ -343,7 +343,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "cpus_per_task": 1,
                     "mem_per_cpu": 9096,
                     "time": "3:00:00",
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
@@ -356,7 +356,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "cpus_per_task": 4,
                     "mem_per_cpu": 6096,
                     "time": "12:00:00",
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
@@ -369,7 +369,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
                     "time": "1:00:00",
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
@@ -424,7 +424,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     f.close()
 
 
-def dti(folder_path, slurm=False, patient_list_m=None):
+def dti(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """Perform dti and store the data in the out/dti folder.
     Parameters
     ----------
@@ -469,7 +469,7 @@ def dti(folder_path, slurm=False, patient_list_m=None):
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
                     "time": "1:00:00",
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err",
@@ -523,7 +523,7 @@ def dti(folder_path, slurm=False, patient_list_m=None):
     f.close()
 
 
-def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False, patient_list_m=None):
+def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
     Parameters
     ----------
@@ -569,7 +569,7 @@ def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False,
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
                     "time": "20:00:00",
-                    "mail_user": "mathieu.simon@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/mf/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/mf/' + "slurm-%j.err",
@@ -631,7 +631,7 @@ def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False,
     """
 
 
-def white_mask(folder_path, slurm=False, patient_list_m=None):
+def white_mask(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if T1 is not available
     Parameters
     ----------
@@ -664,7 +664,7 @@ def white_mask(folder_path, slurm=False, patient_list_m=None):
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
                     "time": "3:00:00",
-                    "mail_user": "mathieu.simon@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.err",
@@ -718,7 +718,7 @@ def white_mask(folder_path, slurm=False, patient_list_m=None):
     f.close()
 
 
-def noddi(folder_path, slurm=False, patient_list_m=None):
+def noddi(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
     Parameters
     ----------
@@ -763,7 +763,7 @@ def noddi(folder_path, slurm=False, patient_list_m=None):
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
                     "time": "10:00:00",
-                    "mail_user": "mathieu.simon@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.err",
@@ -816,7 +816,7 @@ def noddi(folder_path, slurm=False, patient_list_m=None):
     f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI\n")
     f.close()
 
-def noddi_amico(folder_path, slurm=False, patient_list_m=None):
+def noddi_amico(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
     Parameters
     ----------
@@ -876,7 +876,7 @@ def noddi_amico(folder_path, slurm=False, patient_list_m=None):
                     "cpus_per_task": 1,
                     "mem_per_cpu": 8096,
                     "time": "10:00:00",
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi_amico/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi_amico/' + "slurm-%j.err",
@@ -929,7 +929,7 @@ def noddi_amico(folder_path, slurm=False, patient_list_m=None):
     f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
     f.close()
 
-def diamond(folder_path, slurm=False, patient_list_m=None):
+def diamond(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
     Parameters
     ----------
@@ -974,7 +974,7 @@ def diamond(folder_path, slurm=False, patient_list_m=None):
                     "cpus_per_task": 4,
                     "mem_per_cpu": 6096,
                     "time": "14:00:00",
-                    "mail_user": "quentin.dessain@student.uclouvain.be",
+                    "mail_user": email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + "slurm-%j.err",
@@ -1028,7 +1028,7 @@ def diamond(folder_path, slurm=False, patient_list_m=None):
     f.close()
 
 
-def tbss(folder_path, corrected=False, slurm=False):
+def tbss(folder_path, corrected=False, slurm=False, email="quentin.dessain@student.uclouvain.be"):
     """ Perform tract base spatial statistics between the control data and case data
     Parameters
     ----------
@@ -1069,7 +1069,7 @@ def tbss(folder_path, corrected=False, slurm=False):
             "cpus_per_task": 1,
             "mem_per_cpu": 8096,
             "time": "20:00:00",
-            "mail_user": "mathieu.simon@student.uclouvain.be",
+            "mail_user": email,
             "mail_type": "FAIL",
             "output": tbss_path + '/' + "slurm-%j.out",
             "error": tbss_path + '/' + "slurm-%j.err",
