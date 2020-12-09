@@ -718,7 +718,7 @@ def white_mask(folder_path, slurm=False, patient_list_m=None, email="quentin.des
     f.close()
 
 
-def noddi(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
+def noddi(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be", force_brain_mask=False):
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
     Parameters
     ----------
@@ -757,7 +757,7 @@ def noddi(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@
 
         if slurm:
             p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\"," + str(force_brain_mask) + ")'",
                     "job_name": "noddi_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -774,7 +774,7 @@ def noddi(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            noddi_solo(folder_path + "/subjects",p)
+            noddi_solo(folder_path + "/subjects",p,force_brain_mask)
             f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
             f.flush()
     f.close()
@@ -817,7 +817,7 @@ def noddi(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@
     f.close()
 
 
-def noddi_amico(folder_path, slurm=False, patient_list_m=None):
+def noddi_amico(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be", force_brain_mask=False):
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
     Parameters
     ----------
@@ -931,7 +931,7 @@ def noddi_amico(folder_path, slurm=False, patient_list_m=None):
     f.close()
 
 
-def diamond(folder_path, slurm=False, patient_list_m=None):
+def diamond(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
     Parameters
     ----------

@@ -442,7 +442,7 @@ def white_mask_solo(folder_path, p):
     f.close()
 
 
-def noddi_solo(folder_path, p):
+def noddi_solo(folder_path, p, force_brain_mask=False):
     print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
 
     import numpy as np
@@ -490,7 +490,7 @@ def noddi_solo(folder_path, p):
     data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
     bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
-    if os.path.isfile(wm_path):
+    if os.path.isfile(wm_path) and not force_brain_mask:
         mask, _ = load_nifti(wm_path)
     else:
         mask, _ = load_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
