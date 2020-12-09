@@ -46,10 +46,10 @@ Want to contribute? Great!
 Do not hesitate to open issue or pull request!
 ### Todos
 
- - Fully implement Microstructure Fingerprinting
- - Fully implement DIAMOND
- - Fully implement NODDI
  - Fully implement TBSS
+ - Fully implement Quality Control Metrics
+ - Implement visualisation functions
+ - Release a complete and accurate documentation for the library
 
 
 **Free Software, Hell Yeah!**

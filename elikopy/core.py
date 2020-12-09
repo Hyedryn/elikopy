@@ -816,7 +816,8 @@ def noddi(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@
     f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI\n")
     f.close()
 
-def noddi_amico(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
+
+def noddi_amico(folder_path, slurm=False, patient_list_m=None):
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
     Parameters
     ----------
@@ -929,7 +930,8 @@ def noddi_amico(folder_path, slurm=False, patient_list_m=None, email="quentin.de
     f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
     f.close()
 
-def diamond(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
+
+def diamond(folder_path, slurm=False, patient_list_m=None):
     """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
     Parameters
     ----------
