@@ -80,154 +80,87 @@ def patient_list(folder_path):
     """
 
     import os
+    import re
 
     error = []
     success = []
-    iscontrol = {}
+    type = {}
+    pattern = re.compile("data_\\d")
 
-    for file in os.listdir(folder_path + "/CONTROL"):
+    for typeFolder in os.listdir(folder_path):
+        if pattern.match(typeFolder):
+            subjectType = int(re.findall(r'\d+', typeFolder)[0])
+            typeFolderName = "/" + typeFolder
 
-        if file.endswith(".nii"):
-            name = os.path.splitext(file)[0]
-            bvec = os.path.splitext(file)[0] + ".bvec"
-            bval = os.path.splitext(file)[0] + ".bval"
-            if bvec not in os.listdir(folder_path) or bval not in os.listdir(folder_path):
-                error.append(name)
-            else:
-                success.append(name)
-                iscontrol[name]=True
+            for file in os.listdir(folder_path + typeFolderName):
 
-        if file.endswith(".nii.gz"):
-            name = os.path.splitext(os.path.splitext(file)[0])[0]
-            bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
-            bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
-            if bvec not in os.listdir(folder_path + "/CONTROL") or bval not in os.listdir(folder_path + "/CONTROL"):
-                error.append(name)
-            else:
-                success.append(name)
-                iscontrol[name]=True
-                dest = folder_path + "/subjects/" + name + "/dMRI/raw/"
-                if not (os.path.exists(dest)):
-                    try:
-                        os.makedirs(dest)
-                    except OSError:
-                        print("Creation of the directory %s failed" % dest)
-                        f=open(folder_path + "/logs.txt", "a+")
-                        f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
-                        f.close()
+                if file.endswith(".nii"):
+                    name = os.path.splitext(file)[0]
+                    bvec = os.path.splitext(file)[0] + ".bvec"
+                    bval = os.path.splitext(file)[0] + ".bval"
+                    if bvec not in os.listdir(folder_path) or bval not in os.listdir(folder_path):
+                        error.append(name)
                     else:
-                        print("Successfully created the directory %s " % dest)
-                        f=open(folder_path + "/logs.txt", "a+")
-                        f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
-                        f.close()
+                        success.append(name)
+                        type[name]=subjectType
 
-                shutil.copyfile(folder_path + "/CONTROL/" + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
-                shutil.copyfile(folder_path + "/CONTROL/" + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
-                shutil.copyfile(folder_path + "/CONTROL/" + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
-                try:
-                    shutil.copyfile(folder_path + "/CONTROL/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
-                except:
-                    print('WARNING: JSON missing for patient', name)
-
-                try:
-                    shutil.copyfile(folder_path + "/CONTROL/" + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
-                    shutil.copyfile(folder_path + "/CONTROL/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
-                except:
-                    print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
-
-                anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
-                if os.path.isfile(anat_path):
-                    dest = folder_path + "/subjects/" + name + "/T1/"
-                    if not (os.path.exists(dest)):
-                        try:
-                            os.makedirs(dest)
-                        except OSError:
-                            print("Creation of the directory %s failed" % dest)
-                            f = open(folder_path + "/logs.txt", "a+")
-                            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
-                                "%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
-                            f.close()
-                        else:
-                            print("Successfully created the directory %s " % dest)
-                            f = open(folder_path + "/logs.txt", "a+")
-                            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
-                                "%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
-                            f.close()
-                    shutil.copyfile(folder_path + "/T1/" + name + "_T1.nii.gz", folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
-
-
-
-
-    for file in os.listdir(folder_path + "/CASE"):
-
-        if file.endswith(".nii"):
-            name = os.path.splitext(file)[0]
-            bvec = os.path.splitext(file)[0] + ".bvec"
-            bval = os.path.splitext(file)[0] + ".bval"
-            if bvec not in os.listdir(folder_path) or bval not in os.listdir(folder_path):
-                error.append(name)
-            else:
-                success.append(name)
-                iscontrol[name]=False
-
-        if file.endswith(".nii.gz"):
-            name = os.path.splitext(os.path.splitext(file)[0])[0]
-            bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
-            bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
-            if bvec not in os.listdir(folder_path+ "/CASE") or bval not in os.listdir(folder_path+ "/CASE"):
-                error.append(name)
-            else:
-                success.append(name)
-                iscontrol[name]=False
-                dest = folder_path + "/subjects/" + name + "/dMRI/raw/"
-                if not (os.path.exists(dest)):
-                    try:
-                        os.makedirs(dest)
-                    except OSError:
-                        print("Creation of the directory %s failed" % dest)
-                        f=open(folder_path + "/logs.txt", "a+")
-                        f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
-                        f.close()
+                if file.endswith(".nii.gz"):
+                    name = os.path.splitext(os.path.splitext(file)[0])[0]
+                    bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
+                    bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
+                    if bvec not in os.listdir(folder_path + typeFolderName) or bval not in os.listdir(folder_path + typeFolderName):
+                        error.append(name)
                     else:
-                        print("Successfully created the directory %s " % dest)
-                        f=open(folder_path + "/logs.txt", "a+")
-                        f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
-                        f.close()
+                        success.append(name)
+                        type[name]=subjectType
+                        dest = folder_path + "/subjects/" + name + "/dMRI/raw/"
+                        if not (os.path.exists(dest)):
+                            try:
+                                os.makedirs(dest)
+                            except OSError:
+                                print("Creation of the directory %s failed" % dest)
+                                f=open(folder_path + "/logs.txt", "a+")
+                                f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
+                                f.close()
+                            else:
+                                print("Successfully created the directory %s " % dest)
+                                f=open(folder_path + "/logs.txt", "a+")
+                                f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
+                                f.close()
 
-                shutil.copyfile(folder_path + "/CASE/" + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
-                shutil.copyfile(folder_path + "/CASE/" + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
-                shutil.copyfile(folder_path + "/CASE/" + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
-                try:
-                    shutil.copyfile(folder_path + "/CASE/" + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
-                except:
-                    print('WARNING: JSON missing for patient', name)
-
-                try:
-                    shutil.copyfile(folder_path + "/CASE/" + "index.txt", folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
-                    shutil.copyfile(folder_path + "/CASE/" + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
-                except:
-                    print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
-
-
-                anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
-                if os.path.isfile(anat_path):
-                    dest = folder_path + "/subjects/" + name + "/T1/"
-                    if not (os.path.exists(dest)):
+                        shutil.copyfile(folder_path + typeFolderName + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
+                        shutil.copyfile(folder_path + typeFolderName + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
+                        shutil.copyfile(folder_path + typeFolderName + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
                         try:
-                            os.makedirs(dest)
-                        except OSError:
-                            print("Creation of the directory %s failed" % dest)
-                            f = open(folder_path + "/logs.txt", "a+")
-                            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
-                                "%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
-                            f.close()
-                        else:
-                            print("Successfully created the directory %s " % dest)
-                            f = open(folder_path + "/logs.txt", "a+")
-                            f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
-                                "%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
-                            f.close()
-                    shutil.copyfile(folder_path + "/T1/" + name + "_T1.nii.gz",folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
+                            shutil.copyfile(folder_path + typeFolderName + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
+                        except:
+                            print('WARNING: JSON missing for patient', name)
+
+                        try:
+                            shutil.copyfile(folder_path + typeFolderName + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                            shutil.copyfile(folder_path + typeFolderName + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
+                        except:
+                            print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
+
+                        anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
+                        if os.path.isfile(anat_path):
+                            dest = folder_path + "/subjects/" + name + "/T1/"
+                            if not (os.path.exists(dest)):
+                                try:
+                                    os.makedirs(dest)
+                                except OSError:
+                                    print("Creation of the directory %s failed" % dest)
+                                    f = open(folder_path + "/logs.txt", "a+")
+                                    f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
+                                        "%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dest)
+                                    f.close()
+                                else:
+                                    print("Successfully created the directory %s " % dest)
+                                    f = open(folder_path + "/logs.txt", "a+")
+                                    f.write("[PATIENT LIST] " + datetime.datetime.now().strftime(
+                                        "%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dest)
+                                    f.close()
+                            shutil.copyfile(folder_path + "/T1/" + name + "_T1.nii.gz", folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
 
     error = list(dict.fromkeys(error))
     success = list(dict.fromkeys(success))
@@ -240,9 +173,9 @@ def patient_list(folder_path):
     with open(dest_success, 'w') as f:
         json.dump(success, f)
 
-    dest_iscontrol = folder_path + "/subjects/is_control.json"
-    with open(dest_iscontrol, 'w') as f:
-        json.dump(iscontrol, f)
+    dest_type = folder_path + "/subjects/subj_type.json"
+    with open(dest_type, 'w') as f:
+        json.dump(type, f)
 
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[PATIENT LIST] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
