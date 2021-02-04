@@ -12,7 +12,7 @@ import subprocess
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gibbs=False):
+def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gibbs=False, topup=False):
 
     patient_path = os.path.splitext(p)[0]
     preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc/bet"
@@ -89,7 +89,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
     f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
     f.close()
 
-    if not(denoising) and not(eddy) and not(gibbs):
+    if not(denoising) and not(eddy) and not(gibbs) and not(topup):
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32),affine)
         save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32),affine)
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
@@ -120,6 +120,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
         denoised = mppca(b0_mask, patch_radius=pr)
         save_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz', denoised.astype(np.float32), affine)
+
         #save_nifti(denoising_path + '/' + patient_path + '_mppca_mask.nii.gz', mask.astype(np.float32),affine)
 
         print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of denoising for patient %s \n" % p)
@@ -128,14 +129,13 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
         #data, affine = load_nifti(nifti_path)
         b0_mask = denoised
 
-        if not eddy and not gibbs:
+        if not eddy and not gibbs and not topup:
             save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32),affine)
             save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32),affine)
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
     if gibbs:
-
         gibbs_path = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs'
         if not(os.path.exists(gibbs_path)):
             try:
@@ -155,7 +155,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
         corrected_path = folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/" + patient_path + '_gibbscorrected.nii.gz'
         save_nifti(corrected_path, data.astype(np.float32), affine)
 
-        if not eddy:
+        if not eddy and not topup:
             save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', data.astype(np.float32),affine)
             save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32),affine)
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
@@ -170,6 +170,82 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
     data= None
     affine = None
     gc.collect()
+
+    if topup:
+        cmd = 'topup --imain = all_my_b0_images.nii --datain= acquisition_parameters.txt --config = b02b0.cnf --out = my_output"'
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
+
+        topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
+        if not (os.path.exists(topup_path)):
+            try:
+                os.makedirs(topup_path)
+            except OSError:
+                print("Creation of the directory %s failed" % topup_path)
+                f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") +
+                        ": Creation of the directory %s failed\n" % topup_path)
+                f.close()
+            else:
+                print("Successfully created the directory %s " % topup_path)
+                f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % topup_path)
+                f.close()
+
+        if gibbs:
+            imain = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz'
+        elif denoising:
+            imain = folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz'
+        else:
+            imain= folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
+
+        bashCommand = 'topup --imain="' + imain + '" --config="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --verbose'
+
+        import subprocess
+        bashcmd = bashCommand.split()
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
+        f.close()
+
+        topup_log = open(folder_path + '/' + patient_path + "/dMRI/preproc/topup/topup_logs.txt", "a+")
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=topup_log,
+                                   stderr=subprocess.STDOUT)
+
+        # wait until topup finish
+        output, error = process.communicate()
+
+        bashCommand2 = 'applytopup --imain="' + imain + '" --inindex=1 --datatin="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+
+        process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
+                                   stderr=subprocess.STDOUT)
+
+        # wait until topup finish
+        output, error = process2.communicate()
+
+        topup_log.close()
+
+        print("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
+        f.close()
+
+        if not eddy:
+            data, affine = load_nifti(
+                folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + "_unwarped.nii.gz")
+            b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
+            save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+                       b0_mask.astype(np.float32), affine)
+            save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                       mask.astype(np.float32), affine)
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
+                            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
+                            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
 
     if eddy:
@@ -190,7 +266,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
                 f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % eddy_path)
                 f.close()
 
-        if gibbs:
+        if topup:
+            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_unwarped.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
+        elif gibbs:
             bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
         elif denoising:
             bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'

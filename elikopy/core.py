@@ -182,7 +182,7 @@ def patient_list(folder_path):
     f.close()
 
 
-def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False, timeout=None, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
+def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False, gibbs=False, topup=False, timeout=None, patient_list_m=None, email="quentin.dessain@student.uclouvain.be"):
     """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc
     Parameters
@@ -231,7 +231,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
         if slurm:
             if timeout:
                 p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ",topup=" + str(topup) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
@@ -244,7 +244,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif not denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ",topup=" + str(topup) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -257,7 +257,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ",topup=" + str(topup) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
@@ -270,7 +270,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif denoising and not eddy:
                 p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ",topup=" + str(topup) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -283,7 +283,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             elif not denoising and eddy:
                 p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(gibbs) + ",topup=" + str(topup) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 4,
@@ -296,7 +296,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
                 }
             else:
                 p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ")'",
+                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",topup=" + str(topup) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 1,
@@ -313,7 +313,7 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            preproc_solo(folder_path + "/subjects",p,eddy=eddy,denoising=denoising,reslice=reslice,gibbs=gibbs)
+            preproc_solo(folder_path + "/subjects",p,eddy=eddy,denoising=denoising,reslice=reslice,gibbs=gibbs,topup=topup)
             f.write("[PREPROC] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
             f.flush()
     f.close()
