@@ -90,7 +90,7 @@ def patient_list(folder_path):
     for typeFolder in os.listdir(folder_path):
         if pattern.match(typeFolder):
             subjectType = int(re.findall(r'\d+', typeFolder)[0])
-            typeFolderName = "/" + typeFolder
+            typeFolderName = "/" + typeFolder + "/"
 
             for file in os.listdir(folder_path + typeFolderName):
 
