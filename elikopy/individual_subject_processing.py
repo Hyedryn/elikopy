@@ -12,7 +12,16 @@ from dipy.denoise.gibbs import gibbs_removal
 
 
 def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gibbs=False, topup=False):
+    """
 
+    :param folder_path:
+    :param p:
+    :param eddy:
+    :param denoising:
+    :param reslice:
+    :param gibbs:
+    :param topup:
+    """
     patient_path = os.path.splitext(p)[0]
     preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc/bet"
     if not(os.path.exists(preproc_path)):
@@ -307,6 +316,11 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
 
 def dti_solo(folder_path, p):
+    """
+
+    :param folder_path:
+    :param p:
+    """
     print("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DTI processing for patient %s \n" % p)
 
     from dipy.io.image import load_nifti, save_nifti
@@ -370,7 +384,11 @@ def dti_solo(folder_path, p):
 
 
 def white_mask_solo(folder_path, p):
+    """
 
+    :param folder_path:
+    :param p:
+    """
     print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
 
     from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
@@ -520,6 +538,15 @@ def white_mask_solo(folder_path, p):
 
 
 def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False):
+    """
+
+    :param folder_path:
+    :param p:
+    :param force_brain_mask:
+    :param lambda_iso_diff:
+    :param lambda_par_diff:
+    :param use_amico:
+    """
     print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
 
     import numpy as np
@@ -617,6 +644,11 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
 
 
 def noddi_amico_solo(folder_path, p):
+    """
+
+    :param folder_path:
+    :param p:
+    """
     print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI AMICO processing for patient %s \n" % p)
 
     import numpy as np
@@ -669,6 +701,12 @@ def noddi_amico_solo(folder_path, p):
 
 
 def diamond_solo(folder_path, p, box=None):
+    """
+
+    :param folder_path:
+    :param p:
+    :param box:
+    """
     print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
@@ -727,6 +765,13 @@ def diamond_solo(folder_path, p, box=None):
 
 
 def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
+    """
+
+    :param folder_path:
+    :param p:
+    :param dictionary_path:
+    :param CSD_bvalue:
+    """
     print("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
@@ -843,7 +888,11 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
 
 
 def tbss_utils(folder_path, corrected = False):
+    """
 
+    :param folder_path:
+    :param corrected:
+    """
     # create the output directory
     outputdir = folder_path + "/TBSS"
     if not (os.path.exists(outputdir)):

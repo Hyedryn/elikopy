@@ -8,6 +8,11 @@ import subprocess
 
 
 def submit_job(job_info):
+    """
+
+    :param job_info:
+    :return:
+    """
     # Construct sbatch command
     slurm_cmd = ["sbatch"]
     script=False
@@ -50,6 +55,12 @@ def submit_job(job_info):
 
 
 def anonymise_nifti(rootdir,anonymize_json,rename):
+    """
+
+    :param rootdir:
+    :param anonymize_json:
+    :param rename:
+    """
     import json
     import os
 
@@ -110,6 +121,7 @@ def anonymise_nifti(rootdir,anonymize_json,rename):
 def export_files(folder_path, step):
     """
     Create an export folder in the root folder containing the results of step for each patient in a single folder
+
     :param folder_path: root folder
     :param step: step to export
     :return: nothing
@@ -140,6 +152,11 @@ def export_files(folder_path, step):
 
 
 def get_job_state(job_id):
+    """
+
+    :param job_id:
+    :return:
+    """
     cmd = "sacct --jobs=" + str(job_id) + " -n -o state"
 
     proc = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
