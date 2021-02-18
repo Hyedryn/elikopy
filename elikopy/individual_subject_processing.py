@@ -172,7 +172,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
     gc.collect()
 
     if topup:
-        cmd = 'topup --imain = all_my_b0_images.nii --datain= acquisition_parameters.txt --config = b02b0.cnf --out = my_output"'
+        cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config =b02b0.cnf --out=my_output"'
         print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
 
         topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
@@ -520,7 +520,7 @@ def white_mask_solo(folder_path, p):
     f.close()
 
 
-def noddi_solo(folder_path, p, force_brain_mask=False):
+def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False):
     print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
 
     import numpy as np
@@ -555,14 +555,14 @@ def noddi_solo(folder_path, p, force_brain_mask=False):
     watson_dispersed_bundle = SD1WatsonDistributed(models=[stick, zeppelin])
     watson_dispersed_bundle.set_tortuous_parameter('G2Zeppelin_1_lambda_perp', 'C1Stick_1_lambda_par', 'partial_volume_0')
     watson_dispersed_bundle.set_equal_parameter('G2Zeppelin_1_lambda_par', 'C1Stick_1_lambda_par')
-    watson_dispersed_bundle.set_fixed_parameter('G2Zeppelin_1_lambda_par', 1.7e-9)
+    watson_dispersed_bundle.set_fixed_parameter('G2Zeppelin_1_lambda_par', lambda_par_diff)
 
     # build the NODDI model
     from dmipy.core.modeling_framework import MultiCompartmentModel
     NODDI_mod = MultiCompartmentModel(models=[ball, watson_dispersed_bundle])
 
     # fix the isotropic diffusivity
-    NODDI_mod.set_fixed_parameter('G1Ball_1_lambda_iso', 3e-9)
+    NODDI_mod.set_fixed_parameter('G1Ball_1_lambda_iso', lambda_iso_diff)
 
     # load the data
     data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
@@ -579,9 +579,14 @@ def noddi_solo(folder_path, p, force_brain_mask=False):
     gtab_dipy = gradient_table(bvals, bvecs)
     acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy)
 
-    # fit the model to the data
-    NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask)
-    #NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask, solver='mix', maxiter=300)
+    if use_amico:
+        # fit the model to the data using noddi amico
+        from dmipy.optimizers import amico_cvxpy
+        NODDI_fit = amico_cvxpy.AmicoCvxpyOptimizer(acq_scheme_dmipy, data, mask=mask)
+    else:
+        # fit the model to the data
+        NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask)
+        # NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask, solver='mix', maxiter=300)
 
     # exctract the metrics
     fitted_parameters = NODDI_fit.fitted_parameters
