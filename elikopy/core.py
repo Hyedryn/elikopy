@@ -16,13 +16,10 @@ from elikopy.utils import submit_job, get_job_state
 
 
 def dicom_to_nifti(folder_path):
-    """Convert dicom data into nifti. Converted dicom are then moved to a sub-folder named original_data
+    """ Convert dicom data into nifti. Converted dicom are then moved to a sub-folder named original_data
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
-    Returns
-    -------
-    /
+    :param folder_path: Path to root folder containing all the dicom
     Notes
     -----
     Dicom can be organised into sub folder or in the root folder
@@ -70,7 +67,7 @@ def patient_list(folder_path):
      in the out sub-directory. All the valid patient are stored in a file named patient_list.json
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
+    :param folder_path: Path to root folder containing all the dicom
     Notes
     -----
     /
@@ -187,9 +184,9 @@ def preproc(folder_path, eddy=False, denoising=False, slurm=False, reslice=False
     located in the folder out/preproc
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
-    eddy: If True, eddy is called
-    denoising: If True, denoising is called
+    :param folder_path: Path to root folder containing all the dicom
+    :param eddy: If True, eddy is called
+    :param denoising: If True, denoising is called
     Notes
     -----
     All the function executed after this function MUST take input data from folder_path/out/preproc/final
@@ -361,7 +358,7 @@ def dti(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@st
     """Perform dti and store the data in the out/dti folder.
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
+    :param folder_path: Path to root folder containing all the dicom
     """
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[DTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DTI with slurm:" + str(slurm) + "\n")
@@ -460,8 +457,8 @@ def fingerprinting(folder_path, dictionary_path, CSD_bvalue = None, slurm=False,
     """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
     Parameters
     ----------
-    folder_path: Path to root folder containing all the nifti
-    dictionary_path: Path to the dictionary to use
+    :param folder_path: Path to root folder containing all the nifti
+    :param dictionary_path: Path to the dictionary to use
     """
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[MF] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Microstructure Fingerprinting with slurm:" + str(slurm) + "\n")
@@ -560,7 +557,7 @@ def total_workflow(folder_path, dicomToNifti=False, eddy=False, denoising=False,
     """Perform dti and store the data in the out/dti folder.
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
+    :param folder_path: Path to root folder containing all the dicom
     """
 
 
@@ -568,7 +565,7 @@ def white_mask(folder_path, slurm=False, patient_list_m=None, email="quentin.des
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if T1 is not available
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
+    :param folder_path: Path to root folder containing all the dicom
     Remark
     ----------
     The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
@@ -655,7 +652,7 @@ def noddi(folder_path, slurm=False, patient_list_m=None, email="quentin.dessain@
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
+    :param folder_path: Path to root folder containing all the dicom
     """
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[NODDI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Noddi with slurm:" + str(slurm) + "\n")
@@ -754,7 +751,7 @@ def noddi_amico(folder_path, slurm=False, patient_list_m=None, email="quentin.de
     """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
     Parameters
     ----------
-    folder_path: Path to root folder containing all the dicom
+    :param folder_path: Path to root folder containing all the dicom
     """
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[NODDI AMICO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Noddi AMICO with slurm:" + str(slurm) + "\n")
@@ -868,7 +865,7 @@ def diamond(folder_path, slurm=False, patient_list_m=None, email="quentin.dessai
     """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
     Parameters
     ----------
-    folder_path: Path to root folder containing all the nifti
+    :param folder_path: Path to root folder containing all the nifti
     """
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[DIAMOND] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DIAMOND with slurm:" + str(slurm) + "\n")
@@ -967,9 +964,9 @@ def tbss(folder_path, corrected=False, slurm=False, email="quentin.dessain@stude
     """ Perform tract base spatial statistics between the control data and case data
     Parameters
     ----------
-    folder_path: root directory
-    corrected: whether the p value must be FWE corrected
-    slurm: whether to use slurm
+    :param folder_path: root directory
+    :param corrected: whether the p value must be FWE corrected
+    :param slurm: whether to use slurm
     Remark
     ----------
     DTI needs to have been performed on the data first !!

@@ -6,7 +6,6 @@ import json
 import numpy as np
 import math
 
-from future.utils import iteritems
 import subprocess
 
 from dipy.denoise.gibbs import gibbs_removal
