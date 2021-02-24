@@ -1,4 +1,5 @@
 import datetime
+import time
 import os
 import json
 import shutil
@@ -117,6 +118,42 @@ def anonymise_nifti(rootdir,anonymize_json,rename):
 
                 print()
 
+def getJobsState(folder_path,job_list,step_name):
+    job_info = {}
+    while job_list:
+        for job_id in job_list[:]:
+            job_info["job_state"] = get_job_state(job_id)
+            if job_info["job_state"] == 'COMPLETED':
+                job_list.remove(job_id)
+                f = open(folder_path + "/logs.txt", "a+")
+                f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                    job_id) + " COMPLETED\n")
+                f.close()
+            if job_info["job_state"] == 'FAILED':
+                job_list.remove(job_id)
+                f = open(folder_path + "/logs.txt", "a+")
+                f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                    job_id) + " FAILED\n")
+                f.close()
+            if job_info["job_state"] == 'OUT_OF_MEMORY':
+                job_list.remove(job_id)
+                f = open(folder_path + "/logs.txt", "a+")
+                f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                    job_id) + " OUT_OF_MEMORY\n")
+                f.close()
+            if job_info["job_state"] == 'TIMEOUT':
+                job_list.remove(job_id)
+                f = open(folder_path + "/logs.txt", "a+")
+                f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                    job_id) + " TIMEOUT\n")
+                f.close()
+            if job_info["job_state"] == 'CANCELLED':
+                job_list.remove(job_id)
+                f = open(folder_path + "/logs.txt", "a+")
+                f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
+                    job_id) + " CANCELLED\n")
+                f.close()
+        time.sleep(30)
 
 def export_files(folder_path, step):
     """
@@ -170,4 +207,18 @@ def get_job_state(job_id):
             print("Double error" + out)
             state = "NOSTATE"
     return state
-            
+
+def makedir(dir_path,log_path,log_prefix):
+    if not(os.path.exists(dir_path)):
+        try:
+            os.makedirs(dir_path)
+        except OSError:
+            print ("Creation of the directory %s failed" % dir_path)
+            f=open(log_path, "a+")
+            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dir_path)
+            f.close()
+        else:
+            print ("Successfully created the directory %s " % dir_path)
+            f=open(log_path, "a+")
+            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dir_path)
+            f.close()

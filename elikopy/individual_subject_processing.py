@@ -7,6 +7,7 @@ import numpy as np
 import math
 
 import subprocess
+from elikopy.utils import makedir
 
 from dipy.denoise.gibbs import gibbs_removal
 
@@ -22,40 +23,17 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
     :param gibbs:
     :param topup:
     """
+    log_prefix = "PREPROC SOLO"
     patient_path = os.path.splitext(p)[0]
     preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc/bet"
-    if not(os.path.exists(preproc_path)):
-        try:
-            os.makedirs(preproc_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % preproc_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % preproc_path)
-            f.close()
-        else:
-            print ("Successfully created the directory %s " % preproc_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % preproc_path)
-            f.close()
+    makedir(preproc_path,folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt",log_prefix)
 
     mask_path = folder_path + '/' + patient_path + "/masks"
-    if not(os.path.exists(mask_path)):
-        try:
-            os.makedirs(mask_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % mask_path)
-            f=open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % mask_path)
-            f.close()
-        else:
-            print ("Successfully created the directory %s " % mask_path)
-            f=open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mask_path)
-            f.close()
+    makedir(mask_path, folder_path + '/' + patient_path + "/masks/wm_logs.txt", log_prefix)
 
-    print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-    f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
     f.close()
     from dipy.io.image import load_nifti, save_nifti
     from dipy.segment.mask import median_otsu
@@ -66,35 +44,23 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
     if reslice:
         reslice_path = folder_path + '/' + patient_path + "/dMRI/preproc/reslice"
-        if not(os.path.exists(reslice_path)):
-            try:
-                os.makedirs(reslice_path)
-            except OSError:
-                print ("Creation of the directory %s failed" % reslice_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % reslice_path)
-                f.close()
-            else:
-                print ("Successfully created the directory %s " % reslice_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % reslice_path)
-                f.close()
+        makedir(reslice_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         from dipy.align.reslice import reslice
         new_voxel_size = (2., 2., 2.)
         data, affine = reslice(data, affine, voxel_size, new_voxel_size)
         save_nifti(reslice_path + '/' + patient_path + '_reslice.nii.gz', data, affine)
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
         f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
         f.close()
 
     b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
     save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
     save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
-    print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-    f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
     f.close()
 
     if not(denoising) and not(eddy) and not(gibbs) and not(topup):
@@ -105,25 +71,13 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
 
     if denoising:
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
         f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising launched for patient %s \n" % p)
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising launched for patient %s \n" % p)
         f.close()
 
         denoising_path = folder_path + '/' + patient_path + '/dMRI/preproc/mppca'
-        if not(os.path.exists(denoising_path)):
-            try:
-                os.mkdir(denoising_path)
-            except OSError:
-                print ("Creation of the directory %s failed" % denoising_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % denoising_path)
-                f.close()
-            else:
-                print ("Successfully created the directory %s " % denoising_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % denoising_path)
-                f.close()
+        makedir(denoising_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
         denoised = mppca(b0_mask, patch_radius=pr)
@@ -131,7 +85,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
         #save_nifti(denoising_path + '/' + patient_path + '_mppca_mask.nii.gz', mask.astype(np.float32),affine)
 
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of denoising for patient %s \n" % p)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of denoising for patient %s \n" % p)
 
         #nifti_path = folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz'
         #data, affine = load_nifti(nifti_path)
@@ -145,19 +99,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
     if gibbs:
         gibbs_path = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs'
-        if not(os.path.exists(gibbs_path)):
-            try:
-                os.mkdir(gibbs_path)
-            except OSError:
-                print ("Creation of the directory %s failed" % gibbs_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % gibbs_path)
-                f.close()
-            else:
-                print ("Successfully created the directory %s " % gibbs_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % gibbs_path)
-                f.close()
+        makedir(gibbs_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         data = gibbs_removal(b0_mask)
         corrected_path = folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/" + patient_path + '_gibbscorrected.nii.gz'
@@ -181,24 +123,11 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
     if topup:
         cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config =b02b0.cnf --out=my_output"'
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
 
         topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
-        if not (os.path.exists(topup_path)):
-            try:
-                os.makedirs(topup_path)
-            except OSError:
-                print("Creation of the directory %s failed" % topup_path)
-                f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") +
-                        ": Creation of the directory %s failed\n" % topup_path)
-                f.close()
-            else:
-                print("Successfully created the directory %s " % topup_path)
-                f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime(
-                    "%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % topup_path)
-                f.close()
+        makedir(topup_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
+
 
         if gibbs:
             imain = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz'
@@ -211,10 +140,10 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
         import subprocess
         bashcmd = bashCommand.split()
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
         f.close()
 
@@ -235,10 +164,10 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
         topup_log.close()
 
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime(
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
         f.close()
 
@@ -257,22 +186,10 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
 
     if eddy:
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of eddy for patient %s \n" % p)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of eddy for patient %s \n" % p)
 
         eddy_path = folder_path + '/' + patient_path + "/dMRI/preproc/eddy"
-        if not(os.path.exists(eddy_path)):
-            try:
-                os.makedirs(eddy_path)
-            except OSError:
-                print ("Creation of the directory %s failed" % eddy_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % eddy_path)
-                f.close()
-            else:
-                print ("Successfully created the directory %s " % eddy_path)
-                f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-                f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % eddy_path)
-                f.close()
+        makedir(eddy_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         if topup:
             bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_unwarped.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
@@ -285,9 +202,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
         import subprocess
         bashcmd = bashCommand.split()
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
         f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
         f.close()
 
         eddy_log = open(folder_path + '/' + patient_path + "/dMRI/preproc/eddy/eddy_logs.txt", "a+")
@@ -297,9 +214,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
         output, error = process.communicate()
         eddy_log.close()
 
-        print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
         f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
         f.close()
 
         data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.nii.gz")
@@ -309,9 +226,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.eddy_rotated_bvecs",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    print("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-    f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -321,7 +238,8 @@ def dti_solo(folder_path, p):
     :param folder_path:
     :param p:
     """
-    print("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DTI processing for patient %s \n" % p)
+    log_prefix = "DTI SOLO"
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DTI processing for patient %s \n" % p)
 
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
@@ -331,19 +249,7 @@ def dti_solo(folder_path, p):
     patient_path = os.path.splitext(p)[0]
 
     dti_path = folder_path + '/' + patient_path + "/dMRI/microstructure/dti"
-    if not(os.path.exists(dti_path)):
-        try:
-            os.makedirs(dti_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % dti_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-            f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % dti_path)
-            f.close()
-        else:
-            print ("Successfully created the directory %s " % dti_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-            f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dti_path)
-            f.close()
+    makedir(dti_path, folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
 
     # load the data======================================
     data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
@@ -377,9 +283,9 @@ def dti_solo(folder_path, p):
     # diffusion tensor ====================================
     save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
 
-    print("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-    f.write("[DTI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -389,7 +295,9 @@ def white_mask_solo(folder_path, p):
     :param folder_path:
     :param p:
     """
-    print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
+
+    log_prefix = "White mask solo"
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
 
     from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
     from dipy.align.transforms import (TranslationTransform3D, RigidTransform3D, AffineTransform3D)
@@ -406,9 +314,9 @@ def white_mask_solo(folder_path, p):
     patient_path = os.path.splitext(p)[0]
     anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
     if os.path.isfile(anat_path):
-        print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-        f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
         f.close()
         # Read the moving image ====================================
         anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
@@ -488,12 +396,12 @@ def white_mask_solo(folder_path, p):
         white_mask[white_mask != 0] = 1
         anat_affine = static_grid2world
     else:
-        print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-        f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
         f.close()
         f = open(folder_path + "/logs.txt", "a+")
-        f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Warning: Mask done from AP for patient %s \n" % p)
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Warning: Mask done from AP for patient %s \n" % p)
         f.close()
         # compute the white matter mask with the Anisotropic power map
         data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
@@ -514,26 +422,14 @@ def white_mask_solo(folder_path, p):
         anat_affine = affine
 
     mask_path = folder_path + '/' + patient_path + "/masks"
-    if not(os.path.exists(mask_path)):
-        try:
-            os.makedirs(mask_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % mask_path)
-            f=open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % mask_path)
-            f.close()
-        else:
-            print ("Successfully created the directory %s " % mask_path)
-            f=open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-            f.write("[PREPROC SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mask_path)
-            f.close()
+    makedir(mask_path, folder_path + '/' + patient_path + "/masks/wm_logs.txt", log_prefix)
 
     out_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
 
-    print("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-    f.write("[White mask solo] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -554,21 +450,10 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     from dipy.io.gradients import read_bvals_bvecs
 
     patient_path = os.path.splitext(p)[0]
+    log_prefix="NODDI SOLO"
 
     noddi_path = folder_path + '/' + patient_path + "/dMRI/microstructure/noddi"
-    if not(os.path.exists(noddi_path)):
-        try:
-            os.makedirs(noddi_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % noddi_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-            f.write("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % noddi_path)
-            f.close()
-        else:
-            print ("Successfully created the directory %s " % noddi_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-            f.write("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
-            f.close()
+    makedir(noddi_path, folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", log_prefix)
 
     # initialize the compartments model
     from dmipy.signal_models import cylinder_models, gaussian_models
@@ -637,9 +522,9 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     save_nifti(noddi_path + '/' + patient_path + '_noddi_mse.nii.gz', mse.astype(np.float32), affine)
     save_nifti(noddi_path + '/' + patient_path + '_noddi_R2.nii.gz', R2.astype(np.float32), affine)
 
-    print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-    f.write("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -655,22 +540,12 @@ def noddi_amico_solo(folder_path, p):
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
 
+    log_prefix="NODDI AMICO SOLO"
+
     patient_path = os.path.splitext(p)[0]
 
     noddi_path = folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico"
-    if not(os.path.exists(noddi_path)):
-        try:
-            os.makedirs(noddi_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % noddi_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
-            f.write("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % noddi_path)
-            f.close()
-        else:
-            print ("Successfully created the directory %s " % noddi_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
-            f.write("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % noddi_path)
-            f.close()
+    makedir(noddi_path, folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", log_prefix)
 
     wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     if os.path.isfile(wm_path):
@@ -694,9 +569,9 @@ def noddi_amico_solo(folder_path, p):
     ae.fit()
     ae.save_results(path_suffix = patient_path)
 
-    print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
-    f.write("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -707,22 +582,24 @@ def diamond_solo(folder_path, p, box=None):
     :param p:
     :param box:
     """
-    print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
+    log_prefix = "DIAMOND SOLO"
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
     diamond_path = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond"
+    makedir(diamond_path, folder_path +'/'+patient_path+"/dMRI/microstructure/diamond/diamond_logs.txt",log_prefix)
     if not(os.path.exists(diamond_path)):
         try:
             os.makedirs(diamond_path)
         except OSError:
             print ("Creation of the directory %s failed" % diamond_path)
             f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-            f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % diamond_path)
+            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % diamond_path)
             f.close()
         else:
             print ("Successfully created the directory %s " % diamond_path)
             f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-            f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % diamond_path)
+            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % diamond_path)
             f.close()
 
     #'--bbox 0,0,38,128,128,1'
@@ -732,24 +609,24 @@ def diamond_solo(folder_path, p, box=None):
     wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     if os.path.isfile(wm_path):
         mask = wm_path
-        print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
         f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-        f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
         f.close()
     else:
         mask = folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz'
-        print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
+        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
         f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-        f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
         f.close()
 
     bashCommand = 'crlDCIEstimate --input "' + folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc 4 --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
 
     import subprocess
     bashcmd = bashCommand.split()
-    print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-    f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
     f.close()
 
     diamond_log = open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
@@ -758,9 +635,9 @@ def diamond_solo(folder_path, p, box=None):
     output, error = process.communicate()
     diamond_log.close()
 
-    print("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-    f.write("[DIAMOND SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -772,23 +649,12 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     :param dictionary_path:
     :param CSD_bvalue:
     """
-    print("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
+    log_prefix="MF SOLO"
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
     mf_path = folder_path + '/' + patient_path + "/dMRI/microstructure/mf"
-    if not(os.path.exists(mf_path)):
-        try:
-            os.makedirs(mf_path)
-        except OSError:
-            print ("Creation of the directory %s failed" % mf_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
-            f.write("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % mf_path)
-            f.close()
-        else:
-            print ("Successfully created the directory %s " % mf_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
-            f.write("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % mf_path)
-            f.close()
+    makedir(mf_path, folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt",log_prefix)
 
     # imports
     import microstructure_fingerprinting as mf
@@ -881,9 +747,9 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     save_nifti(mf_path + '/' + patient_path + '_mf_MSE.nii.gz', MSE.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_R2.nii.gz', R2.astype(np.float32), affine)
 
-    print("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
-    f.write("[MF SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -894,20 +760,9 @@ def tbss_utils(folder_path, corrected = False):
     :param corrected:
     """
     # create the output directory
+    log_prefix = "TBSS"
     outputdir = folder_path + "/TBSS"
-    if not (os.path.exists(outputdir)):
-        try:
-            os.makedirs(outputdir)
-        except OSError:
-            print("Creation of the directory %s failed" % outputdir)
-            f = open(folder_path + "/logs.txt", "a+")
-            f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % outputdir)
-            f.close()
-        else:
-            print("Successfully created the directory %s " % outputdir)
-            f = open(folder_path + "/logs.txt", "a+")
-            f.write("[TBSS] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % outputdir)
-            f.close()
+    makedir(outputdir, folder_path + "/logs.txt", log_prefix)
 
     # open the subject and is_control lists
     dest_success = folder_path + "/subjects/subj_list.json"
@@ -964,26 +819,18 @@ def tbss_utils(folder_path, corrected = False):
     output, error = process.communicate()
 
     if corrected:
-        bashCommand = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2'
-        bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
-        output, error = process.communicate()
-
-        bashCommand = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
-        bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
-        output, error = process.communicate()
+        bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2'
+        bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
     else:
-        bashCommand = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
-        bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
-        output, error = process.communicate()
+        bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
+        bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
 
-        bashCommand = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
-        bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
-        output, error = process.communicate()
+    bashcmd1 = bashCommand1.split()
+    print("Bash command is:\n{}\n".format(bashcmd1))
+    process = subprocess.Popen(bashcmd1, stdout=subprocess.PIPE)
+    output, error = process.communicate()
+
+    bashcmd2 = bashCommand2.split()
+    print("Bash command is:\n{}\n".format(bashcmd2))
+    process = subprocess.Popen(bashcmd2, stdout=subprocess.PIPE)
+    output, error = process.communicate()
