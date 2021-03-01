@@ -24,7 +24,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
     :param topup:
     """
 
-    assert starting_state == (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
+    assert starting_state != (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
     if starting_state == "denoising":
         assert denoising == True, 'if starting_state is denoising, denoising must be True!'
     if starting_state == "gibbs":
