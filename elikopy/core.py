@@ -163,7 +163,7 @@ class Elikopy:
         f.close()
 
 
-    def preproc(self, folder_path=None, eddy=False, denoising=False, slurm=None, reslice=False, gibbs=False, topup=False, timeout=None, patient_list_m=None, slurm_email=None, starting_state=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def preproc(self, folder_path=None, eddy=False, denoising=False, slurm=None, reslice=False, gibbs=False, topup=False, patient_list_m=None, slurm_email=None, starting_state=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
         located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final
 
@@ -171,7 +171,6 @@ class Elikopy:
         :param reslice:
         :param gibbs:
         :param topup:
-        :param timeout:
         :param patient_list_m:
         :param slurm_email:
         :param folder_path: Path to root folder containing all the dicom
@@ -181,7 +180,7 @@ class Elikopy:
 
         """
 
-        assert starting_state == (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
+        assert starting_state != (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
         if starting_state=="denoising":
             assert denoising == True, 'if starting_state is denoising, denoising must be True!'
         if starting_state=="gibbs":
@@ -219,20 +218,18 @@ class Elikopy:
                 p_job = {
                     "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
                         eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
-                        gibbs) + ",topup=" + str(topup) + ",starting_state=" + str(starting_state) + ")'",
+                        gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + "\")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
                     "mem_per_cpu": 6096,
-                    "time": timeout,
+                    "time": "03:30:00",
                     "mail_user": slurm_email,
                     "mail_type": "FAIL",
                     "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                     "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                 }
-                if timeout:
-                    p_job["time"] = timeout
-                elif not denoising and not eddy:
+                if not denoising and not eddy:
                     p_job["time"] = "00:30:00"
                     p_job["cpus_per_task"] = 1
                     p_job["mem_per_cpu"] = 8096
