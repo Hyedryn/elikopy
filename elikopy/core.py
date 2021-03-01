@@ -272,7 +272,7 @@ class Elikopy:
         f.close()
 
 
-    def dti(self,folder_path=None, slurm=None, patient_list_m=None, slurm_email=None):
+    def dti(self,folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform dti and store the data in the out/dti folder.
 
         :param folder_path: Path to root folder containing all the dicom
@@ -318,6 +318,9 @@ class Elikopy:
                         "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out",
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err",
                     }
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 p_job_id = submit_job(p_job)
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
@@ -337,7 +340,7 @@ class Elikopy:
         f.close()
 
 
-    def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None):
+    def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
 
         :param folder_path: Path to root folder containing all the nifti
@@ -386,6 +389,9 @@ class Elikopy:
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/mf/' + "slurm-%j.err",
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 p_job_id = submit_job(p_job)
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
@@ -405,7 +411,7 @@ class Elikopy:
         f.close()
 
 
-    def white_mask(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None):
+    def white_mask(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
         T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
         a folder named anat in the root folder.
@@ -450,6 +456,9 @@ class Elikopy:
                         "output": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.out",
                         "error": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.err",
                     }
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job_id = submit_job(p_job)
                 job_list.append(p_job_id)
@@ -470,7 +479,7 @@ class Elikopy:
         f.close()
 
 
-    def noddi(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, force_brain_mask=False):
+    def noddi(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, force_brain_mask=False, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
 
         :param folder_path: Path to root folder containing all the dicom
@@ -519,6 +528,9 @@ class Elikopy:
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.err",
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 p_job_id = submit_job(p_job)
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
@@ -538,7 +550,7 @@ class Elikopy:
         f.close()
 
 
-    def noddi_amico(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, force_brain_mask=False):
+    def noddi_amico(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, force_brain_mask=False, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
 
         :param folder_path: Path to root folder containing all the dicom
@@ -588,6 +600,9 @@ class Elikopy:
                         "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi_amico/' + "slurm-%j.out",
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi_amico/' + "slurm-%j.err",
                     }
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job_id = submit_job(p_job)
                 job_list.append(p_job_id)
@@ -608,7 +623,7 @@ class Elikopy:
         f.close()
 
 
-    def diamond(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None):
+    def diamond(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
 
         :param folder_path: Path to root folder containing all the nifti
@@ -655,6 +670,9 @@ class Elikopy:
                         "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + "slurm-%j.out",
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + "slurm-%j.err",
                     }
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job_id = submit_job(p_job)
                 job_list.append(p_job_id)
