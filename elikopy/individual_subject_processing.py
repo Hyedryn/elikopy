@@ -12,7 +12,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gibbs=False, topup=False):
+def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gibbs=False, topup=False,starting_state=None):
     """
 
     :param folder_path:
@@ -23,127 +23,174 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
     :param gibbs:
     :param topup:
     """
+
+    assert starting_state == (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
+    if starting_state == "denoising":
+        assert denoising == True, 'if starting_state is denoising, denoising must be True!'
+    if starting_state == "gibbs":
+        assert gibbs == True, 'if starting_state is gibbs, gibbs must be True!'
+    if starting_state == "topup":
+        assert topup == True, 'if starting_state is topup, topup must be True!'
+    if starting_state == "eddy":
+        assert eddy == True, 'if starting_state is eddy, eddy must be True!'
+
     log_prefix = "PREPROC SOLO"
     patient_path = os.path.splitext(p)[0]
     preproc_path = folder_path + '/' + patient_path + "/dMRI/preproc/bet"
-    makedir(preproc_path,folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt",log_prefix)
+    makedir(preproc_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
     mask_path = folder_path + '/' + patient_path + "/masks"
     makedir(mask_path, folder_path + '/' + patient_path + "/masks/wm_logs.txt", log_prefix)
 
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
-    f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
     f.close()
     from dipy.io.image import load_nifti, save_nifti
     from dipy.segment.mask import median_otsu
     from dipy.denoise.localpca import mppca
 
     nifti_path = folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.nii.gz'
-    data, affine, voxel_size = load_nifti(nifti_path, return_voxsize=True)
+    if (starting_state == None):
+        data, affine, voxel_size = load_nifti(nifti_path, return_voxsize=True)
 
-    if reslice:
-        reslice_path = folder_path + '/' + patient_path + "/dMRI/preproc/reslice"
+    reslice_path = folder_path + '/' + patient_path + "/dMRI/preproc/reslice"
+    if reslice and starting_state == None:
         makedir(reslice_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         from dipy.align.reslice import reslice
         new_voxel_size = (2., 2., 2.)
         data, affine = reslice(data, affine, voxel_size, new_voxel_size)
         save_nifti(reslice_path + '/' + patient_path + '_reslice.nii.gz', data, affine)
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
-        f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
         f.close()
 
-    b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz', mask.astype(np.float32), affine)
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz', b0_mask.astype(np.float32), affine)
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
-    f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
-    f.close()
-
-    if not(denoising) and not(eddy) and not(gibbs) and not(topup):
-        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32),affine)
-        save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32),affine)
-        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
-        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
-
-
-    if denoising:
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
-        f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising launched for patient %s \n" % p)
+    if starting_state == None:
+        b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
+        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',
+                   mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz',
+                   b0_mask.astype(np.float32), affine)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
         f.close()
 
-        denoising_path = folder_path + '/' + patient_path + '/dMRI/preproc/mppca'
+    if not denoising and not eddy and not gibbs and not topup:
+        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+                   b0_mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                   mask.astype(np.float32), affine)
+        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
+                        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
+                        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+
+    denoising_path = folder_path + '/' + patient_path + '/dMRI/preproc/mppca'
+    if denoising and starting_state!="gibbs" and starting_state!="eddy" and starting_state!="topup":
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Denoising launched for patient %s \n" % p)
+        f.close()
+
         makedir(denoising_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
+
+        if (starting_state == denoising):
+            mask_path = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz'
+            b0_mask_path = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
+            b0_mask, affine, voxel_size = load_nifti(b0_mask_path, return_voxsize=True)
+            mask, _ = load_nifti(mask_path)
 
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
         denoised = mppca(b0_mask, patch_radius=pr)
         save_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz', denoised.astype(np.float32), affine)
 
-        #save_nifti(denoising_path + '/' + patient_path + '_mppca_mask.nii.gz', mask.astype(np.float32),affine)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of denoising for patient %s \n" % p)
 
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of denoising for patient %s \n" % p)
-
-        #nifti_path = folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz'
-        #data, affine = load_nifti(nifti_path)
         b0_mask = denoised
 
         if not eddy and not gibbs and not topup:
-            save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32),affine)
-            save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32),affine)
-            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
-            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+            save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+                       b0_mask.astype(np.float32), affine)
+            save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                       mask.astype(np.float32), affine)
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
+                            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
+                            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if gibbs:
+    if gibbs and starting_state!="eddy" and starting_state!="topup":
         gibbs_path = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs'
         makedir(gibbs_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
+
+        if (starting_state == denoising):
+            mask_path = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz'
+            if not denoising:
+                b0_mask_path = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
+            else:
+                b0_mask_path = denoising_path + '/' + patient_path + '_mppca.nii.gz'
+            b0_mask, affine, voxel_size = load_nifti(b0_mask_path, return_voxsize=True)
+            mask, _ = load_nifti(mask_path)
 
         data = gibbs_removal(b0_mask)
         corrected_path = folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/" + patient_path + '_gibbscorrected.nii.gz'
         save_nifti(corrected_path, data.astype(np.float32), affine)
 
         if not eddy and not topup:
-            save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', data.astype(np.float32),affine)
-            save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32),affine)
-            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
-            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+            save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+                       data.astype(np.float32), affine)
+            save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                       mask.astype(np.float32), affine)
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
+                            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
+                            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-
-    #Explicitly freeing memory
+    # Explicitly freeing memory
     import gc
     denoised = None
     b0_mask = None
     mask = None
-    data= None
+    data = None
     affine = None
     gc.collect()
 
-    if topup:
+    topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
+    if topup and starting_state!="eddy":
+
         cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config =b02b0.cnf --out=my_output"'
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
 
         topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
         makedir(topup_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
-
 
         if gibbs:
             imain = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz'
         elif denoising:
             imain = folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz'
         else:
-            imain= folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
+            imain = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
 
         bashCommand = 'topup --imain="' + imain + '" --config="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --verbose'
 
         import subprocess
         bashcmd = bashCommand.split()
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime(
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime(
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
         f.close()
 
@@ -157,17 +204,17 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
         bashCommand2 = 'applytopup --imain="' + imain + '" --inindex=1 --datatin="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
         process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
-                                   stderr=subprocess.STDOUT)
+                                    stderr=subprocess.STDOUT)
 
         # wait until topup finish
         output, error = process2.communicate()
 
         topup_log.close()
 
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime(
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime(
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
         f.close()
 
@@ -184,9 +231,9 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-
     if eddy:
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of eddy for patient %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of eddy for patient %s \n" % p)
 
         eddy_path = folder_path + '/' + patient_path + "/dMRI/preproc/eddy"
         makedir(eddy_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
@@ -194,41 +241,54 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
         if topup:
             bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_unwarped.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
         elif gibbs:
-            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
+            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
         elif denoising:
-            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
+            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
         else:
-            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' +  patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
+            bashCommand = 'eddy --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose'
 
         import subprocess
         bashcmd = bashCommand.split()
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
-        f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Eddy launched for patient %s \n" % p + " with bash command " + bashCommand)
         f.close()
 
         eddy_log = open(folder_path + '/' + patient_path + "/dMRI/preproc/eddy/eddy_logs.txt", "a+")
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=eddy_log, stderr=subprocess.STDOUT)
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=eddy_log,
+                                   stderr=subprocess.STDOUT)
 
-        #wait until eddy finish
+        # wait until eddy finish
         output, error = process.communicate()
         eddy_log.close()
 
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
-        f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of eddy for patient %s \n" % p)
         f.close()
 
-        data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.nii.gz")
+        data, affine = load_nifti(
+            folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.nii.gz")
         b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
-        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32),affine)
-        save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32),affine)
-        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
-        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.eddy_rotated_bvecs",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+                   b0_mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                   mask.astype(np.float32), affine)
+        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
+                        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+        shutil.copyfile(
+            folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.eddy_rotated_bvecs",
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f=open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -239,7 +299,8 @@ def dti_solo(folder_path, p):
     :param p:
     """
     log_prefix = "DTI SOLO"
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DTI processing for patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual DTI processing for patient %s \n" % p)
 
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
@@ -252,9 +313,12 @@ def dti_solo(folder_path, p):
     makedir(dti_path, folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
 
     # load the data======================================
-    data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    data, affine = load_nifti(
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
     mask, _ = load_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
-    bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval", folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    bvals, bvecs = read_bvals_bvecs(
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     # create the model===================================
     gtab = gradient_table(bvals, bvecs)
     tenmodel = dti.TensorModel(gtab)
@@ -263,29 +327,39 @@ def dti_solo(folder_path, p):
     FA = dti.fractional_anisotropy(tenfit.evals)
     FA[np.isnan(FA)] = 0
     FA = np.clip(FA, 0, 1)
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz", FA.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+               FA.astype(np.float32), affine)
     # colored FA ========================================
     RGB = dti.color_fa(FA, tenfit.evecs)
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_fargb.nii.gz", np.array(255 * RGB, 'uint8'), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_fargb.nii.gz",
+               np.array(255 * RGB, 'uint8'), affine)
     # Mean diffusivity ==================================
     MD = dti.mean_diffusivity(tenfit.evals)
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_MD.nii.gz", MD.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_MD.nii.gz",
+               MD.astype(np.float32), affine)
     # Radial diffusivity ==================================
     RD = dti.radial_diffusivity(tenfit.evals)
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_RD.nii.gz", RD.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_RD.nii.gz",
+               RD.astype(np.float32), affine)
     # Axial diffusivity ==================================
     AD = dti.axial_diffusivity(tenfit.evals)
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_AD.nii.gz", AD.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_AD.nii.gz",
+               AD.astype(np.float32), affine)
     # eigen vectors =====================================
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_evecs.nii.gz", tenfit.evecs.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_evecs.nii.gz",
+               tenfit.evecs.astype(np.float32), affine)
     # eigen values ======================================
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_evals.nii.gz", tenfit.evals.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_evals.nii.gz",
+               tenfit.evals.astype(np.float32), affine)
     # diffusion tensor ====================================
-    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_dtensor.nii.gz",
+               tenfit.quadratic_form.astype(np.float32), affine)
 
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -297,7 +371,8 @@ def white_mask_solo(folder_path, p):
     """
 
     log_prefix = "White mask solo"
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
 
     from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
     from dipy.align.transforms import (TranslationTransform3D, RigidTransform3D, AffineTransform3D)
@@ -314,9 +389,11 @@ def white_mask_solo(folder_path, p):
     patient_path = os.path.splitext(p)[0]
     anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
     if os.path.isfile(anat_path):
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
         f.close()
         # Read the moving image ====================================
         anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
@@ -324,9 +401,9 @@ def white_mask_solo(folder_path, p):
         data_gibbs = gibbs_removal(data_gibbs)
         corrected_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_gibbscorrected.nii.gz'
         save_nifti(corrected_path, data_gibbs.astype(np.float32), affine_gibbs)
-        #anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
+        # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'bet2 ' + corrected_path + ' ' + bet_path +' -f 1 -g -3'
+        bashCommand = 'bet2 ' + corrected_path + ' ' + bet_path + ' -f 1 -g -3'
         bashcmd = bashCommand.split()
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
         output, error = process.communicate()
@@ -340,7 +417,8 @@ def white_mask_solo(folder_path, p):
         moving = moving_data
         moving_grid2world = moving_affine
         # Read the static image ====================================
-        static_data, static_affine = load_nifti(folder_path + "/" + patient_path + "/dMRI/preproc/" + patient_path + "_dmri_preproc.nii.gz")
+        static_data, static_affine = load_nifti(
+            folder_path + "/" + patient_path + "/dMRI/preproc/" + patient_path + "_dmri_preproc.nii.gz")
         static = np.squeeze(static_data)[..., 0]
         static_grid2world = static_affine
         # Reslice the moving image ====================================
@@ -357,17 +435,20 @@ def white_mask_solo(folder_path, p):
         transform = TranslationTransform3D()
         params0 = None
         starting_affine = affine_map.affine
-        translation = affreg.optimize(static, moving, transform, params0, static_grid2world, moving_grid2world, starting_affine=starting_affine)
+        translation = affreg.optimize(static, moving, transform, params0, static_grid2world, moving_grid2world,
+                                      starting_affine=starting_affine)
         # Rigid transform the moving image ====================================
         transform = RigidTransform3D()
         params0 = None
         starting_affine = translation.affine
-        rigid = affreg.optimize(static, moving, transform, params0, static_grid2world, moving_grid2world, starting_affine=starting_affine)
+        rigid = affreg.optimize(static, moving, transform, params0, static_grid2world, moving_grid2world,
+                                starting_affine=starting_affine)
         # affine transform the moving image ====================================
         transform = AffineTransform3D()
         params0 = None
         starting_affine = rigid.affine
-        affine = affreg.optimize(static, moving, transform, params0, static_grid2world, moving_grid2world, starting_affine=starting_affine)
+        affine = affreg.optimize(static, moving, transform, params0, static_grid2world, moving_grid2world,
+                                 starting_affine=starting_affine)
         """"
         transformed = affine.transform(moving)
         # final result of registration ==========================================
@@ -396,21 +477,28 @@ def white_mask_solo(folder_path, p):
         white_mask[white_mask != 0] = 1
         anat_affine = static_grid2world
     else:
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
         f.close()
         f = open(folder_path + "/logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Warning: Mask done from AP for patient %s \n" % p)
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Warning: Mask done from AP for patient %s \n" % p)
         f.close()
         # compute the white matter mask with the Anisotropic power map
-        data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+        data, affine = load_nifti(
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
         mask, _ = load_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
-        bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+        bvals, bvecs = read_bvals_bvecs(
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
         gtab = gradient_table(bvals, bvecs)
         sphere = get_sphere('symmetric724')
         qball_model = shm.QballModel(gtab, 8)
-        peaks = dp.peaks_from_model(model=qball_model, data=data, relative_peak_threshold=.5, min_separation_angle=25, sphere=sphere, mask=mask)
+        peaks = dp.peaks_from_model(model=qball_model, data=data, relative_peak_threshold=.5, min_separation_angle=25,
+                                    sphere=sphere, mask=mask)
         ap = shm.anisotropic_power(peaks.shm_coeff)
         nclass = 3
         beta = 0.1
@@ -427,9 +515,11 @@ def white_mask_solo(folder_path, p):
     out_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
 
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -443,14 +533,15 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     :param lambda_par_diff:
     :param use_amico:
     """
-    print("[NODDI SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
+    print("[NODDI SOLO] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
 
     import numpy as np
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
 
     patient_path = os.path.splitext(p)[0]
-    log_prefix="NODDI SOLO"
+    log_prefix = "NODDI SOLO"
 
     noddi_path = folder_path + '/' + patient_path + "/dMRI/microstructure/noddi"
     makedir(noddi_path, folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", log_prefix)
@@ -464,7 +555,8 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     # watson distribution of stick and Zepelin
     from dmipy.distributions.distribute_models import SD1WatsonDistributed
     watson_dispersed_bundle = SD1WatsonDistributed(models=[stick, zeppelin])
-    watson_dispersed_bundle.set_tortuous_parameter('G2Zeppelin_1_lambda_perp', 'C1Stick_1_lambda_par', 'partial_volume_0')
+    watson_dispersed_bundle.set_tortuous_parameter('G2Zeppelin_1_lambda_perp', 'C1Stick_1_lambda_par',
+                                                   'partial_volume_0')
     watson_dispersed_bundle.set_equal_parameter('G2Zeppelin_1_lambda_par', 'C1Stick_1_lambda_par')
     watson_dispersed_bundle.set_fixed_parameter('G2Zeppelin_1_lambda_par', lambda_par_diff)
 
@@ -476,8 +568,11 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     NODDI_mod.set_fixed_parameter('G1Ball_1_lambda_iso', lambda_iso_diff)
 
     # load the data
-    data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
-    bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    data, affine = load_nifti(
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     if os.path.isfile(wm_path) and not force_brain_mask:
         mask, _ = load_nifti(wm_path)
@@ -507,7 +602,8 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     f_bundle = fitted_parameters["partial_volume_1"]
     f_intra = (fitted_parameters['SD1WatsonDistributed_1_partial_volume_0'] * fitted_parameters['partial_volume_1'])
     f_icvf = fitted_parameters['SD1WatsonDistributed_1_partial_volume_0']
-    f_extra = ((1 - fitted_parameters['SD1WatsonDistributed_1_partial_volume_0']) * fitted_parameters['partial_volume_1'])
+    f_extra = ((1 - fitted_parameters['SD1WatsonDistributed_1_partial_volume_0']) * fitted_parameters[
+        'partial_volume_1'])
     mse = NODDI_fit.mean_squared_error(data)
     R2 = NODDI_fit.R2_coefficient_of_determination(data)
 
@@ -522,9 +618,11 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     save_nifti(noddi_path + '/' + patient_path + '_noddi_mse.nii.gz', mse.astype(np.float32), affine)
     save_nifti(noddi_path + '/' + patient_path + '_noddi_R2.nii.gz', R2.astype(np.float32), affine)
 
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -534,18 +632,20 @@ def noddi_amico_solo(folder_path, p):
     :param folder_path:
     :param p:
     """
-    print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI AMICO processing for patient %s \n" % p)
+    print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI AMICO processing for patient %s \n" % p)
 
     import numpy as np
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
 
-    log_prefix="NODDI AMICO SOLO"
+    log_prefix = "NODDI AMICO SOLO"
 
     patient_path = os.path.splitext(p)[0]
 
     noddi_path = folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico"
-    makedir(noddi_path, folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", log_prefix)
+    makedir(noddi_path, folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt",
+            log_prefix)
 
     wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     if os.path.isfile(wm_path):
@@ -555,23 +655,27 @@ def noddi_amico_solo(folder_path, p):
 
     import amico
     amico.core.setup()
-    ae = amico.Evaluation(study_path = folder_path + '/noddi_AMICO/', subject = folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/', output_path=folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/')
+    ae = amico.Evaluation(study_path=folder_path + '/noddi_AMICO/',
+                          subject=folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/',
+                          output_path=folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/')
 
     schemeFile = folder_path + '/' + patient_path + '/dMRI/microstructure/noddi_amico/' + patient_path + "_NODDI_protocol.scheme"
     dwi_preproc = folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc"
 
     amico.util.fsl2scheme(dwi_preproc + ".bval", dwi_preproc + ".bvec", schemeFilename=schemeFile)
 
-    ae.load_data(dwi_filename = dwi_preproc + ".nii.gz", scheme_filename = schemeFile, mask_filename = wm_path, b0_thr = 0)
+    ae.load_data(dwi_filename=dwi_preproc + ".nii.gz", scheme_filename=schemeFile, mask_filename=wm_path, b0_thr=0)
     ae.set_model("NODDI")
     ae.generate_kernels()
     ae.load_kernels()
     ae.fit()
-    ae.save_results(path_suffix = patient_path)
+    ae.save_results(path_suffix=patient_path)
 
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
@@ -583,65 +687,78 @@ def diamond_solo(folder_path, p, box=None):
     :param box:
     """
     log_prefix = "DIAMOND SOLO"
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
     diamond_path = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond"
-    makedir(diamond_path, folder_path +'/'+patient_path+"/dMRI/microstructure/diamond/diamond_logs.txt",log_prefix)
-    if not(os.path.exists(diamond_path)):
+    makedir(diamond_path, folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt",
+            log_prefix)
+    if not (os.path.exists(diamond_path)):
         try:
             os.makedirs(diamond_path)
         except OSError:
-            print ("Creation of the directory %s failed" % diamond_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % diamond_path)
+            print("Creation of the directory %s failed" % diamond_path)
+            f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Creation of the directory %s failed\n" % diamond_path)
             f.close()
         else:
-            print ("Successfully created the directory %s " % diamond_path)
-            f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % diamond_path)
+            print("Successfully created the directory %s " % diamond_path)
+            f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % diamond_path)
             f.close()
 
-    #'--bbox 0,0,38,128,128,1'
-    #if box is not None:
+    # '--bbox 0,0,38,128,128,1'
+    # if box is not None:
     #    bashCommand = 'crlDCIEstimate -i ' + folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + ' -m ' + folder_path + '/' + patient_path + '/dMRI/masks/' + patient_path + '_brain_mask.nii.gz' + ' -n 3 --automose aicu --fascicle diamondcyl -o ' + folder_path + '/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + ' -p 4'
-    #else:
+    # else:
     wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     if os.path.isfile(wm_path):
         mask = wm_path
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
-        f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
+        f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
         f.close()
     else:
         mask = folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz'
-        print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
-        f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
+        f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
         f.close()
 
     bashCommand = 'crlDCIEstimate --input "' + folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc 4 --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
 
     import subprocess
     bashcmd = bashCommand.split()
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
-    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
+    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
     f.close()
 
     diamond_log = open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=diamond_log, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=diamond_log,
+                               stderr=subprocess.STDOUT)
 
     output, error = process.communicate()
     diamond_log.close()
 
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
+def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
     """
 
     :param folder_path:
@@ -649,12 +766,13 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     :param dictionary_path:
     :param CSD_bvalue:
     """
-    log_prefix="MF SOLO"
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
+    log_prefix = "MF SOLO"
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
     mf_path = folder_path + '/' + patient_path + "/dMRI/microstructure/mf"
-    makedir(mf_path, folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt",log_prefix)
+    makedir(mf_path, folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", log_prefix)
 
     # imports
     import microstructure_fingerprinting as mf
@@ -667,8 +785,11 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     from dipy.data import default_sphere
 
     # load the data
-    data, affine = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
-    bvals, bvecs = read_bvals_bvecs(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    data, affine = load_nifti(
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+        folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     if os.path.isfile(wm_path):
         mask, _ = load_nifti(wm_path)
@@ -681,14 +802,17 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
         tensor_files0 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t0.nii.gz'
         tensor_files1 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t1.nii.gz'
         fracs_file = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nii.gz'
-        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,peakmode='tensor', mask=mask, frac12=fracs_file)
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,
+                                                 peakmode='tensor', mask=mask, frac12=fracs_file)
     else:
-        sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue-5) <= bvals, bvals <= (CSD_bvalue+5)))
+        sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue - 5) <= bvals, bvals <= (CSD_bvalue + 5)))
         data_CSD = data[..., sel_b]
         gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
         response, ratio = auto_response(gtab_CSD, data_CSD, roi_radius=10, fa_thr=0.7)
         csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
-        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,relative_peak_threshold=.15, min_separation_angle=25, parallel=False, mask=mask,normalize_peaks=True)
+        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,
+                                     relative_peak_threshold=.15, min_separation_angle=25, parallel=False, mask=mask,
+                                     normalize_peaks=True)
         save_nifti(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz', csd_peaks.peak_dirs, affine)
         save_nifti(mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz', csd_peaks.peak_values, affine)
         normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
@@ -704,7 +828,8 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
         mu2 = normPeaks1
         frac1 = csd_peaks.peak_values[..., 0]
         frac2 = csd_peaks.peak_values[..., 1]
-        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',mask=mask, frac12=None)
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
+                                                 mask=mask, frac12=None)
 
     # get the dictionary
     mf_model = mf.MFModel(dictionary_path)
@@ -714,7 +839,8 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     ear_mask = False  # (numfasc == 1)
 
     # Fit to data:
-    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask, ear_mask=ear_mask, verbose=3, parallel=False)
+    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask,
+                          ear_mask=ear_mask, verbose=3, parallel=False)
 
     # extract info
     M0 = MF_fit.M0
@@ -747,13 +873,15 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue = None):
     save_nifti(mf_path + '/' + patient_path + '_mf_MSE.nii.gz', MSE.astype(np.float32), affine)
     save_nifti(mf_path + '/' + patient_path + '_mf_R2.nii.gz', R2.astype(np.float32), affine)
 
-    print("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f=open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
-    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
 
-def tbss_utils(folder_path, corrected = False):
+def tbss_utils(folder_path, corrected=False):
     """
 
     :param folder_path:
@@ -779,12 +907,15 @@ def tbss_utils(folder_path, corrected = False):
         patient_path = os.path.splitext(p)[0]
         control_info = is_control[index]
         if control_info:
-            shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz", outputdir + "/control" + numcontrol + "_" + patient_path + "_fa.nii.gz")
+            shutil.copyfile(
+                folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                outputdir + "/control" + numcontrol + "_" + patient_path + "_fa.nii.gz")
             numcontrol += 1
         else:
-            shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz", outputdir + "/case" + numpatient + "_" + patient_path + "_fa.nii.gz")
+            shutil.copyfile(
+                folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                outputdir + "/case" + numpatient + "_" + patient_path + "_fa.nii.gz")
             numpatient += 1
-
 
     import subprocess
 

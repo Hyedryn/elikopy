@@ -163,7 +163,7 @@ class Elikopy:
         f.close()
 
 
-    def preproc(self, folder_path=None, eddy=False, denoising=False, slurm=None, reslice=False, gibbs=False, topup=False, timeout=None, patient_list_m=None, slurm_email=None):
+    def preproc(self, folder_path=None, eddy=False, denoising=False, slurm=None, reslice=False, gibbs=False, topup=False, timeout=None, patient_list_m=None, slurm_email=None, starting_state=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
         located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final
 
@@ -177,15 +177,27 @@ class Elikopy:
         :param folder_path: Path to root folder containing all the dicom
         :param eddy: If True, eddy is called
         :param denoising: If True, denoising is called
+        :param starting_state: Could either be None, denoising, gibbs, topup or eddy
 
         """
+
+        assert starting_state == (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
+        if starting_state=="denoising":
+            assert denoising == True, 'if starting_state is denoising, denoising must be True!'
+        if starting_state=="gibbs":
+            assert gibbs == True, 'if starting_state is gibbs, gibbs must be True!'
+        if starting_state=="topup":
+            assert topup == True, 'if starting_state is topup, topup must be True!'
+        if starting_state=="eddy":
+            assert eddy == True, 'if starting_state is eddy, eddy must be True!'
+
         log_prefix = "PREPROC"
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
 
         f=open(folder_path + "/logs.txt", "a+")
-        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + ", reslice:" + str(reslice) + ", gibbs:" + str(gibbs) +"\n")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + ", reslice:" + str(reslice) + ", gibbs:" + str(gibbs) + ", starting_state:" + str(starting_state) +"\n")
         f.close()
 
         dest_success = folder_path + "/subjects/subj_list.json"
@@ -207,7 +219,7 @@ class Elikopy:
                 p_job = {
                     "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
                         eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
-                        gibbs) + ",topup=" + str(topup) + ")'",
+                        gibbs) + ",topup=" + str(topup) + ",starting_state=" + str(starting_state) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
@@ -240,13 +252,16 @@ class Elikopy:
                     p_job["time"] = "1:00:00"
                     p_job["cpus_per_task"] = 1
                     p_job["mem_per_cpu"] = 8096
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
                 p_job_id = submit_job(p_job)
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                preproc_solo(folder_path + "/subjects",p,eddy=eddy,denoising=denoising,reslice=reslice,gibbs=gibbs,topup=topup)
+                preproc_solo(folder_path + "/subjects",p,eddy=eddy,denoising=denoising,reslice=reslice,gibbs=gibbs,topup=topup,starting_state=starting_state)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
                 f.flush()
         f.close()
