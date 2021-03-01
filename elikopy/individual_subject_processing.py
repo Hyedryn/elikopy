@@ -881,73 +881,134 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
     f.close()
 
 
-def tbss_utils(folder_path, corrected=False):
+def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, prestats_treshold=0.2, last_state=None):
     """
 
     :param folder_path:
+    :param grp1:
+    :param grp2:
     :param corrected:
+    :param starting_state:
+    :param prestats_treshold:
     """
+
+    assert starting_state != (None or "preproc" or "prestats" or "randomise"), 'invalid starting state!'
+
     # create the output directory
     log_prefix = "TBSS"
     outputdir = folder_path + "/TBSS"
     makedir(outputdir, folder_path + "/logs.txt", log_prefix)
 
-    # open the subject and is_control lists
-    dest_success = folder_path + "/subjects/subj_list.json"
-    with open(dest_success, 'r') as f:
-        patient_list = json.load(f)
-    dest_iscontrol = folder_path + "/subjects/is_control.json"
-    with open(dest_iscontrol, 'r') as f:
-        is_control = json.load(f)
 
-    # transfer the FA files to the TBSS directory
-    numpatient = 0
-    numcontrol = 0
-    for index, p in patient_list:
-        patient_path = os.path.splitext(p)[0]
-        control_info = is_control[index]
-        if control_info:
-            shutil.copyfile(
-                folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                outputdir + "/control" + numcontrol + "_" + patient_path + "_fa.nii.gz")
-            numcontrol += 1
-        else:
-            shutil.copyfile(
-                folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                outputdir + "/case" + numpatient + "_" + patient_path + "_fa.nii.gz")
-            numpatient += 1
+    if starting_state == None:
+        # open the subject and is_control lists
+        dest_success = folder_path + "/subjects/subj_list.json"
+        with open(dest_success, 'r') as f:
+            patient_list = json.load(f)
+        dest_subj_type = folder_path + "/subjects/subj_type.json"
+        with open(dest_subj_type, 'r') as f:
+            subj_type = json.load(f)
+
+        # transfer the FA files to the TBSS directory
+        numpatient = 0
+        numcontrol = 0
+        for index, p in patient_list:
+            patient_path = os.path.splitext(p)[0]
+            control_info = subj_type[index]
+            if control_info in grp1:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                    outputdir + "/control" + numcontrol + "_" + patient_path + "_fa.nii.gz")
+                numcontrol += 1
+            if control_info in grp2:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                    outputdir + "/case" + numpatient + "_" + patient_path + "_fa.nii.gz")
+                numpatient += 1
 
     import subprocess
+    tbss_log = open(folder_path + "/TBSS/TBSS_logs.txt", "a+")
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of preproc\n")
 
     bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of preproc\n")
+    tbss_log.flush()
+
+    if(last_state=="preproc"):
+        tbss_log.close()
+        return
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
 
     bashCommand = 'cd ' + outputdir + ' && tbss_2_reg -T'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of reg\n")
+    tbss_log.flush()
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of postreg\n")
 
     bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg -S'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
+    #TODO PERFORMS BACKUP FOR STARTING STATE
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of postreg\n")
+    tbss_log.flush()
+
+    if(last_state=="postreg"):
+        tbss_log.close()
+        return
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
 
     bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats 0.2'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of prestats\n")
+    tbss_log.flush()
+
+    if(last_state=="prestats"):
+        tbss_log.close()
+        return
+
+    # TODO PERFORMS BACKUP FOR STARTING STATE
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of design\n")
 
     bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + numcontrol + ' ' + numpatient
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=subprocess.PIPE)
+    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of design\n")
+    tbss_log.flush()
 
     if corrected:
         bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2'
@@ -956,12 +1017,28 @@ def tbss_utils(folder_path, corrected=False):
         bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
         bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
 
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
+
     bashcmd1 = bashCommand1.split()
     print("Bash command is:\n{}\n".format(bashcmd1))
-    process = subprocess.Popen(bashcmd1, stdout=subprocess.PIPE)
+    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of randomise\n")
+    tbss_log.flush()
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of autoaq\n")
 
     bashcmd2 = bashCommand2.split()
     print("Bash command is:\n{}\n".format(bashcmd2))
-    process = subprocess.Popen(bashcmd2, stdout=subprocess.PIPE)
+    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of autoaq\n")
+    tbss_log.flush()
+
+    tbss_log.close()

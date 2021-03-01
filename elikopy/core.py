@@ -675,15 +675,22 @@ class Elikopy:
         f.close()
 
 
-    def tbss(self, folder_path=None, corrected=False, slurm=None, slurm_email=None):
+    def tbss(self, grp1=[1], grp2=[2], folder_path=None, corrected=False, starting_state=None, prestats_treshold=0.2, last_state=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """ Perform tract base spatial statistics between the control data and case data. DTI needs to have been
         performed on the data first !!
 
+        :param grp1:
+        :param grp2:
         :param folder_path: root directory
         :param corrected: whether the p value must be FWE corrected
+        :param starting_state: Could either be None,
+        :param prestats_treshold:
+        :param last_state: Could either be None, preproc, postreg or prestats
+        :param slurm_timeout:
+        :param slurm_cpus:
+        :param slurm_mem:
         :param slurm: whether to use slurm
         :param slurm_email:
-
         """
         log_prefix = "TBSS"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -701,7 +708,7 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "python -c 'from utils import tbss_utils; tbss_utils(" + folder_path + ",corrected =" + corrected + ")'",
+                "wrap": "python -c 'from utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",corrected=" + str(corrected) + ",grp1=" + grp1 + ",grp2=" + grp2 + ",starting_state=" + str(starting_state) + ",prestats_treshold=" + str(prestats_treshold) + ",last_state=" + last_state + ")'",
                 "job_name": "tbss",
                 "ntasks": 8,
                 "cpus_per_task": 1,
@@ -712,11 +719,14 @@ class Elikopy:
                 "output": tbss_path + '/' + "slurm-%j.out",
                 "error": tbss_path + '/' + "slurm-%j.err",
             }
+            job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
+            job["ntasks"] = job["ntasks"] if slurm_cpus is None else slurm_cpus
+            job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
             p_job_id = submit_job(job)
             job_list.append(p_job_id)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            tbss_utils(folder_path, corrected=corrected)
+            tbss_utils(folder_path, grp1=grp1, grp2=grp2, corrected=corrected, starting_state=None, prestats_treshold=prestats_treshold,last_state=last_state)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied TBSS \n")
             f.flush()
         f.close()
