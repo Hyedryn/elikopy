@@ -278,14 +278,14 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
             if control_info in grp1:
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/control" + numcontrol + "_" + patient_path + "_fa.nii.gz")
+                    outputdir + "/control" + str(numcontrol) + "_" + patient_path + "_fa.nii.gz")
                 numcontrol += 1
             if control_info in grp2:
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/case" + numpatient + "_" + patient_path + "_fa.nii.gz")
+                    outputdir + "/case" + str(numpatient) + "_" + patient_path + "_fa.nii.gz")
                 numpatient += 1
-    
+
     import subprocess
     tbss_log = open(folder_path + "/TBSS/TBSS_logs.txt", "a+")
 
@@ -295,7 +295,7 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
     bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -312,7 +312,7 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
     bashCommand = 'cd ' + outputdir + ' && tbss_2_reg -T'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -325,7 +325,7 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
     bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg -S'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     #TODO PERFORMS BACKUP FOR STARTING STATE
@@ -344,7 +344,8 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
     bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats 0.2'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
+                               stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -363,7 +364,7 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
     bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + numcontrol + ' ' + numpatient
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -382,7 +383,8 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
 
     bashcmd1 = bashCommand1.split()
     print("Bash command is:\n{}\n".format(bashcmd1))
-    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
+                               stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -394,7 +396,7 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
 
     bashcmd2 = bashCommand2.split()
     print("Bash command is:\n{}\n".format(bashcmd2))
-    process = subprocess.Popen(bashcmd, stdout=tbss_log, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
