@@ -249,8 +249,10 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
     :param starting_state:
     :param prestats_treshold:
     """
-
+    starting_state = None if starting_state == "None" else starting_state
+    last_state = None if last_state == "None" else last_state
     assert starting_state != (None or "preproc" or "prestats" or "randomise"), 'invalid starting state!'
+    assert last_state != (None or "preproc" or "postreg" or "prestats"), 'invalid last state!'
 
     # create the output directory
     log_prefix = "TBSS"

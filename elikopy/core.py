@@ -751,7 +751,7 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",corrected=" + str(corrected) + ",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=" + str(starting_state) + ",prestats_treshold=" + str(prestats_treshold) + ",last_state=" + last_state + ")'",
+                "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",corrected=" + str(corrected) + ",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",prestats_treshold=" + str(prestats_treshold) + ",last_state=\"" + str(last_state) + "\")'",
                 "job_name": "tbss",
                 "ntasks": 8,
                 "cpus_per_task": 1,
@@ -771,7 +771,7 @@ class Elikopy:
             job_list.append(p_job_id)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            tbss_utils(folder_path, grp1=grp1, grp2=grp2, corrected=corrected, starting_state=None, prestats_treshold=prestats_treshold,last_state=last_state)
+            tbss_utils(folder_path, grp1=grp1, grp2=grp2, corrected=corrected, starting_state=starting_state, prestats_treshold=prestats_treshold,last_state=last_state)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied TBSS \n")
             f.flush()
         f.close()
