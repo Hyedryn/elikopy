@@ -714,7 +714,7 @@ class Elikopy:
         f.close()
 
 
-    def tbss(self, grp1=[1], grp2=[2], folder_path=None, corrected=False, starting_state=None, prestats_treshold=0.2, last_state=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def tbss(self, grp1=None, grp2=None, folder_path=None, corrected=False, starting_state=None, prestats_treshold=0.2, last_state=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """ Perform tract base spatial statistics between the control data and case data. DTI needs to have been
         performed on the data first !!
 
@@ -731,6 +731,10 @@ class Elikopy:
         :param slurm: whether to use slurm
         :param slurm_email:
         """
+        if grp2 is None:
+            grp2 = [2]
+        if grp1 is None:
+            grp1 = [1]
         log_prefix = "TBSS"
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
