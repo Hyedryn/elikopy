@@ -120,40 +120,54 @@ def anonymise_nifti(rootdir,anonymize_json,rename):
 
 def getJobsState(folder_path,job_list,step_name):
     job_info = {}
+    job_failed = []
+    job_successed = []
     while job_list:
-        for job_id in job_list[:]:
-            job_info["job_state"] = get_job_state(job_id)
+        for job_data in job_list[:]:
+            job_info["job_state"] = get_job_state(job_data["id"])
             if job_info["job_state"] == 'COMPLETED':
-                job_list.remove(job_id)
+                job_list.remove(job_data)
                 f = open(folder_path + "/logs.txt", "a+")
                 f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                    job_id) + " COMPLETED\n")
+                    job_data) + " COMPLETED\n")
                 f.close()
+                job_successed.append(job_data["name"])
             if job_info["job_state"] == 'FAILED':
-                job_list.remove(job_id)
+                job_list.remove(job_data)
                 f = open(folder_path + "/logs.txt", "a+")
                 f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                    job_id) + " FAILED\n")
+                    job_data) + " FAILED\n")
                 f.close()
+                job_failed.append(job_data["name"])
             if job_info["job_state"] == 'OUT_OF_MEMORY':
-                job_list.remove(job_id)
+                job_list.remove(job_data)
                 f = open(folder_path + "/logs.txt", "a+")
                 f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                    job_id) + " OUT_OF_MEMORY\n")
+                    job_data) + " OUT_OF_MEMORY\n")
                 f.close()
+                job_failed.append(job_data["name"])
             if job_info["job_state"] == 'TIMEOUT':
-                job_list.remove(job_id)
+                job_list.remove(job_data)
                 f = open(folder_path + "/logs.txt", "a+")
                 f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                    job_id) + " TIMEOUT\n")
+                    job_data) + " TIMEOUT\n")
                 f.close()
+                job_failed.append(job_data["name"])
             if job_info["job_state"] == 'CANCELLED':
-                job_list.remove(job_id)
+                job_list.remove(job_data)
                 f = open(folder_path + "/logs.txt", "a+")
                 f.write("["+step_name+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Job " + str(
-                    job_id) + " CANCELLED\n")
+                    job_data) + " CANCELLED\n")
                 f.close()
+                job_failed.append(job_data["name"])
         time.sleep(30)
+
+    f = open(folder_path + "/logs.txt", "a+")
+    f.write("[" + step_name + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": List of successful jobs:\n " + str(
+        job_successed) + "\n")
+    f.write("[" + step_name + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": List of failed jobs:\n " + str(
+        job_failed) + "\n")
+    f.close()
 
 def export_files(folder_path, step):
     """

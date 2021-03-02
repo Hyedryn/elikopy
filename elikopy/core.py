@@ -253,7 +253,10 @@ class Elikopy:
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
-                p_job_id = submit_job(p_job)
+                p_job_id=[]
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
+
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
@@ -321,7 +324,10 @@ class Elikopy:
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
-                p_job_id = submit_job(p_job)
+
+                p_job_id = []
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
@@ -392,7 +398,10 @@ class Elikopy:
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
-                p_job_id = submit_job(p_job)
+
+                p_job_id = []
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
@@ -460,7 +469,10 @@ class Elikopy:
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
-                p_job_id = submit_job(p_job)
+
+                p_job_id = []
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
                 job_list.append(p_job_id)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
@@ -531,7 +543,10 @@ class Elikopy:
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
-                p_job_id = submit_job(p_job)
+
+                p_job_id = []
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
@@ -604,7 +619,10 @@ class Elikopy:
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
-                p_job_id = submit_job(p_job)
+
+                p_job_id = []
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
@@ -674,7 +692,10 @@ class Elikopy:
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
-                p_job_id = submit_job(p_job)
+
+                p_job_id = []
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
                 job_list.append(p_job_id)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
@@ -740,7 +761,9 @@ class Elikopy:
             job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
             job["ntasks"] = job["ntasks"] if slurm_cpus is None else slurm_cpus
             job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
-            p_job_id = submit_job(job)
+            p_job_id = []
+            p_job_id["id"] = submit_job(job)
+            p_job_id["name"] = "tbss"
             job_list.append(p_job_id)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
