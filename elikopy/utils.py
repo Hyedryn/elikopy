@@ -272,9 +272,9 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
         # transfer the FA files to the TBSS directory
         numpatient = 0
         numcontrol = 0
-        for index, p in patient_list:
+        for p in patient_list:
             patient_path = os.path.splitext(p)[0]
-            control_info = subj_type[index]
+            control_info = subj_type[patient_path]
             if control_info in grp1:
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
@@ -285,7 +285,7 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
                     outputdir + "/case" + numpatient + "_" + patient_path + "_fa.nii.gz")
                 numpatient += 1
-
+    
     import subprocess
     tbss_log = open(folder_path + "/TBSS/TBSS_logs.txt", "a+")
 
