@@ -12,8 +12,8 @@ import subprocess
 
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
-    mf_solo, tbss_utils, noddi_amico_solo
-from elikopy.utils import submit_job, get_job_state, makedir
+    mf_solo, noddi_amico_solo
+from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils
 
 
 def dicom_to_nifti(folder_path):
@@ -325,7 +325,7 @@ class Elikopy:
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
-                p_job_id = []
+                p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
                 p_job_id["name"] = p
                 job_list.append(p_job_id)
@@ -399,7 +399,7 @@ class Elikopy:
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
-                p_job_id = []
+                p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
                 p_job_id["name"] = p
                 job_list.append(p_job_id)
@@ -470,7 +470,7 @@ class Elikopy:
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
 
-                p_job_id = []
+                p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
                 p_job_id["name"] = p
                 job_list.append(p_job_id)
@@ -544,7 +544,7 @@ class Elikopy:
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
-                p_job_id = []
+                p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
                 p_job_id["name"] = p
                 job_list.append(p_job_id)
@@ -620,7 +620,7 @@ class Elikopy:
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
 
-                p_job_id = []
+                p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
                 p_job_id["name"] = p
                 job_list.append(p_job_id)
@@ -693,7 +693,7 @@ class Elikopy:
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
 
-                p_job_id = []
+                p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
                 p_job_id["name"] = p
                 job_list.append(p_job_id)
@@ -751,7 +751,7 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "python -c 'from utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",corrected=" + str(corrected) + ",grp1=" + grp1 + ",grp2=" + grp2 + ",starting_state=" + str(starting_state) + ",prestats_treshold=" + str(prestats_treshold) + ",last_state=" + last_state + ")'",
+                "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",corrected=" + str(corrected) + ",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=" + str(starting_state) + ",prestats_treshold=" + str(prestats_treshold) + ",last_state=" + last_state + ")'",
                 "job_name": "tbss",
                 "ntasks": 8,
                 "cpus_per_task": 1,
@@ -765,7 +765,7 @@ class Elikopy:
             job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
             job["ntasks"] = job["ntasks"] if slurm_cpus is None else slurm_cpus
             job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
-            p_job_id = []
+            p_job_id = {}
             p_job_id["id"] = submit_job(job)
             p_job_id["name"] = "tbss"
             job_list.append(p_job_id)
