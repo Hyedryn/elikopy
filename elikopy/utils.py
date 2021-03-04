@@ -239,26 +239,36 @@ def makedir(dir_path,log_path,log_prefix):
 
 
 
-def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, prestats_treshold=0.2, last_state=None):
+def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_corrected=False):
     """
+    Perform tract base spatial statistics between the control data and case data. DTI needs to have been
+    performed on the data first !!
 
-    :param folder_path:
-    :param grp1:
-    :param grp2:
-    :param corrected:
-    :param starting_state:
-    :param prestats_treshold:
+    :return:
+    :param folder_path: path to the root directory.
+    :param grp1: List of number corresponding to the type of the patients to put in the first group.
+    :param grp2: List of number corresponding to the type of the patients to put in the second group.
+    :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise.
+    :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats, design or randomise.
+    :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
+    :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
+    :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
+    :param randomise_corrected: Define whether or not the p value must be FWE corrected.
     """
     starting_state = None if starting_state == "None" else starting_state
     last_state = None if last_state == "None" else last_state
-    assert starting_state != (None or "preproc" or "prestats" or "randomise"), 'invalid starting state!'
-    assert last_state != (None or "preproc" or "postreg" or "prestats"), 'invalid last state!'
+    assert starting_state != (None or "reg" or "postreg" or "prestats" or "design" or "randomise"), 'invalid starting state!'
+    assert last_state != (None or "preproc" or "reg" or "postreg" or "prestats" or "design" or "randomise"), 'invalid last state!'
+    assert registration_type == ("-T" or "-t" or "-n")
+    assert postreg_type == ("-S" or "-T")
 
     # create the output directory
     log_prefix = "TBSS"
     outputdir = folder_path + "/TBSS"
     makedir(outputdir, folder_path + "/logs.txt", log_prefix)
 
+    import subprocess
+    tbss_log = open(folder_path + "/TBSS/TBSS_logs.txt", "a+")
 
     if starting_state == None:
         # open the subject and is_control lists
@@ -286,113 +296,152 @@ def tbss_utils(folder_path, grp1, grp2, corrected=False, starting_state=None, pr
                     outputdir + "/case" + str(numpatient) + "_" + patient_path + "_fa.nii.gz")
                 numpatient += 1
 
-    import subprocess
-    tbss_log = open(folder_path + "/TBSS/TBSS_logs.txt", "a+")
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of preproc\n")
+        tbss_log.flush()
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of preproc\n")
+        bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+        output, error = process.communicate()
 
-    bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
-    bashcmd = bashCommand.split()
-    print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
-    output, error = process.communicate()
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of preproc\n")
+        tbss_log.flush()
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": End of preproc\n")
-    tbss_log.flush()
+        # PERFORMS BACKUP FOR STARTING STATE
+        from distutils.dir_util import copy_tree
+        copy_tree(folder_path + "/TBSS/origdata", folder_path + "/TBSS/tbss_reg/origdata")
 
-    if(last_state=="preproc"):
-        tbss_log.close()
-        return
+        if last_state=="preproc":
+            tbss_log.close()
+            return
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
+    if starting_state == (None or "reg"):
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
 
-    bashCommand = 'cd ' + outputdir + ' && tbss_2_reg -T'
-    bashcmd = bashCommand.split()
-    print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
-    output, error = process.communicate()
+        bashCommand = 'cd ' + outputdir + ' && tbss_2_reg '+ registration_type
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+        output, error = process.communicate()
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": End of reg\n")
-    tbss_log.flush()
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of reg\n")
+        tbss_log.flush()
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of postreg\n")
+        # PERFORMS BACKUP FOR STARTING STATE
+        from distutils.dir_util import copy_tree
+        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/tbss_reg/FA")
+        #copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_reg/stats")
 
-    bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg -S'
-    bashcmd = bashCommand.split()
-    print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
-    output, error = process.communicate()
+        if last_state=="reg":
+            tbss_log.close()
+            return
 
-    #TODO PERFORMS BACKUP FOR STARTING STATE
+    if starting_state == (None or "reg" or "postreg"):
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of postreg\n")
+        tbss_log.flush()
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": End of postreg\n")
-    tbss_log.flush()
+        bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+        output, error = process.communicate()
 
-    if(last_state=="postreg"):
-        tbss_log.close()
-        return
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of postreg\n")
+        tbss_log.flush()
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_postreg/stats")
 
-    bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats 0.2'
-    bashcmd = bashCommand.split()
-    print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
-                               stderr=subprocess.STDOUT)
-    output, error = process.communicate()
+        if last_state=="postreg":
+            tbss_log.close()
+            return
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": End of prestats\n")
-    tbss_log.flush()
+    if starting_state == (None or "reg" or "postreg" or "prestats"):
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
+        tbss_log.flush()
 
-    if(last_state=="prestats"):
-        tbss_log.close()
-        return
+        bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + prestats_treshold
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
+                                   stderr=subprocess.STDOUT)
+        output, error = process.communicate()
 
-    # TODO PERFORMS BACKUP FOR STARTING STATE
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of prestats\n")
+        tbss_log.flush()
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of design\n")
+        # PERFORMS BACKUP FOR STARTING STATE
+        from distutils.dir_util import copy_tree
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_prestats/stats")
 
-    bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + numcontrol + ' ' + numpatient
-    bashcmd = bashCommand.split()
-    print("Bash command is:\n{}\n".format(bashcmd))
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
-    output, error = process.communicate()
+        if last_state=="prestats":
+            tbss_log.close()
+            return
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": End of design\n")
-    tbss_log.flush()
+    if starting_state == (None or "reg" or "postreg" or "prestats" or "design"):
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of design\n")
+        tbss_log.flush()
 
-    if corrected:
+        bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + numcontrol + ' ' + numpatient
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of design\n")
+        tbss_log.flush()
+
+        # PERFORMS BACKUP FOR STARTING STATE
+        from distutils.dir_util import copy_tree
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/design_ttest2/stats")
+
+        if last_state=="design":
+            tbss_log.close()
+            return
+
+    if randomise_corrected:
         bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2'
         bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
     else:
         bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
         bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
+    if starting_state == (None or "reg" or "postreg" or "prestats" or "design" or "randomise"):
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
+        tbss_log.flush()
 
-    bashcmd1 = bashCommand1.split()
-    print("Bash command is:\n{}\n".format(bashcmd1))
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
-                               stderr=subprocess.STDOUT)
-    output, error = process.communicate()
+        bashcmd1 = bashCommand1.split()
+        print("Bash command is:\n{}\n".format(bashcmd1))
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
+                                   stderr=subprocess.STDOUT)
+        output, error = process.communicate()
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": End of randomise\n")
-    tbss_log.flush()
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of randomise\n")
+        tbss_log.flush()
+
+        # PERFORMS BACKUP FOR STARTING STATE
+        from distutils.dir_util import copy_tree
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/randomise/stats")
+
+        if last_state=="randomise":
+            tbss_log.close()
+            return
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of autoaq\n")
+    tbss_log.flush()
 
     bashcmd2 = bashCommand2.split()
     print("Bash command is:\n{}\n".format(bashcmd2))

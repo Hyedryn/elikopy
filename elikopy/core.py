@@ -714,27 +714,29 @@ class Elikopy:
         f.close()
 
 
-    def tbss(self, grp1=None, grp2=None, folder_path=None, corrected=False, starting_state=None, prestats_treshold=0.2, last_state=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """ Perform tract base spatial statistics between the control data and case data. DTI needs to have been
+    def tbss(self, folder_path=None, grp1=None, grp2=None, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_corrected=False,  slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
+        """ Wrapper function - Perform tract base spatial statistics between the control data and case data. DTI needs to have been
         performed on the data first !!
 
-        :param grp1:
-        :param grp2:
-        :param folder_path: root directory
-        :param corrected: whether the p value must be FWE corrected
-        :param starting_state: Could either be None,
-        :param prestats_treshold:
-        :param last_state: Could either be None, preproc, postreg or prestats
-        :param slurm_timeout:
-        :param slurm_cpus:
-        :param slurm_mem:
-        :param slurm: whether to use slurm
-        :param slurm_email:
+        :param folder_path: path to the root directory.
+        :param grp1: List of number corresponding to the type of the patients to put in the first group.
+        :param grp2: List of number corresponding to the type of the patients to put in the second group.
+        :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise.
+        :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats, design or randomise.
+        :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
+        :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
+        :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
+        :param randomise_corrected: Define whether or not the p value must be FWE corrected.
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
         """
-        if grp2 is None:
-            grp2 = [2]
         if grp1 is None:
             grp1 = [1]
+        if grp2 is None:
+            grp2 = [2]
         log_prefix = "TBSS"
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
@@ -751,7 +753,7 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",corrected=" + str(corrected) + ",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",prestats_treshold=" + str(prestats_treshold) + ",last_state=\"" + str(last_state) + "\")'",
+                "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + ",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + ",last_state=\"" + str(last_state) + ",registration_type=\"" + str(registration_type) + ",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + "\",randomise_corrected=" + str(randomise_corrected) + "\")'",
                 "job_name": "tbss",
                 "ntasks": 8,
                 "cpus_per_task": 1,
@@ -763,7 +765,7 @@ class Elikopy:
                 "error": tbss_path + '/' + "slurm-%j.err",
             }
             job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
-            job["ntasks"] = job["ntasks"] if slurm_cpus is None else slurm_cpus
+            job["ntasks"] = job["ntasks"] if slurm_tasks is None else slurm_tasks
             job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
             p_job_id = {}
             p_job_id["id"] = submit_job(job)
@@ -771,7 +773,7 @@ class Elikopy:
             job_list.append(p_job_id)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            tbss_utils(folder_path, grp1=grp1, grp2=grp2, corrected=corrected, starting_state=starting_state, prestats_treshold=prestats_treshold,last_state=last_state)
+            tbss_utils(folder_path=folder_path, grp1=grp1, grp2=grp2, starting_state=starting_state, last_state=last_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold, randomise_corrected=randomise_corrected)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied TBSS \n")
             f.flush()
         f.close()
