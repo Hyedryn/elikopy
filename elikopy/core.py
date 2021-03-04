@@ -253,7 +253,7 @@ class Elikopy:
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
-                p_job_id=[]
+                p_job_id={}
                 p_job_id["id"] = submit_job(p_job)
                 p_job_id["name"] = p
 
