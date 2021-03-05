@@ -293,14 +293,24 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     from distutils.dir_util import copy_tree
 
+    # open the subject and is_control lists
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+    dest_subj_type = folder_path + "/subjects/subj_type.json"
+    with open(dest_subj_type, 'r') as f:
+        subj_type = json.load(f)
+    numpatient = 0
+    numcontrol = 0
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        control_info = subj_type[patient_path]
+        if control_info in grp1:
+            numcontrol += 1
+        if control_info in grp2:
+            numpatient += 1
+
     if starting_state == None:
-        # open the subject and is_control lists
-        dest_success = folder_path + "/subjects/subj_list.json"
-        with open(dest_success, 'r') as f:
-            patient_list = json.load(f)
-        dest_subj_type = folder_path + "/subjects/subj_type.json"
-        with open(dest_subj_type, 'r') as f:
-            subj_type = json.load(f)
 
         # transfer the FA files to the TBSS directory
         numpatient = 0
@@ -362,7 +372,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
         copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/tbss_reg/FA")
-        #copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_reg/stats")
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_reg/stats")
 
         if last_state=="reg":
             tbss_log.close()
@@ -376,6 +386,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         if starting_state == "postreg":
             copy_tree(folder_path + "/TBSS/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
             copy_tree(folder_path + "/TBSS/tbss_reg/FA", folder_path + "/TBSS/FA")
+            copy_tree(folder_path + "/TBSS/tbss_reg/stats", folder_path + "/TBSS/stats")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
         bashcmd = bashCommand.split()
