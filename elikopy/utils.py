@@ -312,15 +312,20 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/TBSS/origdata", folder_path + "/TBSS/tbss_reg/origdata")
+        copy_tree(folder_path + "/TBSS/origdata", folder_path + "/TBSS/tbss_preproc/origdata")
+        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/tbss_preproc/FA")
 
         if last_state=="preproc":
             tbss_log.close()
             return
 
-    if starting_state == (None or "reg"):
+    if starting_state in (None, "reg"):
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
+
+        if starting_state == "reg":
+            copy_tree(folder_path + "/TBSS/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/tbss_preproc/FA", folder_path + "/TBSS/FA")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_2_reg '+ registration_type
         bashcmd = bashCommand.split()
@@ -341,10 +346,14 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             tbss_log.close()
             return
 
-    if starting_state == (None or "reg" or "postreg"):
+    if starting_state in (None, "reg", "postreg"):
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of postreg\n")
         tbss_log.flush()
+
+        if starting_state == "postreg":
+            copy_tree(folder_path + "/TBSS/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/tbss_reg/FA", folder_path + "/TBSS/FA")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
         bashcmd = bashCommand.split()
@@ -362,10 +371,15 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             tbss_log.close()
             return
 
-    if starting_state == (None or "reg" or "postreg" or "prestats"):
+    if starting_state in (None, "reg", "postreg", "prestats"):
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
         tbss_log.flush()
+
+        if starting_state == "prestats":
+            copy_tree(folder_path + "/TBSS/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/tbss_reg/FA", folder_path + "/TBSS/FA")
+            copy_tree(folder_path + "/TBSS/tbss_postreg/stats", folder_path + "/TBSS/stats")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + prestats_treshold
         bashcmd = bashCommand.split()
@@ -386,10 +400,13 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             tbss_log.close()
             return
 
-    if starting_state == (None or "reg" or "postreg" or "prestats" or "design"):
+    if starting_state in (None, "reg", "postreg", "prestats", "design"):
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of design\n")
         tbss_log.flush()
+
+        if starting_state == "design":
+            copy_tree(folder_path + "/TBSS/tbss_prestats/stats", folder_path + "/TBSS/stats")
 
         bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + numcontrol + ' ' + numpatient
         bashcmd = bashCommand.split()
@@ -416,10 +433,13 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
         bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
 
-    if starting_state == (None or "reg" or "postreg" or "prestats" or "design" or "randomise"):
+    if starting_state in (None, "reg", "postreg", "prestats", "design", "randomise"):
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
         tbss_log.flush()
+        
+        if starting_state == "randomise":
+            copy_tree(folder_path + "/TBSS/design_ttest2/stats", folder_path + "/TBSS/stats")
 
         bashcmd1 = bashCommand1.split()
         print("Bash command is:\n{}\n".format(bashcmd1))
