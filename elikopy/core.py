@@ -163,21 +163,26 @@ class Elikopy:
         f.close()
 
 
-    def preproc(self, folder_path=None, eddy=False, denoising=False, slurm=None, reslice=False, gibbs=False, topup=False, patient_list_m=None, slurm_email=None, starting_state=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """Perform bet and optionnaly eddy and denoising. Generated data are stored in bet, eddy, denoising and final directory
+    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+        """Wrapper function for the preprocessing. Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
         located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final
 
-        :param slurm:
-        :param reslice:
-        :param gibbs:
-        :param topup:
-        :param patient_list_m:
-        :param slurm_email:
-        :param folder_path: Path to root folder containing all the dicom
-        :param eddy: If True, eddy is called
-        :param denoising: If True, denoising is called
-        :param starting_state: Could either be None, denoising, gibbs, topup or eddy
-
+        :param folder_path: the path to the root directory.
+        :param reslice: If true, data will be resliced with a new voxel resolution of 2*2*2.
+        :param denoising: If true, PCA-based denoising using the Marcenko-Pastur distribution will be performed.
+        :param gibbs: If true, Gibbs ringing artefacts of images volumes will be suppressed.
+        :param topup: If true, topup will estimate and correct susceptibility induced distortions.
+        :param eddy: If true, eddy will correct eddy currents and movements in diffusion data.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup or eddy.
+        :param bet_median_radius: Radius (in voxels) of the applied median filter during bet.
+        :param bet_num_pass: Number of pass of the median filter during bet.
+        :param bet_dilate: Number of iterations for binary dilation during bet.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout by a custom timeout.
+        :param slurm_cpus: Replace the default number of slurm cpus by a custom number of cpus.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
         """
 
         assert starting_state != (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
@@ -218,7 +223,8 @@ class Elikopy:
                 p_job = {
                     "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
                         eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
-                        gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + "\")'",
+                        gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + ",bet_median_radius=\"" + str(
+                        bet_median_radius) + ",bet_dilate=\"" + str(bet_dilate) + ",bet_numpass=\"" + str(bet_numpass) + "\")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
@@ -261,7 +267,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                preproc_solo(folder_path + "/subjects",p,eddy=eddy,denoising=denoising,reslice=reslice,gibbs=gibbs,topup=topup,starting_state=starting_state)
+                preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,starting_state=starting_state,bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
                 f.flush()
         f.close()
@@ -275,13 +281,17 @@ class Elikopy:
         f.close()
 
 
-    def dti(self,folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """Perform dti and store the data in the out/dti folder.
+    def dti(self,folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+        """Wrapper function for tensor reconstruction and computation of DTI metrics using Weighted Least-Squares.
+        Performs a tensor reconstruction and saves the DTI metrics.
 
-        :param folder_path: Path to root folder containing all the dicom
-        :param slurm:
-        :param patient_list_m:
-        :param slurm_email:
+        :param folder_path: the path to the root directory.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 1h by a custom timeout.
+        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
         log_prefix = "DTI"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -349,13 +359,15 @@ class Elikopy:
     def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
 
-        :param folder_path: Path to root folder containing all the nifti
+        :param folder_path: the path to the root directory.
         :param dictionary_path: Path to the dictionary to use
         :param CSD_bvalue:
-        :param slurm:
-        :param patient_list_m:
-        :param slurm_email:
-
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
         log_prefix="MF"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -420,17 +432,18 @@ class Elikopy:
         f.close()
 
 
-    def white_mask(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def white_mask(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
         T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
         a folder named anat in the root folder.
 
-        :param folder_path: Path to root folder containing all the dicom
-        :param slurm:
-        :param patient_list_m:
-        :param slurm_email:
-
-
+        :param folder_path: path to the root directory.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 3h by a custom timeout.
+        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
 
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -491,15 +504,17 @@ class Elikopy:
         f.close()
 
 
-    def noddi(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, force_brain_mask=False, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def noddi(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
 
-        :param folder_path: Path to root folder containing all the dicom
-        :param slurm:
-        :param patient_list_m:
-        :param slurm_email:
+        :param folder_path: path to the root directory.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
         :param force_brain_mask:
-
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
+        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
         log_prefix="NODDI"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -565,15 +580,17 @@ class Elikopy:
         f.close()
 
 
-    def noddi_amico(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, force_brain_mask=False, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def noddi_amico(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
 
-        :param folder_path: Path to root folder containing all the dicom
-        :param slurm:
-        :param patient_list_m:
-        :param slurm_email:
+        :param folder_path: path to the root directory.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
         :param force_brain_mask:
-
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
+        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
         log_prefix = "NODDI AMICO"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -641,14 +658,16 @@ class Elikopy:
         f.close()
 
 
-    def diamond(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def diamond(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
 
-        :param folder_path: Path to root folder containing all the nifti
-        :param slurm:
-        :param patient_list_m:
-        :param slurm_email:
-
+        :param folder_path: path to the root directory.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 14h by a custom timeout.
+        :param slurm_cpus: Replace the default number of slurm cpus of 4 by a custom number of cpus.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (6096MO by cpu) by a custom amount of ram.
         """
         log_prefix = "DIAMOND"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -715,8 +734,8 @@ class Elikopy:
 
 
     def tbss(self, folder_path=None, grp1=None, grp2=None, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_corrected=False,  slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
-        """ Wrapper function - Perform tract base spatial statistics between the control data and case data. DTI needs to have been
-        performed on the data first !!
+        """ Wrapper function for TBSS. Perform tract base spatial statistics between the control data and case data.
+        DTI needs to have been performed on the data first !!
 
         :param folder_path: path to the root directory.
         :param grp1: List of number corresponding to the type of the patients to put in the first group.
@@ -727,11 +746,11 @@ class Elikopy:
         :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
         :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
         :param randomise_corrected: Define whether or not the p value must be FWE corrected.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
         :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
-        :param slurm: Whether to use the Slurm Workload Manager or not.
-        :param slurm_email: Email adress to send notification if a task fails.
         """
         if grp1 is None:
             grp1 = [1]

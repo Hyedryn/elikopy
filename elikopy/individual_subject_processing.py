@@ -12,16 +12,20 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gibbs=False, topup=False,starting_state=None):
+def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2):
     """
 
-    :param folder_path:
-    :param p:
-    :param eddy:
-    :param denoising:
-    :param reslice:
-    :param gibbs:
-    :param topup:
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
+    :param reslice: If true, data will be resliced with a new voxel resolution of 2*2*2.
+    :param denoising: If true, PCA-based denoising using the Marcenko-Pastur distribution will be performed.
+    :param gibbs: If true, Gibbs ringing artefacts of images volumes will be suppressed.
+    :param topup: If true, topup will estimate and correct susceptibility induced distortions.
+    :param eddy: If true, eddy will correct eddy currents and movements in diffusion data.
+    :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup or eddy.
+    :param bet_median_radius: Radius (in voxels) of the applied median filter during bet.
+    :param bet_num_pass: Number of pass of the median filter during bet.
+    :param bet_dilate: Number of iterations for binary dilation during bet.
     """
 
     assert starting_state != (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
@@ -72,7 +76,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
         f.close()
 
     if starting_state == None:
-        b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
+        b0_mask, mask = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass, vol_idx=range(0, np.shape(data)[3]), dilate=bet_dilate)
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',
                    mask.astype(np.float32), affine)
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz',
@@ -112,7 +116,25 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
             mask, _ = load_nifti(mask_path)
 
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
-        denoised = mppca(b0_mask, patch_radius=pr)
+        denoised, sigma = mppca(b0_mask, patch_radius=pr, return_sigma=True)
+
+        mean_sigma = np.mean(sigma[b0_mask])
+        mean_signal = np.mean(denoised[b0_mask])
+        snr = mean_signal/mean_sigma
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Denoising mean sigma:"+ str(mean_sigma)+ ", snr:" + str(snr) + " for patient %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Denoising mean sigma" + str(mean_sigma)+ ", snr:" + str(snr) + " for patient %s \n" % p)
+        f.close()
+
+        #import matplotlib.pyplot as plt
+        #fig3 = plt.figure('PCA Noise standard deviation estimation')
+        #plt.imshow(sigma[..., sli].T, cmap='gray', origin='lower')
+        #plt.axis('off')
+        #plt.show()
+        #fig3.savefig(denoising_path + '/' + patient_path + '_mppca_sigma.png')
+
         save_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz', denoised.astype(np.float32), affine)
 
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -143,7 +165,7 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
             b0_mask, affine, voxel_size = load_nifti(b0_mask_path, return_voxsize=True)
             mask, _ = load_nifti(mask_path)
 
-        data = gibbs_removal(b0_mask)
+        data = gibbs_removal(b0_mask,num_threads=4)
         corrected_path = folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/" + patient_path + '_gibbscorrected.nii.gz'
         save_nifti(corrected_path, data.astype(np.float32), affine)
 
@@ -294,9 +316,11 @@ def preproc_solo(folder_path, p, eddy=False, denoising=False, reslice=False, gib
 
 def dti_solo(folder_path, p):
     """
+    Tensor reconstruction and computation of DTI metrics using Weighted Least-Squares.
+    Performs a tensor reconstruction and saves the DTI metrics.
 
-    :param folder_path:
-    :param p:
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
     """
     log_prefix = "DTI SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -366,8 +390,8 @@ def dti_solo(folder_path, p):
 def white_mask_solo(folder_path, p):
     """
 
-    :param folder_path:
-    :param p:
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
     """
 
     log_prefix = "White mask solo"
@@ -526,8 +550,8 @@ def white_mask_solo(folder_path, p):
 def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False):
     """
 
-    :param folder_path:
-    :param p:
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
     :param force_brain_mask:
     :param lambda_iso_diff:
     :param lambda_par_diff:
@@ -629,8 +653,8 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
 def noddi_amico_solo(folder_path, p):
     """
 
-    :param folder_path:
-    :param p:
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
     """
     print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI AMICO processing for patient %s \n" % p)
@@ -682,8 +706,8 @@ def noddi_amico_solo(folder_path, p):
 def diamond_solo(folder_path, p, box=None):
     """
 
-    :param folder_path:
-    :param p:
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
     :param box:
     """
     log_prefix = "DIAMOND SOLO"
@@ -761,8 +785,8 @@ def diamond_solo(folder_path, p, box=None):
 def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
     """
 
-    :param folder_path:
-    :param p:
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
     :param dictionary_path:
     :param CSD_bvalue:
     """
