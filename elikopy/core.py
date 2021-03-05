@@ -185,7 +185,7 @@ class Elikopy:
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
         """
 
-        assert starting_state != (None or "denoising" or "gibbs" or "topup" or "eddy"), 'invalid starting state!'
+        assert starting_state in (None, "denoising", "gibbs", "topup", "eddy"), 'invalid starting state!'
         if starting_state=="denoising":
             assert denoising == True, 'if starting_state is denoising, denoising must be True!'
         if starting_state=="gibbs":
@@ -752,6 +752,12 @@ class Elikopy:
         :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
+
+        assert starting_state in (None, "reg", "postreg", "prestats", "design", "randomise"), 'invalid starting state!'
+        assert last_state in (None, "preproc", "reg", "postreg", "prestats", "design", "randomise"), 'invalid last state!'
+        assert registration_type in ("-T", "-t", "-n"), 'invalid registration type!'
+        assert postreg_type in ("-S", "-T"), 'invalid postreg type!'
+
         if grp1 is None:
             grp1 = [1]
         if grp2 is None:

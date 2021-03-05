@@ -257,10 +257,10 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
     """
     starting_state = None if starting_state == "None" else starting_state
     last_state = None if last_state == "None" else last_state
-    assert starting_state != (None or "reg" or "postreg" or "prestats" or "design" or "randomise"), 'invalid starting state!'
-    assert last_state != (None or "preproc" or "reg" or "postreg" or "prestats" or "design" or "randomise"), 'invalid last state!'
-    assert registration_type == ("-T" or "-t" or "-n")
-    assert postreg_type == ("-S" or "-T")
+    assert starting_state in (None, "reg", "postreg", "prestats", "design", "randomise"), 'invalid starting state!'
+    assert last_state in (None, "preproc", "reg", "postreg", "prestats", "design", "randomise"), 'invalid last state!'
+    assert registration_type in ("-T", "-t", "-n"), 'invalid registration type!'
+    assert postreg_type in ("-S", "-T"), 'invalid postreg type!'
 
     # create the output directory
     log_prefix = "TBSS"
