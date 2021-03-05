@@ -476,7 +476,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
         bashcmd1 = bashCommand1.split()
         print("Bash command is:\n{}\n".format(bashcmd1))
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
+        process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=tbss_log,
                                    stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
@@ -498,7 +498,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     bashcmd2 = bashCommand2.split()
     print("Bash command is:\n{}\n".format(bashcmd2))
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
