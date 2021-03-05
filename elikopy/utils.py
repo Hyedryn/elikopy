@@ -441,7 +441,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         if starting_state == "design":
             copy_tree(folder_path + "/TBSS/tbss_prestats/stats", folder_path + "/TBSS/stats")
 
-        bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + numcontrol + ' ' + numpatient
+        bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numcontrol) + ' ' + str(numpatient)
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
