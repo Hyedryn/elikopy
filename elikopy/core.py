@@ -772,7 +772,7 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + ",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + ",last_state=\"" + str(last_state) + ",registration_type=\"" + str(registration_type) + ",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + "\",randomise_corrected=" + str(randomise_corrected) + "\")'",
+                "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",last_state=\"" + str(last_state) + "\",registration_type=\"" + str(registration_type) + "\",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + ",randomise_corrected=" + str(randomise_corrected) + ")'",
                 "job_name": "tbss",
                 "ntasks": 8,
                 "cpus_per_task": 1,
