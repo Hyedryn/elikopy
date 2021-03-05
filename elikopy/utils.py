@@ -291,6 +291,8 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
     import subprocess
     tbss_log = open(folder_path + "/TBSS/TBSS_logs.txt", "a+")
 
+    from distutils.dir_util import copy_tree
+
     if starting_state == None:
         # open the subject and is_control lists
         dest_success = folder_path + "/subjects/subj_list.json"
@@ -332,7 +334,6 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         tbss_log.flush()
 
         # PERFORMS BACKUP FOR STARTING STATE
-        from distutils.dir_util import copy_tree
         copy_tree(folder_path + "/TBSS/origdata", folder_path + "/TBSS/tbss_preproc/origdata")
         copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/tbss_preproc/FA")
 
