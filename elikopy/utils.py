@@ -402,7 +402,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             copy_tree(folder_path + "/TBSS/tbss_reg/FA", folder_path + "/TBSS/FA")
             copy_tree(folder_path + "/TBSS/tbss_postreg/stats", folder_path + "/TBSS/stats")
 
-        bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + prestats_treshold
+        bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold)
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
@@ -417,7 +417,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         from distutils.dir_util import copy_tree
         copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_prestats/stats")
 
-        if last_state=="prestats":
+        if last_state == "prestats":
             tbss_log.close()
             return
 
