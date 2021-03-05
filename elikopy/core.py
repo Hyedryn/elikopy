@@ -21,7 +21,6 @@ def dicom_to_nifti(folder_path):
     Parameters
 
     :param folder_path: Path to root folder containing all the dicom
-
     """
     f=open(folder_path + "/logs.txt", "a+")
     f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning sequential dicom convertion\n")
@@ -81,7 +80,7 @@ class Elikopy:
         bval and bvec file, they are discarded and the user is notified by the mean of a summary file named
         patient_error.json generated in the out sub-directory. All the valid patient are stored in a file named patient_list.json
 
-        :param folder_path: Path to root folder containing all the dicom
+        :param folder_path: Path to root folder of the study.
         """
         log_prefix = "PATIENT LIST"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -357,7 +356,7 @@ class Elikopy:
 
 
     def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
+        """Wrapper function for microstructure estimation. Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
 
         :param folder_path: the path to the root directory.
         :param dictionary_path: Path to the dictionary to use
@@ -433,7 +432,7 @@ class Elikopy:
 
 
     def white_mask(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
+        """ Wrapper function for whitematter mask computation. Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
         T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
         a folder named anat in the root folder.
 
@@ -505,7 +504,7 @@ class Elikopy:
 
 
     def noddi(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
+        """Wrapper function for noddi. Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
 
         :param folder_path: path to the root directory.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
@@ -581,7 +580,7 @@ class Elikopy:
 
 
     def noddi_amico(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
+        """Wrapper function for noddi amico. Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
 
         :param folder_path: path to the root directory.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
@@ -659,7 +658,7 @@ class Elikopy:
 
 
     def diamond(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
+        """Wrapper function for DIAMOND. Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
 
         :param folder_path: path to the root directory.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.

@@ -14,6 +14,8 @@ from dipy.denoise.gibbs import gibbs_removal
 
 def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2):
     """
+    Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
+    located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
@@ -388,7 +390,9 @@ def dti_solo(folder_path, p):
 
 
 def white_mask_solo(folder_path, p):
-    """
+    """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
+    T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
+    a folder named anat in the root folder.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
@@ -548,7 +552,7 @@ def white_mask_solo(folder_path, p):
 
 
 def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False):
-    """
+    """ Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
@@ -651,7 +655,7 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
 
 
 def noddi_amico_solo(folder_path, p):
-    """
+    """ Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
@@ -704,7 +708,7 @@ def noddi_amico_solo(folder_path, p):
 
 
 def diamond_solo(folder_path, p, box=None):
-    """
+    """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
@@ -783,7 +787,7 @@ def diamond_solo(folder_path, p, box=None):
 
 
 def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
-    """
+    """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.

@@ -10,9 +10,10 @@ import subprocess
 
 def submit_job(job_info):
     """
+    Submit a job to the Slurm Workload Manager using a crafted sbatch.
 
-    :param job_info:
-    :return:
+    :param job_info: The parameters to use in the sbatch.
+    :return job_id: The id of the submited job.
     """
     # Construct sbatch command
     slurm_cmd = ["sbatch"]
@@ -57,10 +58,12 @@ def submit_job(job_info):
 
 def anonymise_nifti(rootdir,anonymize_json,rename):
     """
+    Anonymise all nifti present in rootdir by removing the PatientName and PatientBirthDate (only month and day) in the json and
+    renaming the nifti file name to the PatientID.
 
-    :param rootdir:
-    :param anonymize_json:
-    :param rename:
+    :param rootdir: Folder containing all the nifti to anonimyse.
+    :param anonymize_json: If true, edit the json to remove the PatientName and replace the PatientBirthDate by the year of birth.
+    :param rename: If true, rename the nifti to the PatientID.
     """
     import json
     import os
@@ -119,6 +122,14 @@ def anonymise_nifti(rootdir,anonymize_json,rename):
                 print()
 
 def getJobsState(folder_path,job_list,step_name):
+    """
+    Periodically check the status of all jobs in the job_list. When a job status change to complete or a failing state.
+    Write the status in the log and remove the job from the job_list. This function end when all jobs are completed or failed.
+
+    :param folder_path: The path to the root dir of the study (used to write the logs.txt file)
+    :param job_list: The list of job to check for state update
+    :param step_name: The string value of the prefix to put in the log file
+    """
     job_info = {}
     job_failed = []
     job_successed = []
@@ -169,13 +180,13 @@ def getJobsState(folder_path,job_list,step_name):
         job_failed) + "\n")
     f.close()
 
-def export_files(folder_path, step):
+def export_files(folder_path, step, patient_list_m=None):
     """
     Create an export folder in the root folder containing the results of step for each patient in a single folder
 
     :param folder_path: root folder
     :param step: step to export
-    :return: nothing
+    :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
 
     example : export_files('user/my_rootfolder', 'dMRI/microstructure/dti')
     """
@@ -193,20 +204,23 @@ def export_files(folder_path, step):
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
+    if patient_list_m:
+        patient_list = patient_list_m
+
     for p in patient_list:
         copy_path = folder_path + '/subjects/' + os.path.splitext(p)[0] + '/' + step
         shutil.copytree(copy_path, export_path, dirs_exist_ok=True)
 
     shutil.copyfile(folder_path + "/subjects/subj_list.json", export_path + "/subj_list.json")
     shutil.copyfile(folder_path + "/subjects/subj_error.json", export_path + "/subj_error.json")
-    shutil.copyfile(folder_path + "/subjects/is_control.json", export_path + "/is_control.json")
+    shutil.copyfile(folder_path + "/subjects/subj_type.json", export_path + "/subj_type.json")
 
 
 def get_job_state(job_id):
     """
-
-    :param job_id:
-    :return:
+    Retrieve the state of a job through the sacct bash command offered by the lurm Workload Manager.
+    :param job_id: The id of the job to retrieve the state of.
+    :return state: The string value representing the state of the job.
     """
     cmd = "sacct --jobs=" + str(job_id) + " -n -o state"
 
@@ -223,6 +237,13 @@ def get_job_state(job_id):
     return state
 
 def makedir(dir_path,log_path,log_prefix):
+    """
+    Create a directory in the location specified by the dir_path and write the log in the log_path.
+
+    :param dir_path: The path to the directory to create.
+    :param log_path: The path to the log file to write verbose data.
+    :param log_prefix: The prefix to use in the log file.
+    """
     if not(os.path.exists(dir_path)):
         try:
             os.makedirs(dir_path)
@@ -437,7 +458,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
         tbss_log.flush()
-        
+
         if starting_state == "randomise":
             copy_tree(folder_path + "/TBSS/design_ttest2/stats", folder_path + "/TBSS/stats")
 
