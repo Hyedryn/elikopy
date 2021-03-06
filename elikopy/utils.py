@@ -344,8 +344,8 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         tbss_log.flush()
 
         # PERFORMS BACKUP FOR STARTING STATE
-        copy_tree(folder_path + "/TBSS/origdata", folder_path + "/TBSS/tbss_preproc/origdata")
-        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/tbss_preproc/FA")
+        copy_tree(folder_path + "/TBSS/origdata", folder_path + "/TBSS/backup/tbss_preproc/origdata")
+        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/backup/tbss_preproc/FA")
 
         if last_state=="preproc":
             tbss_log.close()
@@ -356,8 +356,8 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
 
         if starting_state == "reg":
-            copy_tree(folder_path + "/TBSS/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
-            copy_tree(folder_path + "/TBSS/tbss_preproc/FA", folder_path + "/TBSS/FA")
+            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/FA", folder_path + "/TBSS/FA")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_2_reg '+ registration_type
         bashcmd = bashCommand.split()
@@ -371,8 +371,8 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/tbss_reg/FA")
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_reg/stats")
+        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/backup/tbss_reg/FA")
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/tbss_reg/stats")
 
         if last_state=="reg":
             tbss_log.close()
@@ -384,9 +384,9 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         tbss_log.flush()
 
         if starting_state == "postreg":
-            copy_tree(folder_path + "/TBSS/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
-            copy_tree(folder_path + "/TBSS/tbss_reg/FA", folder_path + "/TBSS/FA")
-            copy_tree(folder_path + "/TBSS/tbss_reg/stats", folder_path + "/TBSS/stats")
+            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/backup/tbss_reg/FA", folder_path + "/TBSS/FA")
+            copy_tree(folder_path + "/TBSS/backup/tbss_reg/stats", folder_path + "/TBSS/stats")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
         bashcmd = bashCommand.split()
@@ -398,7 +398,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             "%d.%b %Y %H:%M:%S") + ": End of postreg\n")
         tbss_log.flush()
 
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_postreg/stats")
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/tbss_postreg/stats")
 
         if last_state=="postreg":
             tbss_log.close()
@@ -410,9 +410,9 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         tbss_log.flush()
 
         if starting_state == "prestats":
-            copy_tree(folder_path + "/TBSS/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
-            copy_tree(folder_path + "/TBSS/tbss_reg/FA", folder_path + "/TBSS/FA")
-            copy_tree(folder_path + "/TBSS/tbss_postreg/stats", folder_path + "/TBSS/stats")
+            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/backup/tbss_reg/FA", folder_path + "/TBSS/FA")
+            copy_tree(folder_path + "/TBSS/backup/tbss_postreg/stats", folder_path + "/TBSS/stats")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold)
         bashcmd = bashCommand.split()
@@ -427,7 +427,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/tbss_prestats/stats")
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/tbss_prestats/stats")
 
         if last_state == "prestats":
             tbss_log.close()
@@ -439,7 +439,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         tbss_log.flush()
 
         if starting_state == "design":
-            copy_tree(folder_path + "/TBSS/tbss_prestats/stats", folder_path + "/TBSS/stats")
+            copy_tree(folder_path + "/TBSS/backup/tbss_prestats/stats", folder_path + "/TBSS/stats")
 
         bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numcontrol) + ' ' + str(numpatient)
         bashcmd = bashCommand.split()
@@ -453,26 +453,30 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/design_ttest2/stats")
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/design_ttest2/stats")
 
         if last_state=="design":
             tbss_log.close()
             return
 
+    if starting_state == "randomise":
+        copy_tree(folder_path + "/TBSS/backup/design_ttest2/stats", folder_path + "/TBSS/stats")
+
     if randomise_corrected:
-        bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2'
-        bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/stats_corrected")
+        bashCommand1 = 'cd ' + outputdir + '/stats_corrected ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2'
+        bashCommand2 = 'cd ' + outputdir + '/stats_corrected ' + ' && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
     else:
-        bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
-        bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/stats_uncorrected")
+        bashCommand1 = 'cd ' + outputdir + '/stats_uncorrected ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
+        bashCommand2 = 'cd ' + outputdir + '/stats_uncorrected ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
 
     if starting_state in (None, "reg", "postreg", "prestats", "design", "randomise"):
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
         tbss_log.flush()
 
-        if starting_state == "randomise":
-            copy_tree(folder_path + "/TBSS/design_ttest2/stats", folder_path + "/TBSS/stats")
+
 
         bashcmd1 = bashCommand1.split()
         print("Bash command is:\n{}\n".format(bashcmd1))
@@ -486,7 +490,10 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/randomise/stats")
+        if randomise_corrected:
+            copy_tree(folder_path + "/TBSS/stats_corrected", folder_path + "/TBSS/backup/randomise/stats_corrected")
+        else:
+            copy_tree(folder_path + "/TBSS/stats_uncorrected", folder_path + "/TBSS/backup/randomise/stats_uncorrected")
 
         if last_state=="randomise":
             tbss_log.close()
