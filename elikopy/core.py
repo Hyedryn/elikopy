@@ -69,10 +69,11 @@ class Elikopy:
         deprecated, for testing only.
     '''
 
-    def __init__(self, folder_path, slurm=False, slurm_email='example@example.com'):
+    def __init__(self, folder_path, cuda=False, slurm=False, slurm_email='example@example.com'):
         self._folder_path = folder_path
         self._slurm = slurm
         self._slurm_email = slurm_email
+        self._cuda = cuda
 
 
     def patient_list(self, folder_path=None):
@@ -266,7 +267,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,starting_state=starting_state,bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass)
+                preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,starting_state=starting_state,bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
                 f.flush()
         f.close()
