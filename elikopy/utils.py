@@ -536,6 +536,14 @@ def synb0DISCO(synb0path):
 
     mri_convert_norm = "mri_convert " + synb0path + "/T1_norm.mgz " + synb0path + "/T1_norm.nii.gz"
 
+    bashCommand_step1 = mri_convert_T1 + "; " + n3_correction + "; " + mri_convert_N3 + "; " + mri_normalize + "; " + mri_convert_norm
+    step1_log = open(synb0path + "/step1_logs.txt", "a+")
+    process = subprocess.Popen(bashCommand_step1, universal_newlines=True, shell=True, stdout=step1_log,
+                               stderr=subprocess.STDOUT)
+
+    output, error = process.communicate()
+    step1_log.close()
+
     """
     Step 2 - Registration
     """
@@ -561,6 +569,14 @@ def synb0DISCO(synb0path):
 
     # Apply nonlinear transform to distorted b0 to get it into atlas space
     antsApplyTransforms_nonlin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_nonlin_atlas_2_5.nii.gz"
+
+    bashCommand_step2 = epi_reg_b0_dist + "; " + c3d_affine_tool + "; " + antsRegistrationSyNQuick + "; " + antsApplyTransforms_lin_T1 + "; " + antsApplyTransforms_lin_b0 + "; " + antsApplyTransforms_nonlin_T1 + "; " + antsApplyTransforms_nonlin_b0
+    step2_log = open(synb0path + "/step2_logs.txt", "a+")
+    process = subprocess.Popen(bashCommand_step2, universal_newlines=True, shell=True, stdout=step2_log,
+                               stderr=subprocess.STDOUT)
+
+    output, error = process.communicate()
+    step2_log.close()
 
     """
     Step 3 -  Run inference
@@ -607,7 +623,21 @@ def synb0DISCO(synb0path):
 
     run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams.txt --config=b02b0.cnf --iout=" + synb0path + "/b0_all_topup.nii.gz --out=" + synb0path + "/topup --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0"
 
+    bashCommand_step4 = mean_merge + "; " + mean_math + "; " + antsApplyTransforms_inv_xform + "; " + smooth_math + "; " + merge_image
+    step4_log = open(synb0path + "/step4_logs.txt", "a+")
+    process = subprocess.Popen(bashCommand_step4, universal_newlines=True, shell=True, stdout=step4_log,
+                               stderr=subprocess.STDOUT)
 
+    output, error = process.communicate()
+    step4_log.close()
+
+    bashCommand_topup = run_topup
+    topup_log = open(synb0path + "/topup_logs.txt", "a+")
+    process = subprocess.Popen(bashCommand_topup, universal_newlines=True, shell=True, stdout=topup_log,
+                               stderr=subprocess.STDOUT)
+
+    output, error = process.communicate()
+    topup_log.close()
 
 import os
 import sys
