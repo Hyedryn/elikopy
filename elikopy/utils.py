@@ -548,6 +548,10 @@ def synb0DISCO(synb0path):
     Step 2 - Registration
     """
 
+    # Skull strip T1
+
+    bet = "bet " + synb0path + "/T1.nii.gz " + synb0path + "/T1_mask.nii.gz -R"# + " -f 0.4 -g -0.2"
+
     # epi_reg distorted b0 to T1; wont be perfect since B0 is distorted
 
     epi_reg_b0_dist = "epi_reg --epi=" + synb0path + "/b0.nii.gz  --t1=" + synb0path + "/T1.nii.gz --t1brain=" + synb0path + "/T1_mask.nii.gz --out=" + synb0path + "/epi_reg_d"
@@ -570,7 +574,7 @@ def synb0DISCO(synb0path):
     # Apply nonlinear transform to distorted b0 to get it into atlas space
     antsApplyTransforms_nonlin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_nonlin_atlas_2_5.nii.gz"
 
-    bashCommand_step2 = epi_reg_b0_dist + "; " + c3d_affine_tool + "; " + antsRegistrationSyNQuick + "; " + antsApplyTransforms_lin_T1 + "; " + antsApplyTransforms_lin_b0 + "; " + antsApplyTransforms_nonlin_T1 + "; " + antsApplyTransforms_nonlin_b0
+    bashCommand_step2 = bet + "; " + epi_reg_b0_dist + "; " + c3d_affine_tool + "; " + antsRegistrationSyNQuick + "; " + antsApplyTransforms_lin_T1 + "; " + antsApplyTransforms_lin_b0 + "; " + antsApplyTransforms_nonlin_T1 + "; " + antsApplyTransforms_nonlin_b0
     step2_log = open(synb0path + "/step2_logs.txt", "a+")
     process = subprocess.Popen(bashCommand_step2, universal_newlines=True, shell=True, stdout=step2_log,
                                stderr=subprocess.STDOUT)
@@ -621,7 +625,7 @@ def synb0DISCO(synb0path):
     # Merge for topup
     merge_image = "fslmerge -t " + synb0path + "/b0_all.nii.gz " + synb0path + "/b0_d_smooth.nii.gz " + synb0path + "/b0_u.nii.gz"
 
-    run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams.txt --config=b02b0.cnf --iout=" + synb0path + "/b0_all_topup.nii.gz --out=" + synb0path + "/topup --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0"
+    run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams.txt --config=b02b0.cnf --iout=" + synb0path + "/TOPUP/b0_all_topup.nii.gz --out=" + synb0path + "/TOPUP/topup --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0"
 
     bashCommand_step4 = mean_merge + "; " + mean_math + "; " + antsApplyTransforms_inv_xform + "; " + smooth_math + "; " + merge_image
     step4_log = open(synb0path + "/step4_logs.txt", "a+")
