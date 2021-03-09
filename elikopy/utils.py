@@ -514,7 +514,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     tbss_log.close()
 
-def synb0DISCO(synb0path):
+def synb0DISCO(synb0path,starting_step=None,topup=True):
     """
     synb0DISCO adapted from https://github.com/MASILab/Synb0-DISCO
 
@@ -522,126 +522,158 @@ def synb0DISCO(synb0path):
     :param synb0path:
     """
 
-    """
-    Step 1 - Normalize T1
-    """
+    assert starting_step in (None, "Registration", "Inference", "Apply", "topup")
 
-    mri_convert_T1 = "mri_convert " + synb0path + "/T1.nii.gz " + synb0path + "/T1.mgz"
+    if starting_step in (None):
+        """
+        Step 1 - Normalize T1
+        """
 
-    n3_correction = "mri_nu_correct.mni --i " + synb0path + "/T1.mgz --o " + synb0path + "/T1_N3.mgz --n 2"
+        mri_convert_T1 = "mri_convert " + synb0path + "/T1.nii.gz " + synb0path + "/T1.mgz"
 
-    mri_convert_N3 = "mri_convert " + synb0path + "/T1_N3.mgz " + synb0path + "/T1_N3.nii.gz"
+        n3_correction = "mri_nu_correct.mni --i " + synb0path + "/T1.mgz --o " + synb0path + "/T1_N3.mgz --n 2"
 
-    mri_normalize = "mri_normalize -g 1 -mprage " + synb0path + "/T1_N3.mgz " + synb0path + "/T1_norm.mgz"
+        mri_convert_N3 = "mri_convert " + synb0path + "/T1_N3.mgz " + synb0path + "/T1_N3.nii.gz"
 
-    mri_convert_norm = "mri_convert " + synb0path + "/T1_norm.mgz " + synb0path + "/T1_norm.nii.gz"
+        mri_normalize = "mri_normalize -g 1 -mprage " + synb0path + "/T1_N3.mgz " + synb0path + "/T1_norm.mgz"
 
-    bashCommand_step1 = mri_convert_T1 + "; " + n3_correction + "; " + mri_convert_N3 + "; " + mri_normalize + "; " + mri_convert_norm
-    step1_log = open(synb0path + "/step1_logs.txt", "a+")
-    process = subprocess.Popen(bashCommand_step1, universal_newlines=True, shell=True, stdout=step1_log,
-                               stderr=subprocess.STDOUT)
+        mri_convert_norm = "mri_convert " + synb0path + "/T1_norm.mgz " + synb0path + "/T1_norm.nii.gz"
 
-    output, error = process.communicate()
-    step1_log.close()
+        bashCommand_step1 = mri_convert_T1 + "; " + n3_correction + "; " + mri_convert_N3 + "; " + mri_normalize + "; " + mri_convert_norm
+        step1_log = open(synb0path + "/step1_logs.txt", "a+")
+        step1_log.write("[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of step 1 \n\n" )
+        step1_log.flush()
+        process = subprocess.Popen(bashCommand_step1, universal_newlines=True, shell=True, stdout=step1_log,
+                                   stderr=subprocess.STDOUT)
 
-    """
-    Step 2 - Registration
-    """
+        output, error = process.communicate()
+        step1_log.write(
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of step 1 \n\n")
+        step1_log.close()
 
-    # Skull strip T1
+    if starting_step in (None, "Registration"):
+        """
+        Step 2 - Registration
+        """
 
-    bet = "bet " + synb0path + "/T1.nii.gz " + synb0path + "/T1_mask.nii.gz -R"# + " -f 0.4 -g -0.2"
+        # Skull strip T1
 
-    # epi_reg distorted b0 to T1; wont be perfect since B0 is distorted
+        bet = "bet " + synb0path + "/T1.nii.gz " + synb0path + "/T1_mask.nii.gz -R"# + " -f 0.4 -g -0.2"
 
-    epi_reg_b0_dist = "epi_reg --epi=" + synb0path + "/b0.nii.gz  --t1=" + synb0path + "/T1.nii.gz --t1brain=" + synb0path + "/T1_mask.nii.gz --out=" + synb0path + "/epi_reg_d"
+        # epi_reg distorted b0 to T1; wont be perfect since B0 is distorted
 
-    # Convert FSL transform to ANTS transform
-    c3d_affine_tool = "c3d_affine_tool -ref " + synb0path + "/T1.nii.gz -src " + synb0path + "/b0.nii.gz " + synb0path + "/epi_reg_d.mat -fsl2ras -oitk " + synb0path + "/epi_reg_d_ANTS.txt"
+        epi_reg_b0_dist = "epi_reg --epi=" + synb0path + "/b0.nii.gz  --t1=" + synb0path + "/T1.nii.gz --t1brain=" + synb0path + "/T1_mask.nii.gz --out=" + synb0path + "/epi_reg_d"
 
-    # ANTs register T1 to atla
-    antsRegistrationSyNQuick = "antsRegistrationSyNQuick.sh -d 3 -f " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c.nii.gz -m " + synb0path + "/T1.nii.gz -o " + synb0path + "/ANTS"
+        # Convert FSL transform to ANTS transform
+        c3d_affine_tool = "c3d_affine_tool -ref " + synb0path + "/T1.nii.gz -src " + synb0path + "/b0.nii.gz " + synb0path + "/epi_reg_d.mat -fsl2ras -oitk " + synb0path + "/epi_reg_d_ANTS.txt"
 
-    # Apply linear transform to normalized T1 to get it into atlas space
-    antsApplyTransforms_lin_T1 = "antsApplyTransforms -d 3 -i " + synb0path + "/T1_norm.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS0GenericAffine.mat -o " + synb0path + "/T1_norm_lin_atlas_2_5.nii.gz"
+        # ANTs register T1 to atla
+        antsRegistrationSyNQuick = "antsRegistrationSyNQuick.sh -d 3 -f " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c.nii.gz -m " + synb0path + "/T1.nii.gz -o " + synb0path + "/ANTS"
 
-    # Apply linear transform to distorted b0 to get it into atlas space
-    antsApplyTransforms_lin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_lin_atlas_2_5.nii.gz"
+        # Apply linear transform to normalized T1 to get it into atlas space
+        antsApplyTransforms_lin_T1 = "antsApplyTransforms -d 3 -i " + synb0path + "/T1_norm.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS0GenericAffine.mat -o " + synb0path + "/T1_norm_lin_atlas_2_5.nii.gz"
 
-    # Apply nonlinear transform to normalized T1 to get it into atlas space
-    antsApplyTransforms_nonlin_T1 = "antsApplyTransforms -d 3 -i " + synb0path + "/T1_norm.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -o " + synb0path + "/T1_norm_nonlin_atlas_2_5.nii.gz"
+        # Apply linear transform to distorted b0 to get it into atlas space
+        antsApplyTransforms_lin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_lin_atlas_2_5.nii.gz"
 
-    # Apply nonlinear transform to distorted b0 to get it into atlas space
-    antsApplyTransforms_nonlin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_nonlin_atlas_2_5.nii.gz"
+        # Apply nonlinear transform to normalized T1 to get it into atlas space
+        antsApplyTransforms_nonlin_T1 = "antsApplyTransforms -d 3 -i " + synb0path + "/T1_norm.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -o " + synb0path + "/T1_norm_nonlin_atlas_2_5.nii.gz"
 
-    bashCommand_step2 = bet + "; " + epi_reg_b0_dist + "; " + c3d_affine_tool + "; " + antsRegistrationSyNQuick + "; " + antsApplyTransforms_lin_T1 + "; " + antsApplyTransforms_lin_b0 + "; " + antsApplyTransforms_nonlin_T1 + "; " + antsApplyTransforms_nonlin_b0
-    step2_log = open(synb0path + "/step2_logs.txt", "a+")
-    process = subprocess.Popen(bashCommand_step2, universal_newlines=True, shell=True, stdout=step2_log,
-                               stderr=subprocess.STDOUT)
+        # Apply nonlinear transform to distorted b0 to get it into atlas space
+        antsApplyTransforms_nonlin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + synb0path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_nonlin_atlas_2_5.nii.gz"
 
-    output, error = process.communicate()
-    step2_log.close()
+        bashCommand_step2 = bet + "; " + epi_reg_b0_dist + "; " + c3d_affine_tool + "; " + antsRegistrationSyNQuick + "; " + antsApplyTransforms_lin_T1 + "; " + antsApplyTransforms_lin_b0 + "; " + antsApplyTransforms_nonlin_T1 + "; " + antsApplyTransforms_nonlin_b0
+        step2_log = open(synb0path + "/step2_logs.txt", "a+")
+        step2_log.write(
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of step 2 \n\n")
+        step2_log.flush()
+        process = subprocess.Popen(bashCommand_step2, universal_newlines=True, shell=True, stdout=step2_log,
+                                   stderr=subprocess.STDOUT)
 
-    """
-    Step 3 -  Run inference
-    """
-    numfold = 5
-    # Get device
-    device = torch.device("cuda")
+        output, error = process.communicate()
+        step2_log.write(
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of step 2 \n\n")
+        step2_log.close()
 
-    T1_input_path = synb0path + "/T1_norm_lin_atlas_2_5.nii.gz"
-    b0_input_path = synb0path + "/b0_d_lin_atlas_2_5.nii.gz"
+    if starting_step in (None, "Registration", "Inference"):
+        """
+        Step 3 -  Run inference
+        """
+        step3_log = open(synb0path + "/step3_logs.txt", "a+")
+        step3_log.write(
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of step 3 \n\n")
+        numfold = 5
+        # Get device
+        device = torch.device("cuda")
 
-    for i in range(1,numfold):
-        b0_output_path = synb0path + "/b0_d_lin_atlas_2_5.nii.gz b0_u_lin_atlas_2_5_FOLD_" + str(i) + ".nii.gz"
-        model_path = synb0path + "/dual_channel_unet/num_fold_" + str(i) + "_total_folds_" + str(numfold) + "_seed_1_num_epochs_100_lr_0.0001_betas_\(0.9\,\ 0.999\)_weight_decay_1e-05_num_epoch_*.pth"
+        T1_input_path = synb0path + "/T1_norm_lin_atlas_2_5.nii.gz"
+        b0_input_path = synb0path + "/b0_d_lin_atlas_2_5.nii.gz"
 
-        # Get model
-        model = UNet3D(2, 1).to(device)
-        model.load_state_dict(torch.load(model_path))
+        for i in range(1,numfold):
+            b0_output_path = synb0path + "/b0_d_lin_atlas_2_5.nii.gz b0_u_lin_atlas_2_5_FOLD_" + str(i) + ".nii.gz"
+            model_path = synb0path + "/dual_channel_unet/num_fold_" + str(i) + "_total_folds_" + str(numfold) + "_seed_1_num_epochs_100_lr_0.0001_betas_\(0.9\,\ 0.999\)_weight_decay_1e-05_num_epoch_*.pth"
 
-        # Inference
-        img_model = inference(T1_input_path, b0_input_path, model, device)
+            # Get model
+            model = UNet3D(2, 1).to(device)
+            model.load_state_dict(torch.load(model_path))
 
-        # Save
-        nii_template = nib.load(b0_input_path)
-        nii = nib.Nifti1Image(util.torch2nii(img_model.detach().cpu()), nii_template.affine, nii_template.header)
-        nib.save(nii, b0_output_path)
+            # Inference
+            step3_log.write("[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of inference " + str(i) +"\n\n")
+            step3_log.flush()
+            img_model = inference(T1_input_path, b0_input_path, model, device)
 
-    """
-    Step 4 -  Apply
-    """
+            # Save
+            nii_template = nib.load(b0_input_path)
+            nii = nib.Nifti1Image(util.torch2nii(img_model.detach().cpu()), nii_template.affine, nii_template.header)
+            nib.save(nii, b0_output_path)
 
-    # Take mean
-    mean_merge ="fslmerge -t " + synb0path + "/b0_u_lin_atlas_2_5_merged.nii.gz " + synb0path + "/b0_u_lin_atlas_2_5_FOLD_*.nii.gz"
-    mean_math = "fslmaths " + synb0path + "/b0_u_lin_atlas_2_5_merged.nii.gz -Tmean " + synb0path + "/b0_u_lin_atlas_2_5.nii.gz"
+        step3_log.write("[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of step 3 \n\n")
+        step3_log.close()
 
-    # Apply inverse xform to undistorted b0
-    antsApplyTransforms_inv_xform = "antsApplyTransforms -d 3 -i " + synb0path + "/b0_u_lin_atlas_2_5.nii.gz -r " + synb0path + "/b0.nii.gz -n BSpline -t [" + synb0path + "/epi_reg_d_ANTS.txt,1] -t [" + synb0path + "/ANTS0GenericAffine.mat,1] -o " + synb0path + "/b0_u.nii.gz"
+    if starting_step in (None, "Registration", "Inference", "Apply"):
+        """
+        Step 4 -  Apply
+        """
 
-    # Smooth image
-    smooth_math = "fslmaths " + synb0path + "/b0.nii.gz -s 1.15 " + synb0path + "/b0_d_smooth.nii.gz"
+        # Take mean
+        mean_merge ="fslmerge -t " + synb0path + "/b0_u_lin_atlas_2_5_merged.nii.gz " + synb0path + "/b0_u_lin_atlas_2_5_FOLD_*.nii.gz"
+        mean_math = "fslmaths " + synb0path + "/b0_u_lin_atlas_2_5_merged.nii.gz -Tmean " + synb0path + "/b0_u_lin_atlas_2_5.nii.gz"
 
-    # Merge for topup
-    merge_image = "fslmerge -t " + synb0path + "/b0_all.nii.gz " + synb0path + "/b0_d_smooth.nii.gz " + synb0path + "/b0_u.nii.gz"
+        # Apply inverse xform to undistorted b0
+        antsApplyTransforms_inv_xform = "antsApplyTransforms -d 3 -i " + synb0path + "/b0_u_lin_atlas_2_5.nii.gz -r " + synb0path + "/b0.nii.gz -n BSpline -t [" + synb0path + "/epi_reg_d_ANTS.txt,1] -t [" + synb0path + "/ANTS0GenericAffine.mat,1] -o " + synb0path + "/b0_u.nii.gz"
 
-    run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams.txt --config=b02b0.cnf --iout=" + synb0path + "/TOPUP/b0_all_topup.nii.gz --out=" + synb0path + "/TOPUP/topup --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0"
+        # Smooth image
+        smooth_math = "fslmaths " + synb0path + "/b0.nii.gz -s 1.15 " + synb0path + "/b0_d_smooth.nii.gz"
 
-    bashCommand_step4 = mean_merge + "; " + mean_math + "; " + antsApplyTransforms_inv_xform + "; " + smooth_math + "; " + merge_image
-    step4_log = open(synb0path + "/step4_logs.txt", "a+")
-    process = subprocess.Popen(bashCommand_step4, universal_newlines=True, shell=True, stdout=step4_log,
-                               stderr=subprocess.STDOUT)
+        # Merge for topup
+        merge_image = "fslmerge -t " + synb0path + "/b0_all.nii.gz " + synb0path + "/b0_d_smooth.nii.gz " + synb0path + "/b0_u.nii.gz"
 
-    output, error = process.communicate()
-    step4_log.close()
 
-    bashCommand_topup = run_topup
-    topup_log = open(synb0path + "/topup_logs.txt", "a+")
-    process = subprocess.Popen(bashCommand_topup, universal_newlines=True, shell=True, stdout=topup_log,
-                               stderr=subprocess.STDOUT)
+        bashCommand_step4 = mean_merge + "; " + mean_math + "; " + antsApplyTransforms_inv_xform + "; " + smooth_math + "; " + merge_image
+        step4_log = open(synb0path + "/step4_logs.txt", "a+")
+        step4_log.write(
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of step 4 \n\n")
+        process = subprocess.Popen(bashCommand_step4, universal_newlines=True, shell=True, stdout=step4_log,
+                                   stderr=subprocess.STDOUT)
 
-    output, error = process.communicate()
-    topup_log.close()
+        output, error = process.communicate()
+        step4_log.write(
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of step 4 \n\n")
+        step4_log.close()
+
+    if starting_step in (None, "Registration", "Inference", "Apply", "topup") and topup:
+        run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams.txt --config=b02b0.cnf --iout=" + synb0path + "/TOPUP/b0_all_topup.nii.gz --out=" + synb0path + "/TOPUP/topup --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0"
+        bashCommand_topup = run_topup
+        topup_log = open(synb0path + "/topup_logs.txt", "a+")
+        topup_log.write(
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup \n\n")
+        process = subprocess.Popen(bashCommand_topup, universal_newlines=True, shell=True, stdout=topup_log,
+                                   stderr=subprocess.STDOUT)
+
+        output, error = process.communicate()
+        topup_log.write(
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup \n\n")
+        topup_log.close()
 
 import os
 import sys
