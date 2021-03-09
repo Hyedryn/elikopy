@@ -516,7 +516,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
 def synb0DISCO(synb0path):
     """
-    synb0DISCO heavily inspired from https://github.com/MASILab/Synb0-DISCO
+    synb0DISCO adapted from https://github.com/MASILab/Synb0-DISCO
 
     :rtype: object
     :param synb0path:
@@ -663,9 +663,9 @@ import nibabel as nib
 import torch
 import torch.nn as nn
 
-import util
+import elikopy.utilsSynb0Disco as util
 
-from model import UNet3D
+from elikopy.modelSynb0Disco import UNet3D
 
 
 def inference(T1_path, b0_d_path, model, device):
@@ -708,3 +708,5 @@ def inference(T1_path, b0_d_path, model, device):
 
     # Return model
     return img_model
+
+
