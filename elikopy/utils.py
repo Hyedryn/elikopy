@@ -524,7 +524,7 @@ def synb0DISCO(synb0path,starting_step=None,topup=True):
 
     assert starting_step in (None, "Registration", "Inference", "Apply", "topup")
 
-    if starting_step in (None):
+    if starting_step == None:
         """
         Step 1 - Normalize T1
         """
