@@ -51,49 +51,74 @@ class UNet3D(nn.Module):
         e0   = self.ec0(x)
         syn0 = self.ec1(e0)
         del e0
+        torch.cuda.empty_cache()
 
         e1   = self.pool0(syn0)
         e2   = self.ec2(e1)
+        del e1
+        torch.cuda.empty_cache()
+
         syn1 = self.ec3(e2)
-        del e1, e2
+        del e2
+        torch.cuda.empty_cache()
 
         e3   = self.pool1(syn1)
         e4   = self.ec4(e3)
+        del e3
+        torch.cuda.empty_cache()
         syn2 = self.ec5(e4)
-        del e3, e4
+        del e4
+        torch.cuda.empty_cache()
 
         e5   = self.pool2(syn2)
         e6   = self.ec6(e5)
+        del e5
+        torch.cuda.empty_cache()
         e7   = self.ec7(e6)
-
+        del e6
+        torch.cuda.empty_cache()
         # Last layer without relu
         el   = self.el(e7)
-        del e5, e6, e7
+        del e7
+        torch.cuda.empty_cache()
 
         # Decode
         d9   = torch.cat((self.dc9(el), syn2), 1)
         del el, syn2
+        torch.cuda.empty_cache()
 
         d8   = self.dc8(d9)
+        del d9
+        torch.cuda.empty_cache()
         d7   = self.dc7(d8)
-        del d9, d8
+        del d8
+        torch.cuda.empty_cache()
 
         d6   = torch.cat((self.dc6(d7), syn1), 1)
         del d7, syn1
+        torch.cuda.empty_cache()
 
         d5   = self.dc5(d6)
+        del d6
+        torch.cuda.empty_cache()
         d4   = self.dc4(d5)
-        del d6, d5
+        del d5
+        torch.cuda.empty_cache()
 
         d3   = torch.cat((self.dc3(d4), syn0), 1)
         del d4, syn0
+        torch.cuda.empty_cache()
 
         d2   = self.dc2(d3)
+        del d3
+        torch.cuda.empty_cache()
         d1   = self.dc1(d2)
-        del d3, d2
+        del d2
+        torch.cuda.empty_cache()
 
         d0   = self.dc0(d1)
         del d1
+        torch.cuda.empty_cache()
 
         # Last layer without relu
         out  = self.dl(d0)
