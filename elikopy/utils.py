@@ -514,7 +514,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     tbss_log.close()
 
-def synb0DISCO(synb0path,starting_step=None,topup=True):
+def synb0DISCO(synb0path,starting_step=None,topup=True,gpu=True):
     """
     synb0DISCO adapted from https://github.com/MASILab/Synb0-DISCO
 
@@ -604,7 +604,10 @@ def synb0DISCO(synb0path,starting_step=None,topup=True):
             "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of step 3 \n\n")
         numfold = 5
         # Get device
-        device = torch.device("cuda")
+        if gpu:
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
 
         T1_input_path = synb0path + "/T1_norm_lin_atlas_2_5.nii.gz"
         b0_input_path = synb0path + "/b0_d_lin_atlas_2_5.nii.gz"
