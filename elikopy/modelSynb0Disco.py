@@ -109,7 +109,7 @@ class UNet3D(nn.Module):
         del d4, syn0
         torch.cuda.empty_cache()
         d3   = torch.cat(temp, 1)
-        del d4, syn0
+        del temp
         torch.cuda.empty_cache()
 
         d2   = self.dc2(d3)
