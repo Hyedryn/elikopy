@@ -614,9 +614,9 @@ def synb0DISCO(synb0path,starting_step=None,topup=True,gpu=True):
 
         import glob
 
-        for i in range(1,numfold):
+        for i in range(1,numfold+1):
             torch.cuda.empty_cache()
-            b0_output_path = synb0path + "/b0_d_lin_atlas_2_5.nii.gz b0_u_lin_atlas_2_5_FOLD_" + str(i) + ".nii.gz"
+            b0_output_path = synb0path + "/b0_u_lin_atlas_2_5_FOLD_" + str(i) + ".nii.gz"
             model_path = synb0path + "/dual_channel_unet/num_fold_" + str(i) + "_total_folds_" + str(numfold) + "_seed_1_num_epochs_100_lr_0.0001_betas_(0.9, 0.999)_weight_decay_1e-05_num_epoch_*.pth"
             model_path = glob.glob(model_path)[0]
             # Get model
