@@ -105,7 +105,10 @@ class UNet3D(nn.Module):
         del d5
         torch.cuda.empty_cache()
 
-        d3   = torch.cat((self.dc3(d4), syn0), 1)
+        temp = (self.dc3(d4), syn0)
+        del d4, syn0
+        torch.cuda.empty_cache()
+        d3   = torch.cat(temp, 1)
         del d4, syn0
         torch.cuda.empty_cache()
 
