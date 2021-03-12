@@ -345,7 +345,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             z = z_val - 2
 
             #bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
-            cmd1="fslmaths origdata/" + pref + patient_path + "_fa -min 1 -dilD -ero -ero -roi 1 "+x+" 1 "+y+" 1 "+z+" 0 1 FA/" + pref + patient_path + "_fa_FA"
+            cmd1="fslmaths origdata/" + pref + patient_path + "_fa -min 1 -dilD -ero -ero -roi 1 "+str(x)+" 1 "+str(y)+" 1 "+str(z)+" 0 1 FA/" + pref + patient_path + "_fa_FA"
 
             # create mask (for use in FLIRT & FNIRT)
             cmd2="fslmaths FA/" + pref + patient_path + "_fa_FA -bin FA/" + pref + patient_path + "_fa_FA_mask"
