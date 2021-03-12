@@ -312,32 +312,57 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     if starting_state == None:
 
+        makedir(folder_path + "/TBSS/FA", folder_path + "/logs.txt", log_prefix)
+        makedir(folder_path + "/TBSS/origdata", folder_path + "/logs.txt", log_prefix)
+
         # transfer the FA files to the TBSS directory
         numpatient = 0
         numcontrol = 0
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of preproc\n")
+        tbss_log.flush()
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
             control_info = subj_type[patient_path]
             if control_info in grp1:
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/control" + str(numcontrol) + "_" + patient_path + "_fa.nii.gz")
+                    outputdir + "/origdata/control" + str(numcontrol) + "_" + patient_path + "_fa.nii.gz")
+                pref = "control" + str(numcontrol) + "_"
                 numcontrol += 1
             if control_info in grp2:
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/case" + str(numpatient) + "_" + patient_path + "_fa.nii.gz")
+                    outputdir + "/origdata/case" + str(numpatient) + "_" + patient_path + "_fa.nii.gz")
+                pref = "case" + str(numpatient) + "_"
                 numpatient += 1
 
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Beginning of preproc\n")
-        tbss_log.flush()
+            x_val = subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim1", shell=True);
+            x = x_val - 2
+            y_val = subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim2", shell=True);
+            y = y_val - 2
+            z_val = subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim3", shell=True);
+            z = z_val - 2
 
-        bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
-        bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
-        output, error = process.communicate()
+            #bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
+            cmd1="fslmaths origdata/" + pref + patient_path + "_fa -min 1 -dilD -ero -ero -roi 1 "+x+" 1 "+y+" 1 "+z+" 0 1 FA/" + pref + patient_path + "_fa_FA"
+
+            # create mask (for use in FLIRT & FNIRT)
+            cmd2="fslmaths FA/" + pref + patient_path + "_fa_FA -bin FA/" + pref + patient_path + "_fa_FA_mask"
+            cmd3="fslmaths FA/" + pref + patient_path + "_fa_FA_mask -dilD -dilD -sub 1 -abs -add FA/" + pref + patient_path + "_fa_FA_mask FA/" + pref + patient_path + "_fa_FA_mask -odt char"
+            #bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
+            bashCommand = 'cd ' + outputdir + '; ' + cmd1 + '; ' + cmd2 + '; ' + cmd3
+            bashcmd = bashCommand.split()
+            print("Bash command is:\n{}\n".format(bashcmd))
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+            output, error = process.communicate()
+
+        #bashCommand = 'cd ' + outputdir + '/FA; ' + "slicesdir `imglob *_FA.*`" + '; ' + cmd2 + '; ' + cmd3
+        #bashcmd = bashCommand.split()
+        #print("Bash command is:\n{}\n".format(bashcmd))
+        #process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
+        #                           stderr=subprocess.STDOUT)
+        #output, error = process.communicate()
 
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of preproc\n")
@@ -372,7 +397,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
         copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/backup/tbss_reg/FA")
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/tbss_reg/stats")
+
 
         if last_state=="reg":
             tbss_log.close()
@@ -386,7 +411,6 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         if starting_state == "postreg":
             copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
             copy_tree(folder_path + "/TBSS/backup/tbss_reg/FA", folder_path + "/TBSS/FA")
-            copy_tree(folder_path + "/TBSS/backup/tbss_reg/stats", folder_path + "/TBSS/stats")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
         bashcmd = bashCommand.split()
