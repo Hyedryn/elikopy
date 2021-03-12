@@ -339,9 +339,9 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
             x_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim1", shell=True));
             x = x_val - 2
-            y_val = subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim2", shell=True);
+            y_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim2", shell=True));
             y = y_val - 2
-            z_val = subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim3", shell=True);
+            z_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim3", shell=True));
             z = z_val - 2
 
             #bashCommand = 'cd ' + outputdir + ' && tbss_1_preproc \"*_fa.nii.gz\"'
@@ -354,6 +354,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             bashCommand = 'cd ' + outputdir + '; ' + cmd1 + '; ' + cmd2 + '; ' + cmd3
             bashcmd = bashCommand.split()
             print("Bash command is:\n{}\n".format(bashcmd))
+            tbss_log.write(bashCommand)
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
 
@@ -387,6 +388,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         bashCommand = 'cd ' + outputdir + ' && tbss_2_reg '+ registration_type
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
+        tbss_log.write(bashCommand)
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
@@ -415,6 +417,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
+        tbss_log.write(bashCommand)
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
@@ -441,6 +444,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold)
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
+        tbss_log.write(bashCommand)
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
                                    stderr=subprocess.STDOUT)
         output, error = process.communicate()
@@ -468,6 +472,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numcontrol) + ' ' + str(numpatient)
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
+        tbss_log.write(bashCommand)
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
@@ -504,6 +509,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
         bashcmd1 = bashCommand1.split()
         print("Bash command is:\n{}\n".format(bashcmd1))
+        tbss_log.write(bashCommand1)
         process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=tbss_log,
                                    stderr=subprocess.STDOUT)
         output, error = process.communicate()
@@ -529,6 +535,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     bashcmd2 = bashCommand2.split()
     print("Bash command is:\n{}\n".format(bashcmd2))
+    tbss_log.write(bashCommand2)
     process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
