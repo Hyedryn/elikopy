@@ -337,7 +337,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
                 pref = "case" + str(numpatient) + "_"
                 numpatient += 1
 
-            x_val = int(("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim1", shell=True));
+            x_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim1", shell=True));
             x = x_val - 2
             y_val = subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_fa dim2", shell=True);
             y = y_val - 2
