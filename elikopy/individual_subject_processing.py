@@ -912,3 +912,59 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
+
+
+def report_solo(folder_path,patient_path):
+    """
+
+    -x 0.4 slicesdir/grota.png -x 0.5 slicesdir/grotb.png -x 0.6 slicesdir/grotc.png -y 0.4 slicesdir/grotd.png -y 0.5
+    slicesdir/grote.png -y 0.6 slicesdir/grotf.png -z 0.4 slicesdir/grotg.png -z 0.5 slicesdir/groth.png -z 0.6 slicesdir/groti.png
+
+
+
+    """
+
+    report_path = folder_path + '/' + patient_path + "/report/raw/"
+    report_log = open(report_path + "TBSS_logs.txt", "a+")
+
+    from fpdf import FPDF
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_xy(0, 0)
+    pdf.set_font('arial', 'B', 18)
+    pdf.cell(60,10)
+    pdf.cell(75, 10, "A Tabular and Graphical Report of Professor Criss's Ratings by Users Charles and Mike", 0, 2, 'C')
+    pdf.cell(75, 20)
+    pdf.set_font('arial', 'B', 12)
+
+
+
+    image=[]
+    image.append((folder_path + '/' + patient_path + "/microstrucutre/preproc/ddef","preproc_","Preprocessing for patient "+patient_path))
+
+    for nifti,pre,texte in image:
+        slices_info = "-x 0.4 "+report_path+pre+"a.png -x 0.5 "+report_path+pre+"b.png -x 0.6 "+report_path+pre+"c.png " \
+                      "-y 0.4 "+report_path+pre+"d.png -y 0.5 "+report_path+pre+"e.png -y 0.6 "+report_path+pre+"f.png " \
+                      "-z 0.4 "+report_path+pre+"g.png -z 0.5 "+report_path+pre+"h.png -z 0.6 "+report_path+pre+"i.png"
+        slices_merge_info = ""+report_path+pre+"a.png + "+report_path+pre+"b.png + "+report_path+pre+"c.png " \
+                      "+ "+report_path+pre+"d.png + "+report_path+pre+"e.png + "+report_path+pre+"f.png " \
+                      "+ "+report_path+pre+"g.png + "+report_path+pre+"h.png + "+report_path+pre+"i.png"
+
+        cmd1 = "slicer " + nifti + "  -s 1 " + slices_info
+        cmd2 = "pngappend " + slices_merge_info + " "+report_path+pre+".png"
+
+        bashCommand = 'cd ' + report_path + '; ' + cmd1 + '; ' + cmd2
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        report_log.write(bashCommand + "\n")
+        report_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=report_log,stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+
+        pdf.cell(75, 10, texte, 0, 2,'C')
+        pdf.image(report_path+pre+".png", x=None, y=None, w=0, h=0, type='', link='')
+        pdf.cell(75, 20)
+
+    pdf.output(folder_path + '/' + patient_path + "/report/report_"+patient_path+".pdf", 'F')
+

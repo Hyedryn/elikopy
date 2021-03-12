@@ -327,7 +327,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
             if control_info in grp1:
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/origdata/control" + str(numcontrol) + "_" + patient_path + "_fa.nii.gz")
+                    outputdir + "/origdata/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
                 pref = "control" + str(numcontrol) + "_"
                 numcontrol += 1
             if control_info in grp2:
@@ -784,5 +784,6 @@ def inference(T1_path, b0_d_path, model, device):
 
     # Return model
     return img_model
+
 
 
