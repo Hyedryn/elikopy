@@ -935,9 +935,9 @@ def report_solo(folder_path,patient_path):
     pdf.add_page()
     pdf.set_xy(0, 0)
     pdf.set_font('arial', 'B', 18)
-    pdf.cell(0, 20, '', 0, 1, 'C')
+    pdf.cell(0, 10, '', 0, 1, 'C')
     pdf.cell(0, 10, "Individual report for subject "+patient_path, 0, 2, 'C')
-    pdf.cell(0, 20, '', 0, 1, 'C')
+    pdf.cell(0, 5, '', 0, 1, 'C')
     pdf.set_font('arial', 'B', 12)
 
 
@@ -975,14 +975,16 @@ def report_solo(folder_path,patient_path):
         slices_info = "-x 0.4 "+report_path+pre+"a.png -x 0.5 "+report_path+pre+"b.png -x 0.6 "+report_path+pre+"c.png " \
                       "-y 0.4 "+report_path+pre+"d.png -y 0.5 "+report_path+pre+"e.png -y 0.6 "+report_path+pre+"f.png " \
                       "-z 0.4 "+report_path+pre+"g.png -z 0.5 "+report_path+pre+"h.png -z 0.6 "+report_path+pre+"i.png"
-        slices_merge_info = ""+report_path+pre+"a.png + "+report_path+pre+"b.png + "+report_path+pre+"c.png " \
-                      "+ "+report_path+pre+"d.png + "+report_path+pre+"e.png + "+report_path+pre+"f.png " \
-                      "+ "+report_path+pre+"g.png + "+report_path+pre+"h.png + "+report_path+pre+"i.png"
+        slices_merge_info_1 = ""+report_path+pre+"a.png + "+report_path+pre+"b.png + "+report_path+pre+"c.png "
+        slices_merge_info_2 = ""+report_path+pre+"d.png + "+report_path+pre+"e.png + "+report_path+pre+"f.png "
+        slices_merge_info_3 = ""+report_path+pre+"g.png + "+report_path+pre+"h.png + "+report_path+pre+"i.png "
 
         cmd1 = "slicer " + nifti + "  -s 1 " + slices_info
-        cmd2 = "pngappend " + slices_merge_info + " "+report_path+pre+".png"
+        cmd2 = "pngappend " + slices_merge_info_1 + " " + report_path + pre + "_x.png"
+        cmd3 = "pngappend " + slices_merge_info_2 + " " + report_path + pre + "_y.png"
+        cmd4 = "pngappend " + slices_merge_info_3 + " " + report_path + pre + "_z.png"
 
-        bashCommand = 'cd ' + report_path + '; ' + cmd1 + '; ' + cmd2
+        bashCommand = 'cd ' + report_path + '; ' + cmd1 + '; ' + cmd2 + '; ' + cmd3 + '; ' + cmd4
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
         report_log.write(bashCommand + "\n")
@@ -991,8 +993,10 @@ def report_solo(folder_path,patient_path):
         output, error = process.communicate()
 
         pdf.cell(0, 10, texte, 0, 1,'C')
-        pdf.image(report_path+pre+".png", x=None, y=None, w=0, h=0, type='', link='')
-        pdf.cell(0, 30, '', 0, 1, 'C')
+        pdf.image(report_path + pre + "_x.png", x=None, y=None, w=0, h=0, type='', link='')
+        pdf.image(report_path + pre + "_y.png", x=None, y=None, w=0, h=0, type='', link='')
+        pdf.image(report_path + pre + "_z.png", x=None, y=None, w=0, h=0, type='', link='')
+        pdf.cell(0, 5, '', 0, 1, 'C')
 
     pdf.output(folder_path + '/' + patient_path + "/report/report_"+patient_path+".pdf", 'F')
 
