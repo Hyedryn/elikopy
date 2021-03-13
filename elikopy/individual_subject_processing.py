@@ -935,9 +935,9 @@ def report_solo(folder_path,patient_path):
     pdf.add_page()
     pdf.set_xy(0, 0)
     pdf.set_font('arial', 'B', 18)
-    pdf.cell(60,10)
-    pdf.cell(75, 10, "Individual report for subject "+patient_path, 0, 2, 'C')
-    pdf.cell(75, 20)
+    pdf.cell(0, 20, '', 0, 1, 'C')
+    pdf.cell(0, 10, "Individual report for subject "+patient_path, 0, 2, 'C')
+    pdf.cell(0, 20, '', 0, 1, 'C')
     pdf.set_font('arial', 'B', 12)
 
 
@@ -946,6 +946,30 @@ def report_solo(folder_path,patient_path):
     image.append((folder_path + '/' + patient_path + "/dMRI/raw/"+patient_path+"_raw_dmri","raw_drmi","Raw dMRI ("+patient_path+"_raw_drmi.nii.gz)"))
     if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/"+patient_path+"_dmri_preproc" + ".nii.gz"):
         image.append((folder_path + '/' + patient_path + "/dMRI/preproc/"+patient_path+"_dmri_preproc","drmi_preproc","dMRI preprocessed ("+patient_path+"_drmi_preproc.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/bet/"+patient_path+"_mask" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/preproc/bet/"+patient_path+"_mask","drmi_preproc_bet","dMRI BET preprocessing ("+patient_path+"_mask.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/mppca/"+patient_path+"_mppca" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/preproc/mppca/"+patient_path+"_mppca","drmi_preproc_mppca","dMRI Denoised preprocessing ("+patient_path+"_mppca.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/"+patient_path+"_gibbscorrected" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/"+patient_path+"_gibbscorrected","drmi_preproc_gibbs","dMRI Gibbs preprocessing ("+patient_path+"_gibbscorrected.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/topup/"+patient_path+"_topup" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/preproc/topup/"+patient_path+"_topup","drmi_preproc_topup","dMRI Topup preprocessing ("+patient_path+"_topup.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/eddy/" + patient_path + "_eddy_corr" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/preproc/eddy/" + patient_path + "_eddy_corr","drmi_preproc_eddy_corr", "dMRI Eddy preprocessing (" + patient_path + "_eddy_corr.nii.gz)"))
+
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_FA" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_FA","dti_FA", "Microstructure: FA of dti (" + patient_path + "_FA.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_AD" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_AD","dti_AD", "Microstructure: AD of dti (" + patient_path + "_AD.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_MD" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_MD","dti_MD", "Microstructure: MD of dti (" + patient_path + "_MD.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_RD" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_RD","dti_RD", "Microstructure: RD of dti (" + patient_path + "_RD.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_dtensor" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/microstructure/dti/" + patient_path + "_dtensor","dti_dtensor", "Microstructure: Dtensor of dti (" + patient_path + "_dtensor.nii.gz)"))
+
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/" + patient_path + "_dtensor" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/microstructure/noddi/" + patient_path + "_dtensor","noddi_dtensor", "Microstructure: ICVF of Noddi (" + patient_path + "_dtensor.nii.gz)"))
 
     for nifti,pre,texte in image:
         slices_info = "-x 0.4 "+report_path+pre+"a.png -x 0.5 "+report_path+pre+"b.png -x 0.6 "+report_path+pre+"c.png " \
@@ -966,9 +990,9 @@ def report_solo(folder_path,patient_path):
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=report_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
-        pdf.cell(75, 10, texte, 0, 2,'C')
+        pdf.cell(0, 10, texte, 0, 1,'C')
         pdf.image(report_path+pre+".png", x=None, y=None, w=0, h=0, type='', link='')
-        pdf.cell(75, 20)
+        pdf.cell(0, 30, '', 0, 1, 'C')
 
     pdf.output(folder_path + '/' + patient_path + "/report/report_"+patient_path+".pdf", 'F')
 
