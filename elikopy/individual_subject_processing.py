@@ -934,14 +934,16 @@ def report_solo(folder_path,patient_path):
     pdf.set_xy(0, 0)
     pdf.set_font('arial', 'B', 18)
     pdf.cell(60,10)
-    pdf.cell(75, 10, "A Tabular and Graphical Report of Professor Criss's Ratings by Users Charles and Mike", 0, 2, 'C')
+    pdf.cell(75, 10, "Individual report for subject "+patient_path, 0, 2, 'C')
     pdf.cell(75, 20)
     pdf.set_font('arial', 'B', 12)
 
 
 
     image=[]
-    image.append((folder_path + '/' + patient_path + "/microstrucutre/preproc/ddef","preproc_","Preprocessing for patient "+patient_path))
+    image.append((folder_path + '/' + patient_path + "/dMRI/raw/"+patient_path+"_raw_dmri","raw_drmi","Raw dMRI ("+patient_path+"_raw_drmi.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/"+patient_path+"_dmri_preproc" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/preproc/"+patient_path+"_dmri_preproc","drmi_preproc","dMRI preprocessed ("+patient_path+"_drmi_preproc.nii.gz)"))
 
     for nifti,pre,texte in image:
         slices_info = "-x 0.4 "+report_path+pre+"a.png -x 0.5 "+report_path+pre+"b.png -x 0.6 "+report_path+pre+"c.png " \

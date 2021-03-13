@@ -496,14 +496,9 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
     if starting_state == "randomise":
         copy_tree(folder_path + "/TBSS/backup/design_ttest2/stats", folder_path + "/TBSS/stats")
 
-    if randomise_corrected:
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/stats_corrected")
-        bashCommand1 = 'cd ' + outputdir + '/stats_corrected ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2'
-        bashCommand2 = 'cd ' + outputdir + '/stats_corrected ' + ' && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
-    else:
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/stats_uncorrected")
-        bashCommand1 = 'cd ' + outputdir + '/stats_uncorrected ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
-        bashCommand2 = 'cd ' + outputdir + '/stats_uncorrected ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_cortical.txt'
+    bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 5000 --T2 --uncorrp'
+    bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_corrected_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_corrected_subcortical.txt && autoaq -i tbss_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_corrected_cortical.txt && autoaq -i tbss_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_corrected_cortical.txt'
+    bashCommand3 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report1_uncorrected_subcortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o report2_uncorrected_subcortical.txt && autoaq -i tbss_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report1_uncorrected_cortical.txt && autoaq -i tbss_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o report2_uncorrected_cortical.txt'
 
     if starting_state in (None, "reg", "postreg", "prestats", "design", "randomise"):
         tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -526,10 +521,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
-        if randomise_corrected:
-            copy_tree(folder_path + "/TBSS/stats_corrected", folder_path + "/TBSS/backup/randomise/stats_corrected")
-        else:
-            copy_tree(folder_path + "/TBSS/stats_uncorrected", folder_path + "/TBSS/backup/randomise/stats_uncorrected")
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/randomise/stats")
 
         if last_state=="randomise":
             tbss_log.close()
@@ -544,6 +536,14 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
     tbss_log.write(bashCommand2+"\n")
     tbss_log.flush()
     process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+    output, error = process.communicate()
+
+    bashcmd3 = bashCommand3.split()
+    print("Bash command is:\n{}\n".format(bashcmd3))
+    tbss_log.write(bashCommand3 + "\n")
+    tbss_log.flush()
+    process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=tbss_log,
+                               stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
     tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
