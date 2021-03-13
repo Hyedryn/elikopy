@@ -996,7 +996,8 @@ def report_solo(folder_path,patient_path):
         pdf.image(report_path + pre + "_x.png", x=None, y=None, w=190, h=0, type='', link='')
         pdf.image(report_path + pre + "_y.png", x=None, y=None, w=190, h=0, type='', link='')
         pdf.image(report_path + pre + "_z.png", x=None, y=None, w=190, h=0, type='', link='')
-        pdf.cell(0, 5, '', 0, 1, 'C')
+        pdf.add_page()
+
 
     pdf.output(folder_path + '/' + patient_path + "/report/report_"+patient_path+".pdf", 'F')
 
