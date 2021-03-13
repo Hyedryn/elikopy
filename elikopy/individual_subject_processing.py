@@ -925,7 +925,9 @@ def report_solo(folder_path,patient_path):
     """
 
     report_path = folder_path + '/' + patient_path + "/report/raw/"
-    report_log = open(report_path + "TBSS_logs.txt", "a+")
+    log_prefix="Individual Report"
+    makedir(report_path, folder_path + "/logs.txt", log_prefix)
+    report_log = open(report_path + "report_logs.txt", "a+")
 
     from fpdf import FPDF
 

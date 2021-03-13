@@ -260,7 +260,7 @@ def makedir(dir_path,log_path,log_prefix):
 
 
 
-def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_corrected=False):
+def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2):
     """
     Perform tract base spatial statistics between the control data and case data. DTI needs to have been
     performed on the data first !!
@@ -274,7 +274,6 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
     :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
     :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
     :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
-    :param randomise_corrected: Define whether or not the p value must be FWE corrected.
     """
     starting_state = None if starting_state == "None" else starting_state
     last_state = None if last_state == "None" else last_state
