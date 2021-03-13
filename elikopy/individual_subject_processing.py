@@ -193,7 +193,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
     if topup and starting_state!="eddy":
 
-        cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config =b02b0.cnf --out=my_output"'
+        #cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config=b02b0.cnf --out=my_output"'
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
 
