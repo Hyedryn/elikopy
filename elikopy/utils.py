@@ -551,7 +551,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     tbss_log.close()
 
-def synb0DISCO(synb0path,starting_step=None,topup=True,gpu=True):
+def synb0DisCo(topuppath,starting_step=None,topup=True,gpu=True):
     """
     synb0DISCO adapted from https://github.com/MASILab/Synb0-DISCO
 
@@ -560,6 +560,8 @@ def synb0DISCO(synb0path,starting_step=None,topup=True,gpu=True):
     """
 
     assert starting_step in (None, "Registration", "Inference", "Apply", "topup")
+
+    synb0path = topuppath + "/synb0-DisCo"
 
     if starting_step == None:
         """
@@ -705,9 +707,9 @@ def synb0DISCO(synb0path,starting_step=None,topup=True,gpu=True):
         step4_log.close()
 
     if starting_step in (None, "Registration", "Inference", "Apply", "topup") and topup:
-        run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams.txt --config=b02b0.cnf --iout=" + synb0path + "/TOPUP/b0_all_topup.nii.gz --out=" + synb0path + "/TOPUP/topup --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0"
+        run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams.txt --config=b02b0.cnf --iout=" + topuppath + "/b0_all_topup.nii.gz --out=" + topuppath + "/topup --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0"
         bashCommand_topup = run_topup
-        topup_log = open(synb0path + "/topup_logs.txt", "a+")
+        topup_log = open(topuppath + "/topup_logs.txt", "a+")
         topup_log.write(
             "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup \n\n")
         process = subprocess.Popen(bashCommand_topup, universal_newlines=True, shell=True, stdout=topup_log,
@@ -715,7 +717,7 @@ def synb0DISCO(synb0path,starting_step=None,topup=True,gpu=True):
 
         output, error = process.communicate()
         topup_log.write(
-            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of topup \n\n")
+            "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of topup \n\n")
         topup_log.close()
 
 import os

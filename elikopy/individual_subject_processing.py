@@ -193,44 +193,101 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
     if topup and starting_state!="eddy":
 
+        import subprocess
         #cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config=b02b0.cnf --out=my_output"'
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
 
         topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
         makedir(topup_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
+        makedir(topup_path+"/synb0-DisCo", folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         if gibbs:
-            imain = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz'
+            imain_tot = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz'
         elif denoising:
-            imain = folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz'
+            imain_tot = folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz'
         else:
-            imain = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
+            imain_tot = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
 
-        bashCommand = 'topup --imain="' + imain + '" --config="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --verbose'
-
-        import subprocess
-        bashcmd = bashCommand.split()
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
-        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
-        f.close()
-
+        multiple_encoding=False
         topup_log = open(folder_path + '/' + patient_path + "/dMRI/preproc/topup/topup_logs.txt", "a+")
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=topup_log,
-                                   stderr=subprocess.STDOUT)
 
-        # wait until topup finish
-        output, error = process.communicate()
+        with open(folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt') as f:
+            str = f.read()
+            topup_index = [int(s) for s in str.split(' ')]
+        with open(folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
+            str = f.read()
+            topup_acq = [[int(x) for x in line.split()] for line in f]
 
-        bashCommand2 = 'applytopup --imain="' + imain + '" --inindex=1 --datatin="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+        #Find all the bo to extract.
+        current_index = 1
+        i=1
+        roi=[]
+        for ind in topup_index:
+            if ind!=current_index:
+                roi.append(i)
+                fslroi = "fslroi " + imain_tot + " " + topup_path + "/b0_"+i+".nii.gz "+i+" 1"
+            current_index=ind
+            i=i+1
+
+        #Merge b0
+        if len(roi) == 1:
+            shutil.copyfile(topup_path + "/b0_"+roi[1]+".nii.gz", topup_path + "/b0.nii.gz")
+        else:
+            roi_to_merge=""
+            for r in roi:
+                roi_to_merge = roi_to_merge + " " + r
+            cmd = "fslmerge -t " + topup_path + "/b0.nii.gz " + roi_to_merge
+            process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=topup_log,
+                                       stderr=subprocess.STDOUT)
+            output, error = process.communicate()
+
+        #Check if multiple or single encoding direction
+        curr_x=0
+        curr_y=0
+        curr_z=0
+        first=True
+        for acq in topup_acq:
+            if not first and (curr_x!=acq[1] or curr_y!=acq[2] or curr_z!=acq[3]):
+                multiple_encoding=True
+            first=False
+            curr_x=acq[1]
+            curr_y=acq[2]
+            curr_z=acq[3]
+
+        if multiple_encoding:
+            bashCommand = 'topup --imain="' + topup_path + '/b0.nii.gz" --config="b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --verbose'
+            bashcmd = bashCommand.split()
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
+            f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
+            f.close()
+
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=topup_log,
+                                       stderr=subprocess.STDOUT)
+            # wait until topup finish
+            output, error = process.communicate()
+        else:
+            from elikopy.utils import synb0DisCo
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt',
+                            topup_path + '/synb0-DisCo/' + 'acqparams.txt')
+
+            shutil.copyfile(folder_path + '/' + patient_path + '/T1/' + patient_path + '_T1.nii.gz',
+                            topup_path + '/synb0-DisCo/' + 'T1.nii.gz')
+
+            shutil.copyfile(topup_path + "/b0.nii.gz",topup_path + "/synb0-Disco/b0.nii.gz")
+
+            process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=topup_log,stderr=subprocess.STDOUT)
+            output, error = process.communicate()
+            synb0DisCo(topup_path,starting_step=None,topup=True,gpu=False)
+
+        bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex=1 --datatin="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
         process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
                                     stderr=subprocess.STDOUT)
-
-        # wait until topup finish
+        # wait until apply topup finish
         output, error = process2.communicate()
 
         topup_log.close()
