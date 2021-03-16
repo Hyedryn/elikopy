@@ -55,6 +55,7 @@ def dicom_to_nifti(folder_path):
             f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Moved " + f + " to " + dest + "\n")
     f.close()
 
+
 class Elikopy:
     r'''
     The MultiCompartmentModel class allows to combine any number of
@@ -74,7 +75,6 @@ class Elikopy:
         self._slurm = slurm
         self._slurm_email = slurm_email
         self._cuda = cuda
-
 
     def patient_list(self, folder_path=None):
         """ Verify the validity of all the nifti present in the root folder. If some nifti does not posses an associated
@@ -137,6 +137,11 @@ class Elikopy:
                             except:
                                 print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
 
+                            try:
+                                shutil.copyfile(folder_path + typeFolderName + "slspec.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "slspec.txt")
+                            except:
+                                print('WARNING: slspec missing, EDDY outlier replacement and slice-to-volume motion correction will not correct properly')
+
                             anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
                             if os.path.isfile(anat_path):
                                 dest = folder_path + "/subjects/" + name + "/T1/"
@@ -161,7 +166,6 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
-
 
     def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Wrapper function for the preprocessing. Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
@@ -280,7 +284,6 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
         f.close()
 
-
     def dti(self,folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Wrapper function for tensor reconstruction and computation of DTI metrics using Weighted Least-Squares.
         Performs a tensor reconstruction and saves the DTI metrics.
@@ -354,7 +357,6 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
         f.close()
-
 
     def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Wrapper function for microstructure estimation. Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
@@ -431,7 +433,6 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-
     def white_mask(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """ Wrapper function for whitematter mask computation. Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
         T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
@@ -502,7 +503,6 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of White mask\n")
         f.close()
-
 
     def noddi(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Wrapper function for noddi. Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
@@ -578,7 +578,6 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI\n")
         f.close()
-
 
     def noddi_amico(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Wrapper function for noddi amico. Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
@@ -657,7 +656,6 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
         f.close()
 
-
     def diamond(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Wrapper function for DIAMOND. Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
 
@@ -731,7 +729,6 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DIAMOND\n")
         f.close()
-
 
     def tbss(self, folder_path=None, grp1=None, grp2=None, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_numberofpermutation=5000, slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
         """ Wrapper function for TBSS. Perform tract base spatial statistics between the control data and case data.
