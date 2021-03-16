@@ -35,20 +35,17 @@ Features
 Installation
 ------------
 
-| ElikoPy requires Python v3.7+ to run.
-| After cloning the repo, you can either firstly install all the python dependencies including optionnal dependency used to speed up the code:
+ElikoPy requires Python v3.7+ to run.
+After cloning the repo, you can either firstly install all the python dependencies including optionnal dependency used to speed up the code::
 
-.. code-block:: console
    pip install -r requirements.txt --user
 
-| Or you can install directly the library with only the mandatory dependencies (if you performed the previous step, you still need to perform this step):
+Or you can install directly the library with only the mandatory dependencies (if you performed the previous step, you still need to perform this step)::
 
-.. code-block:: console
    python3 setup.py install --user
 
-| Microstructure Fingerprinting is currently not avaible in the standard python repo, you can clone and install this library manually.
+Microstructure Fingerprinting is currently not avaible in the standard python repo, you can clone and install this library manually::
 
-.. code-block:: console
    git clone git@github.com:rensonnetg/microstructure_fingerprinting.git
    cd microstructure_fingerprinting
    python setup.py install
