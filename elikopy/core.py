@@ -167,7 +167,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Wrapper function for the preprocessing. Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
         located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final
 
@@ -182,6 +182,10 @@ class Elikopy:
         :param bet_median_radius: Radius (in voxels) of the applied median filter during bet.
         :param bet_num_pass: Number of pass of the median filter during bet.
         :param bet_dilate: Number of iterations for binary dilation during bet.
+        :param cuda: If true, eddy will run on cuda with the command name specified in cuda_name.
+        :param cuda_name: name of the eddy command to run when cuda==True.
+        :param s2v: list of parameters eddy for slice-to-volume correction (see Eddy FSL documentation): [mporder,s2v_niter,s2v_lambda,s2v_interp].
+        :param olrep: list of parameters eddy outlier replacement (see Eddy FSL documentation): [repol,ol_nstd,ol_nvox,ol_type].
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout by a custom timeout.
@@ -228,7 +232,7 @@ class Elikopy:
                     "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
                         eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
                         gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + ",bet_median_radius=\"" + str(
-                        bet_median_radius) + ",bet_dilate=\"" + str(bet_dilate) + ",bet_numpass=\"" + str(bet_numpass) + "\")'",
+                        bet_median_radius) + ",bet_dilate=\"" + str(bet_dilate) + ",bet_numpass=\"" + str(bet_numpass) + ",cuda=\"" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + ",s2v=\"" + str(s2v) + ",olrep=\"" + str(olrep) + "\")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
