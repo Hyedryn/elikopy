@@ -577,6 +577,7 @@ def white_mask_solo(folder_path, p):
         white_mask = affine.transform(white_mask)
         white_mask[white_mask != 0] = 1
         anat_affine = static_grid2world
+        segmentation = affine.transform(final_segmentation)
     else:
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
@@ -609,12 +610,14 @@ def white_mask_solo(folder_path, p):
         white_mask[white_mask >= 0.01] = 1
         white_mask[white_mask < 0.01] = 0
         anat_affine = affine
+        segmentation = np.copy(final_segmentation)
 
     mask_path = folder_path + '/' + patient_path + "/masks"
     makedir(mask_path, folder_path + '/' + patient_path + "/masks/wm_logs.txt", log_prefix)
 
     out_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
+    save_nifti(folder_path + '/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz', segmentation.astype(np.float32), anat_affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
