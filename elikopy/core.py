@@ -231,8 +231,8 @@ class Elikopy:
                 p_job = {
                     "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
                         eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
-                        gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + ",bet_median_radius=\"" + str(
-                        bet_median_radius) + ",bet_dilate=\"" + str(bet_dilate) + ",bet_numpass=\"" + str(bet_numpass) + ",cuda=\"" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + ",s2v=\"" + str(s2v) + ",olrep=\"" + str(olrep) + "\")'",
+                        gibbs) + ",topup=" + str(topup) + ",starting_state=" + str(starting_state) + ",bet_median_radius=" + str(
+                        bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=" + str(cuda_name) + ",s2v=" + str(s2v) + ",olrep=" + str(olrep) + ")'",
                     "job_name": "preproc_" + p,
                     "ntasks": 1,
                     "cpus_per_task": 8,
