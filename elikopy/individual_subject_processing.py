@@ -134,13 +134,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             "%d.%b %Y %H:%M:%S") + ": Denoising mean sigma" + str(mean_sigma)+ ", snr:" + str(snr) + " for patient %s \n" % p)
         f.close()
 
-        #import matplotlib.pyplot as plt
-        #fig3 = plt.figure('PCA Noise standard deviation estimation')
-        #plt.imshow(sigma[..., sli].T, cmap='gray', origin='lower')
-        #plt.axis('off')
-        #plt.show()
-        #fig3.savefig(denoising_path + '/' + patient_path + '_mppca_sigma.png')
-
+        save_nifti(denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz', sigma.astype(np.float32), affine)
         save_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz', denoised.astype(np.float32), affine)
 
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
