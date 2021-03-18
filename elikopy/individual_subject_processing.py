@@ -122,16 +122,20 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             mask, _ = load_nifti(mask_path)
 
         pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
-        denoised, sigma = mppca(b0_mask, patch_radius=pr, return_sigma=True)
+        denoised, sigma = mppca(b0_mask, patch_radius=pr, return_sigma=True, mask = mask)
 
-        mean_sigma = np.mean(sigma[b0_mask])
-        mean_signal = np.mean(denoised[b0_mask])
-        snr = mean_signal/mean_sigma
+        #mean_sigma = np.mean(sigma[b0_mask])
+        #mean_signal = np.mean(denoised[b0_mask])
+        #snr = mean_signal/mean_sigma
+        #f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        #f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        #    "%d.%b %Y %H:%M:%S") + ": Denoising mean sigma:"+ str(mean_sigma)+ ", snr:" + str(snr) + " for patient %s \n" % p)
+        #print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        #    "%d.%b %Y %H:%M:%S") + ": Denoising mean sigma" + str(mean_sigma)+ ", snr:" + str(snr) + " for patient %s \n" % p)
+        #f.close()
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
-        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Denoising mean sigma:"+ str(mean_sigma)+ ", snr:" + str(snr) + " for patient %s \n" % p)
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Denoising mean sigma" + str(mean_sigma)+ ", snr:" + str(snr) + " for patient %s \n" % p)
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
         f.close()
 
         save_nifti(denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz', sigma.astype(np.float32), affine)
