@@ -169,7 +169,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             b0_mask, affine, voxel_size = load_nifti(b0_mask_path, return_voxsize=True)
             mask, _ = load_nifti(mask_path)
 
-        data = gibbs_removal(b0_mask,num_threads=4)
+        data = gibbs_removal(b0_mask)
         corrected_path = folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/" + patient_path + '_gibbscorrected.nii.gz'
         save_nifti(corrected_path, data.astype(np.float32), affine)
 
