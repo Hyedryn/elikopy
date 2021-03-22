@@ -244,7 +244,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             for r in roi:
                 roi_to_merge = roi_to_merge + " b0_" + str(r) + ".nii.gz"
             print("The following roi will be merged: " + roi_to_merge)
-            cmd = "fslmerge -t " + topup_path + "/b0.nii.gz " + roi_to_merge
+            cmd = "fslmerge -t " + topup_path + "/b0.nii.gz" + roi_to_merge
             process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=topup_log,
                                        stderr=subprocess.STDOUT)
             output, error = process.communicate()
