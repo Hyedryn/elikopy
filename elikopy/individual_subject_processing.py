@@ -291,7 +291,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             shutil.copyfile(folder_path + '/' + patient_path + '/T1/' + patient_path + '_T1.nii.gz',
                             topup_path + '/synb0-DisCo/' + 'T1.nii.gz')
 
-            shutil.copyfile(topup_path + "/b0.nii.gz",topup_path + "/synb0-Disco/b0.nii.gz")
+            shutil.copyfile(topup_path + "/b0.nii.gz",topup_path + "/synb0-DisCo/b0.nii.gz")
 
             process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=topup_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()

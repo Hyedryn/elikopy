@@ -147,6 +147,21 @@ class Elikopy:
                                 dest = folder_path + "/subjects/" + name + "/T1/"
                                 makedir(dest, folder_path + "/logs.txt", log_prefix)
                                 shutil.copyfile(folder_path + "/T1/" + name + "_T1.nii.gz", folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
+                                anat_path_json = folder_path + '/T1/' + name + '_T1.json'
+                                if os.path.isfile(anat_path_json):
+                                    shutil.copyfile(folder_path + "/T1/" + name + "_T1.json",
+                                                folder_path + "/subjects/" + name + "/T1/" + name + "_T1.json")
+
+                            anat_path = folder_path + '/T1/' + name + '.nii.gz'
+                            if os.path.isfile(anat_path):
+                                dest = folder_path + "/subjects/" + name + "/T1/"
+                                makedir(dest, folder_path + "/logs.txt", log_prefix)
+                                shutil.copyfile(folder_path + "/T1/" + name + ".nii.gz",
+                                                folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
+                                anat_path_json = folder_path + '/T1/' + name + '.json'
+                                if os.path.isfile(anat_path_json):
+                                    shutil.copyfile(folder_path + "/T1/" + name + ".json",
+                                                    folder_path + "/subjects/" + name + "/T1/" + name + "_T1.json")
 
         error = list(dict.fromkeys(error))
         success = list(dict.fromkeys(success))
