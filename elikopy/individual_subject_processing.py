@@ -215,10 +215,10 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         topup_log = open(folder_path + '/' + patient_path + "/dMRI/preproc/topup/topup_logs.txt", "a+")
 
         with open(folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt') as f:
-            str = f.read()
-            topup_index = [int(s) for s in str.split(' ')]
+            line = f.read()
+            topup_index = [int(s) for s in line.split(' ')]
         with open(folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
-            str = f.read()
+            line = f.read()
             topup_acq = [[int(x) for x in line.split()] for line in f]
 
         #Find all the bo to extract.
