@@ -222,13 +222,13 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             topup_acq = [[int(x) for x in line.split()] for line in f]
 
         #Find all the bo to extract.
-        current_index = 1
+        current_index = 0
         i=1
         roi=[]
         for ind in topup_index:
             if ind!=current_index:
                 roi.append(i)
-                fslroi = "fslroi " + imain_tot + " " + topup_path + "/b0_"+i+".nii.gz "+i+" 1"
+                fslroi = "fslroi " + imain_tot + " " + topup_path + "/b0_"+str(i)+".nii.gz "+str(i)+" 1"
                 print("B0 of index" + str(i) + " extracted!")
             current_index=ind
             i=i+1
