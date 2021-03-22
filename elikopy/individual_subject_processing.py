@@ -229,6 +229,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             if ind!=current_index:
                 roi.append(i)
                 fslroi = "fslroi " + imain_tot + " " + topup_path + "/b0_"+i+".nii.gz "+i+" 1"
+                print("B0 of index" + str(i) + " extracted!")
             current_index=ind
             i=i+1
 
@@ -239,6 +240,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             roi_to_merge=""
             for r in roi:
                 roi_to_merge = roi_to_merge + " " + r
+            print("The following roi will be merged: " + roi_to_merge)
             cmd = "fslmerge -t " + topup_path + "/b0.nii.gz " + roi_to_merge
             process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=topup_log,
                                        stderr=subprocess.STDOUT)
@@ -258,11 +260,14 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             curr_z=acq[3]
 
         if multiple_encoding:
+            f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Patient %s \n" % p + " has multiple direction of gradient encoding, launching topup directly ")
             bashCommand = 'topup --imain="' + topup_path + '/b0.nii.gz" --config="b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --verbose'
             bashcmd = bashCommand.split()
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
-            f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
             f.close()
@@ -272,6 +277,10 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             # wait until topup finish
             output, error = process.communicate()
         else:
+            f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Patient %s \n" % p + " has a single direction of gradient encoding, launching synb0DisCo ")
+            f.close()
             from elikopy.utils import synb0DisCo
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt',
                             topup_path + '/synb0-DisCo/' + 'acqparams.txt')
