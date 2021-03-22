@@ -217,9 +217,9 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         with open(folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt') as f:
             line = f.read()
             topup_index = [int(s) for s in line.split(' ')]
+
         with open(folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
-            line = f.read()
-            topup_acq = [[int(x) for x in line.split()] for line in f]
+            topup_acq = [[float(x) for x in line2.split()] for line2 in f]
 
         #Find all the bo to extract.
         current_index = 0
@@ -250,9 +250,9 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             output, error = process.communicate()
 
         #Check if multiple or single encoding direction
-        curr_x=0
-        curr_y=0
-        curr_z=0
+        curr_x=0.0
+        curr_y=0.0
+        curr_z=0.0
         first=True
         print("Topup acq parameters:")
         print(topup_acq)
