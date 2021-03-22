@@ -235,7 +235,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         #Merge b0
         if len(roi) == 1:
-            shutil.copyfile(topup_path + "/b0_"+roi[1]+".nii.gz", topup_path + "/b0.nii.gz")
+            shutil.copyfile(topup_path + "/b0_"+roi[0]+".nii.gz", topup_path + "/b0.nii.gz")
         else:
             roi_to_merge=""
             for r in roi:
