@@ -254,6 +254,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         curr_y=0
         curr_z=0
         first=True
+        print("Topup acq parameters:")
+        print(topup_acq)
         for acq in topup_acq:
             if not first and (curr_x!=acq[1] or curr_y!=acq[2] or curr_z!=acq[3]):
                 multiple_encoding=True
