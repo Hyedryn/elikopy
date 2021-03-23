@@ -701,7 +701,19 @@ def synb0DisCo(topuppath,patient_path,starting_step=None,topup=True,gpu=True):
         process = subprocess.Popen(bashCommand_step4, universal_newlines=True, shell=True, stdout=step4_log,
                                    stderr=subprocess.STDOUT)
 
+
         output, error = process.communicate()
+
+        with open(synb0path + '/' + 'acqparams_topup.txt') as f:
+            topup_acq = [[float(x) for x in line2.split()] for line2 in f]
+
+        topup_acq.append([topup_acq[0][0], - topup_acq[0][1], topup_acq[0][2], topup_acq[0][3]])
+
+        print(topup_acq)
+
+        with open(synb0path + '/' + "acqparams_topup.txt", 'w') as file:
+            file.writelines(' '.join(str(j) for j in i) + '\n' for i in topup_acq)
+
         step4_log.write(
             "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of step 4 \n\n")
         step4_log.close()

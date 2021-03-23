@@ -297,7 +297,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             f.close()
             from elikopy.utils import synb0DisCo
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt',
-                            topup_path + '/synb0-DisCo/' + 'acqparams.txt')
+                            topup_path + '/synb0-DisCo/' + 'acqparams_topup.txt')
 
             shutil.copyfile(folder_path + '/' + patient_path + '/T1/' + patient_path + '_T1.nii.gz',
                             topup_path + '/synb0-DisCo/' + 'T1.nii.gz')
@@ -308,7 +308,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             output, error = process.communicate()
             synb0DisCo(topup_path,patient_path,starting_step=None,topup=True,gpu=False)
 
-            bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+            bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
             process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
                                         stderr=subprocess.STDOUT)
