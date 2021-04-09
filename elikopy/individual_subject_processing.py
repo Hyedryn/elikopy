@@ -630,6 +630,7 @@ def white_mask_solo(folder_path, p):
         peaks = dp.peaks_from_model(model=qball_model, data=data, relative_peak_threshold=.5, min_separation_angle=25,
                                     sphere=sphere, mask=mask)
         ap = shm.anisotropic_power(peaks.shm_coeff)
+        save_nifti(folder_path + '/' + patient_path + "/masks/" + patient_path + '_ap.nii.gz', ap.astype(np.float32), affine)
         nclass = 3
         beta = 0.1
         hmrf = TissueClassifierHMRF()
