@@ -43,6 +43,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         assert topup == True, 'if starting_state is topup, topup must be True!'
     if starting_state == "eddy":
         assert eddy == True, 'if starting_state is eddy, eddy must be True!'
+    if starting_state == "None":
+        starting_state = None
 
     log_prefix = "PREPROC SOLO"
     patient_path = os.path.splitext(p)[0]
@@ -83,10 +85,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
     if starting_state == None:
         b0_mask, mask = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass, vol_idx=range(0, np.shape(data)[3]), dilate=bet_dilate)
-        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',
-                   mask.astype(np.float32), affine)
-        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz',
-                   b0_mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz',b0_mask.astype(np.float32), affine)
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
@@ -95,10 +95,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         f.close()
 
     if not denoising and not eddy and not gibbs and not topup:
-        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
-                   b0_mask.astype(np.float32), affine)
-        save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
-                   mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32), affine)
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
                         folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
