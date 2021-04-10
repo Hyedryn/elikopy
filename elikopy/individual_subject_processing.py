@@ -479,6 +479,11 @@ def dti_solo(folder_path, p):
     # diffusion tensor ====================================
     save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_dtensor.nii.gz",
                tenfit.quadratic_form.astype(np.float32), affine)
+    # Residual ============================================
+    reconstructed = tenfit.predict(gtab, S0=data[...,0])
+    residual = data - reconstructed
+    save_nifti(folder_path + '/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_residual.nii.gz",
+               residual.astype(np.float32), affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
