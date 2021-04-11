@@ -531,7 +531,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         axs[i].set_title('Raw data at b=' + str(list_bval[i]))
     plt.savefig(qc_path + "/raw.jpg", dpi=300, bbox_inches='tight')
 
-    list_images = [[qc_path + "/title.jpg", qc_path + "/inputs.jpg", qc_path + "/raw.jpg"]]
+    list_images = [[qc_path + "/title.jpg", qc_path + "/inputs.jpg"],[qc_path + "/raw.jpg"]]
 
     """data each step Plot + brain mask""";
 
@@ -673,16 +673,16 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             previous = bet_data
 
         fig, axs = plt.subplots(len(list_bval), 3, figsize=(9, 3 * len(list_bval)))
-        fig.suptitle('Gibbs ringing correction', y=1, fontsize=16)
+        #fig.suptitle('Gibbs ringing correction', y=1, fontsize=16)
         for i in range(len(list_bval)):
             shell_index = np.where(np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50))[0]
             # plot the gibbs before, after and residual
             axs[i, 0].imshow(previous[..., sl, shell_index[0]], cmap='gray')
             axs[i, 0].set_axis_off()
-            axs[i, 0].set_title('Uncorrected at b=' + str(list_bval[i]))
+            axs[i, 0].set_title('Gibbs uncorrected at b=' + str(list_bval[i]))
             axs[i, 1].imshow(gibbs_data[..., sl, shell_index[0]], cmap='gray')
             axs[i, 1].set_axis_off()
-            axs[i, 1].set_title('Corrected at b=' + str(list_bval[i]))
+            axs[i, 1].set_title('Gibbs corrected at b=' + str(list_bval[i]))
             axs[i, 2].imshow(np.abs(previous[..., sl, shell_index[0]] - gibbs_data[..., sl, shell_index[0]]),
                              cmap='gray')
             axs[i, 2].set_axis_off()
@@ -756,7 +756,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         # 2) MPPCA sigma + SNR estimation + before/after residual ==========================================
 
         fig, axs = plt.subplots(len(list_bval), 3, figsize=(9, 3 * len(list_bval)))
-        fig.suptitle('MPPCA denoising', y=1, fontsize=16)
+        #fig.suptitle('MPPCA denoising', y=1, fontsize=16)
         for i in range(len(list_bval)):
             shell_index = np.where(np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50))[0]
             # plot the gibbs before, after and residual
@@ -765,7 +765,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             axs[i, 0].set_title('Original at b=' + str(list_bval[i]))
             axs[i, 1].imshow(mppca_data[..., sl, shell_index[0]], cmap='gray')
             axs[i, 1].set_axis_off()
-            axs[i, 1].set_title('Denoised at b=' + str(list_bval[i]))
+            axs[i, 1].set_title('MPPCA denoised at b=' + str(list_bval[i]))
             axs[i, 2].imshow(np.abs(bet_data[..., sl, shell_index[0]] - mppca_data[..., sl, shell_index[0]]),
                              cmap='gray')
             axs[i, 2].set_axis_off()
@@ -1222,7 +1222,7 @@ def dti_solo(folder_path, p):
             # self.image('assets/logo.png', 10, 8, 33)
             self.set_font('Arial', 'B', 11)
             self.cell(self.WIDTH - 80)
-            self.cell(60, 1, 'Quality control report - Preprocessing', 0, 0, 'R')
+            self.cell(60, 1, 'Quality control report - DTI', 0, 0, 'R')
             self.ln(20)
 
         def footer(self):
