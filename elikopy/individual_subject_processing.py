@@ -496,7 +496,7 @@ def dti_solo(folder_path, p):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 
-    metric1 = np.copy(RGB)
+    metric1 = np.array(255 * RGB, 'uint8')
     metric2 = np.copy(MD)
     qc_path = folder_path + '/' + patient_path + "/dMRI/microstructure/dti/quality_control"
     makedir(qc_path, folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
