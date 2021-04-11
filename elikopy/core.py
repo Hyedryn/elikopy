@@ -299,6 +299,40 @@ class Elikopy:
         if slurm:
             elikopy.utils.getJobsState(folder_path, job_list, log_prefix)
 
+        """Outside of preprocsolo : Eddy squad + Merge both individual QC pdf""";
+        if eddy:
+            # 1) update the QC with squad
+            squadlist = [folder_path + '/subjects/' + x + "/dMRI/preproc/eddy/" + x + '_eddy_corr.qc\n' for x in
+                         patient_list]
+            dest_list = folder_path + "/subjects/squad_list.txt"
+            f = open(dest_list, "w")
+            for elem in squadlist:
+                f.write(elem)
+            f.close()
+
+            bashCommand = 'eddy_squad "' + dest_list + '" --update'
+            bashcmd = bashCommand.split()
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
+            output, error = process.communicate()
+
+            # 2) merge both pdfs
+            from PyPDF2 import PdfFileMerger
+            for p in patient_list:
+                patient_path = os.path.splitext(p)[0]
+                pdfs = [folder_path + '/subjects/' + patient_path + '/dMRI/preproc/quality_control/qc_report.pdf',
+                        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.qc/qc_updated.pdf']
+                merger = PdfFileMerger()
+                for pdf in pdfs:
+                    merger.append(pdf)
+                merger.write(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+                merger.close()
+        else:
+            for p in patient_list:
+                patient_path = os.path.splitext(p)[0]
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/preproc/quality_control/qc_report.pdf',
+                    folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
         f.close()

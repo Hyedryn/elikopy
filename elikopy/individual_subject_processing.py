@@ -408,6 +408,654 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
+    f.close()
+    # ==================================================================================================================
+
+    """Imports"""
+    from dipy.io.image import load_nifti, load_nifti_data
+    from dipy.io import read_bvals_bvecs
+    from dipy.core.gradients import gradient_table
+    from dipy.io.image import save_nifti
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from dipy.segment.mask import median_otsu
+    import dipy.reconst.dti as dti
+    from dipy.reconst.dti import fractional_anisotropy, color_fa
+    from dipy.viz import colormap
+    from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
+    from dipy.align.transforms import RigidTransform3D
+    from dipy.segment.mask import segment_from_cfa
+    from dipy.segment.mask import bounding_box
+    from scipy.ndimage.morphology import binary_dilation
+    from os import listdir
+    from os.path import isdir
+    from skimage import measure
+    import img2pdf
+    import os
+    from fpdf import FPDF
+    from PyPDF2 import PdfFileMerger
+
+    preproc_path = folder_path + '/' + patient_path + '/dMRI/preproc/'
+    raw_path = folder_path + '/' + patient_path + '/dMRI/raw/'
+    mask_path = folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz'
+    qc_path = preproc_path + 'quality_control'
+    makedir(qc_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
+
+    """Open the data"""
+
+    # original data
+    raw_data, raw_affine = load_nifti(raw_path + patient_path + "_raw_dmri.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(raw_path + patient_path + "_raw_dmri.bval",
+                                    raw_path + patient_path + "_raw_dmri.bvec")
+    gtab_raw = gradient_table(bvals, bvecs)
+
+    # reslice data
+    bool_reslice = isdir(preproc_path + "reslice")
+    if bool_reslice:
+        reslice_data, reslice_affine = load_nifti(preproc_path + "reslice/" + patient_path + "_reslice.nii.gz")
+
+    # bet data (stage to compare with final)
+    bet_data, bet_affine = load_nifti(preproc_path + "bet/" + patient_path + "_mask.nii.gz")
+    mask_raw, mask_raw_affine = load_nifti(preproc_path + "bet/" + patient_path + "_binary_mask.nii.gz")
+
+    # mppca data
+    bool_mppca = isdir(preproc_path + "mppca")
+    if bool_mppca:
+        mppca_data, mppca_affine = load_nifti(preproc_path + "mppca/" + patient_path + "_mppca.nii.gz")
+        sigma, sigma_affine = load_nifti(preproc_path + "mppca/" + patient_path + "_sigmaNoise.nii.gz")
+
+    # gibbs data
+    bool_gibbs = isdir(preproc_path + "gibbs")
+    if bool_gibbs:
+        gibbs_data, gibbs_affine = load_nifti(preproc_path + "gibbs/" + patient_path + "_gibbscorrected.nii.gz")
+
+    # topup data
+    bool_topup = isdir(preproc_path + "topup")
+    if bool_topup:
+        topup_data, topup_affine = load_nifti(preproc_path + "topup/" + patient_path + "_topup_corr.nii.gz")
+        field_data, field_affine = load_nifti(
+            preproc_path + "topup/" + patient_path + "_topup_estimate_fieldcoef.nii.gz")
+
+    # eddy data (=preproc total)
+    bool_eddy = isdir(preproc_path + "eddy")
+    preproc_data, preproc_affine = load_nifti(preproc_path + patient_path + "_dmri_preproc.nii.gz")
+    mask_preproc, mask_preproc_affine = load_nifti(mask_path)
+    bvals, bvecs = read_bvals_bvecs(preproc_path + patient_path + "_dmri_preproc.bval",
+                                    preproc_path + patient_path + "_dmri_preproc.bvec")
+    gtab_preproc = gradient_table(bvals, bvecs)
+
+    fig, axs = plt.subplots(2, 1, figsize=(2, 1))
+    fig.suptitle('Elikopy : Quality control report - Preprocessing', fontsize=50)
+    axs[0].set_axis_off()
+    axs[1].set_axis_off()
+    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+
+    rows = ["patient id", "reslice", "denoising", "gibbs", "topup", "eddy", "bet_median_radius", "bet_numpass",
+            "bet_dilate", "cuda", "s2v", "olrep"]
+    cell_text = [[p], [reslice], [denoising], [gibbs], [topup], [eddy], [bet_median_radius], [bet_numpass],
+                 [bet_dilate], [cuda], [s2v], [olrep]]
+
+    fig, ax = plt.subplots()
+    ax.axis('off')
+    fig.tight_layout()
+    the_table = plt.table(cellText=cell_text, rowLabels=rows, rowColours=['lightsteelblue'] * 12,
+                          colColours=['lightsteelblue'], loc='center', colLabels=["Input parameters"])
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(14)
+    the_table.scale(0.8, 1.5)
+    plt.savefig(qc_path + "/inputs.jpg", dpi=300, bbox_inches='tight');
+
+    """Raw data""";
+
+    bval = np.copy(gtab_raw.bvals)
+    list_bval = []
+    for i in range(np.shape(bval)[0]):
+        test = bval[i]
+        flag = True
+        for j in range(len(list_bval)):
+            if list_bval[j] - 50 < test < list_bval[j] + 50:
+                flag = False
+        if flag == True:
+            list_bval.append(test)
+
+    sl = np.shape(raw_data)[2] // 2
+    fig, axs = plt.subplots(len(list_bval), 1, figsize=(14, 3 * len(list_bval)))
+    for i in range(len(list_bval)):
+        shell_index = np.where(np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50))[0]
+        # plot the shell
+        plot_shell = np.zeros((np.shape(raw_data)[0], np.shape(raw_data)[1] * 5))
+        plot_shell[:, 0:np.shape(raw_data)[1]] = raw_data[..., sl - 10, shell_index[0]]
+        plot_shell[:, np.shape(raw_data)[1]:(np.shape(raw_data)[1] * 2)] = raw_data[..., sl - 5, shell_index[0]]
+        plot_shell[:, (np.shape(raw_data)[1] * 2):(np.shape(raw_data)[1] * 3)] = raw_data[..., sl, shell_index[0]]
+        plot_shell[:, (np.shape(raw_data)[1] * 3):(np.shape(raw_data)[1] * 4)] = raw_data[..., sl + 5, shell_index[0]]
+        plot_shell[:, (np.shape(raw_data)[1] * 4):(np.shape(raw_data)[1] * 5)] = raw_data[..., sl + 10, shell_index[0]]
+        axs[i].imshow(plot_shell, cmap='gray')
+        axs[i].set_axis_off()
+        axs[i].set_title('Raw data at b=' + str(list_bval[i]))
+    plt.savefig(qc_path + "/raw.jpg", dpi=300, bbox_inches='tight')
+
+    list_images = [[qc_path + "/title.jpg", qc_path + "/inputs.jpg", qc_path + "/raw.jpg"]]
+
+    """data each step Plot + brain mask""";
+
+    def mask_to_coor(mask):
+        contours = measure.find_contours(mask.astype(float), 0)
+        X, Y = [], []
+        for i in range(0, len(contours[0])):
+            X.append(int(contours[0][i][1]))
+            Y.append(int(contours[0][i][0]))
+        return X, Y
+
+    sl = np.shape(bet_data)[2] // 2
+    for i in range(len(list_bval)):
+        shell_index = np.where(np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50))[0]
+        numstep = 1 + bool_mppca + bool_gibbs + bool_topup + bool_eddy
+
+        current_subplot = 0
+        fig, axs = plt.subplots(numstep, 1, figsize=(14, 3 * numstep))
+        fig.suptitle('Overview of processing steps for b=' + str(list_bval[i]), y=0.95, fontsize=16)
+
+        # plot bet
+        X1, Y1 = mask_to_coor(mask_raw[..., sl - 10])
+        X2, Y2 = mask_to_coor(mask_raw[..., sl - 5])
+        X3, Y3 = mask_to_coor(mask_raw[..., sl])
+        X4, Y4 = mask_to_coor(mask_raw[..., sl + 5])
+        X5, Y5 = mask_to_coor(mask_raw[..., sl + 10])
+        Y = Y1 + Y2 + Y3 + Y4 + Y5
+        X = X1 + [x + np.shape(mask_raw)[1] for x in X2] + [x + np.shape(mask_raw)[1] * 2 for x in X3] + [
+            x + np.shape(mask_raw)[1] * 3 for x in X4] + [x + np.shape(mask_raw)[1] * 4 for x in X5]
+        axs[current_subplot].scatter(X, Y, marker='.', s=1, c='red')
+        plot_bet = np.zeros((np.shape(bet_data)[0], np.shape(bet_data)[1] * 5))
+        plot_bet[:, 0:np.shape(bet_data)[1]] = bet_data[..., sl - 10, shell_index[0]]
+        plot_bet[:, np.shape(bet_data)[1]:(np.shape(bet_data)[1] * 2)] = bet_data[..., sl - 5, shell_index[0]]
+        plot_bet[:, (np.shape(bet_data)[1] * 2):(np.shape(bet_data)[1] * 3)] = bet_data[..., sl, shell_index[0]]
+        plot_bet[:, (np.shape(bet_data)[1] * 3):(np.shape(bet_data)[1] * 4)] = bet_data[..., sl + 5, shell_index[0]]
+        plot_bet[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = bet_data[..., sl + 10, shell_index[0]]
+        axs[current_subplot].imshow(plot_bet, cmap='gray')
+        axs[current_subplot].set_axis_off()
+        axs[current_subplot].set_title('brain extraction')
+        current_subplot = current_subplot + 1
+        # plot mppca
+        if bool_mppca:
+            plot_mppca = np.zeros((np.shape(mppca_data)[0], np.shape(mppca_data)[1] * 5))
+            plot_mppca[:, 0:np.shape(mppca_data)[1]] = mppca_data[..., sl - 10, shell_index[0]]
+            plot_mppca[:, np.shape(mppca_data)[1]:(np.shape(mppca_data)[1] * 2)] = mppca_data[
+                ..., sl - 5, shell_index[0]]
+            plot_mppca[:, (np.shape(mppca_data)[1] * 2):(np.shape(mppca_data)[1] * 3)] = mppca_data[
+                ..., sl, shell_index[0]]
+            plot_mppca[:, (np.shape(mppca_data)[1] * 3):(np.shape(mppca_data)[1] * 4)] = mppca_data[
+                ..., sl + 5, shell_index[0]]
+            plot_mppca[:, (np.shape(mppca_data)[1] * 4):(np.shape(mppca_data)[1] * 5)] = mppca_data[
+                ..., sl + 10, shell_index[0]]
+            axs[current_subplot].imshow(plot_mppca, cmap='gray')
+            axs[current_subplot].set_axis_off()
+            axs[current_subplot].set_title('Denoising')
+            current_subplot = current_subplot + 1
+        # plot gibbs
+        if bool_gibbs:
+            plot_gibbs = np.zeros((np.shape(gibbs_data)[0], np.shape(gibbs_data)[1] * 5))
+            plot_gibbs[:, 0:np.shape(gibbs_data)[1]] = gibbs_data[..., sl - 10, shell_index[0]]
+            plot_gibbs[:, np.shape(gibbs_data)[1]:(np.shape(gibbs_data)[1] * 2)] = gibbs_data[
+                ..., sl - 5, shell_index[0]]
+            plot_gibbs[:, (np.shape(gibbs_data)[1] * 2):(np.shape(gibbs_data)[1] * 3)] = gibbs_data[
+                ..., sl, shell_index[0]]
+            plot_gibbs[:, (np.shape(gibbs_data)[1] * 3):(np.shape(gibbs_data)[1] * 4)] = gibbs_data[
+                ..., sl + 5, shell_index[0]]
+            plot_gibbs[:, (np.shape(gibbs_data)[1] * 4):(np.shape(gibbs_data)[1] * 5)] = gibbs_data[
+                ..., sl + 10, shell_index[0]]
+            axs[current_subplot].imshow(plot_gibbs, cmap='gray')
+            axs[current_subplot].set_axis_off()
+            axs[current_subplot].set_title('Gibbs ringing correction')
+            current_subplot = current_subplot + 1
+        # plot topup
+        if bool_topup:
+            plot_topup = np.zeros((np.shape(topup_data)[0], np.shape(topup_data)[1] * 5))
+            plot_topup[:, 0:np.shape(topup_data)[1]] = topup_data[..., sl - 10, shell_index[0]]
+            plot_topup[:, np.shape(topup_data)[1]:(np.shape(topup_data)[1] * 2)] = topup_data[
+                ..., sl - 5, shell_index[0]]
+            plot_topup[:, (np.shape(topup_data)[1] * 2):(np.shape(topup_data)[1] * 3)] = topup_data[
+                ..., sl, shell_index[0]]
+            plot_topup[:, (np.shape(topup_data)[1] * 3):(np.shape(topup_data)[1] * 4)] = topup_data[
+                ..., sl + 5, shell_index[0]]
+            plot_topup[:, (np.shape(topup_data)[1] * 4):(np.shape(topup_data)[1] * 5)] = topup_data[
+                ..., sl + 10, shell_index[0]]
+            axs[current_subplot].imshow(plot_topup, cmap='gray')
+            axs[current_subplot].set_axis_off()
+            axs[current_subplot].set_title('Susceptibility induced distortions correction')
+            current_subplot = current_subplot + 1
+        # plot eddy
+        if bool_eddy:
+            plot_eddy = np.zeros((np.shape(preproc_data)[0], np.shape(preproc_data)[1] * 5))
+            plot_eddy[:, 0:np.shape(preproc_data)[1]] = preproc_data[..., sl - 10, shell_index[0]]
+            plot_eddy[:, np.shape(preproc_data)[1]:(np.shape(preproc_data)[1] * 2)] = preproc_data[
+                ..., sl - 5, shell_index[0]]
+            plot_eddy[:, (np.shape(preproc_data)[1] * 2):(np.shape(preproc_data)[1] * 3)] = preproc_data[
+                ..., sl, shell_index[0]]
+            plot_eddy[:, (np.shape(preproc_data)[1] * 3):(np.shape(preproc_data)[1] * 4)] = preproc_data[
+                ..., sl + 5, shell_index[0]]
+            plot_eddy[:, (np.shape(preproc_data)[1] * 4):(np.shape(preproc_data)[1] * 5)] = preproc_data[
+                ..., sl + 10, shell_index[0]]
+            axs[current_subplot].imshow(plot_eddy, cmap='gray')
+            axs[current_subplot].set_axis_off()
+            axs[current_subplot].set_title('Eddy and motion correction')
+            current_subplot = current_subplot + 1
+
+        plt.savefig(qc_path + "/processing" + str(i) + ".jpg", dpi=300, bbox_inches='tight')
+        list_images.append([qc_path + "/processing" + str(i) + ".jpg"])
+
+    """Reslice data""";
+
+    if bool_reslice:
+        fig, axs = plt.subplots(2, 3, figsize=(8, 6))
+        fig.suptitle('Data reslice', y=1, fontsize=16)
+        # plot the raw and reslice data
+        axs[0, 0].imshow(np.rot90(raw_data[:, :, np.shape(raw_data)[2] // 2, 0]), cmap='gray')
+        axs[0, 0].set_axis_off()
+        axs[0, 1].imshow(np.rot90(raw_data[:, np.shape(raw_data)[1] // 2, :, 0]), cmap='gray')
+        axs[0, 1].set_axis_off()
+        axs[0, 1].set_title('Raw data')
+        axs[0, 2].imshow(np.rot90(raw_data[np.shape(raw_data)[0] // 2, :, :, 0]), cmap='gray')
+        axs[0, 2].set_axis_off()
+        axs[1, 0].imshow(np.rot90(reslice_data[:, :, np.shape(raw_data)[2] // 2, 0]), cmap='gray')
+        axs[1, 0].set_axis_off()
+        axs[1, 1].imshow(np.rot90(reslice_data[:, np.shape(raw_data)[1] // 2, :, 0]), cmap='gray')
+        axs[1, 1].set_axis_off()
+        axs[1, 1].set_title('Reslice data')
+        axs[1, 2].imshow(np.rot90(reslice_data[np.shape(raw_data)[0] // 2, :, :, 0]), cmap='gray')
+        axs[1, 2].set_axis_off()
+        plt.savefig(qc_path + "/reslice.jpg", dpi=300, bbox_inches='tight')
+        list_images.append([qc_path + "/reslice.jpg"])
+
+    """Gibbs ringing""";
+
+    if bool_gibbs:
+
+        if bool_mppca:
+            previous = mppca_data
+        else:
+            previous = bet_data
+
+        fig, axs = plt.subplots(len(list_bval), 3, figsize=(9, 3 * len(list_bval)))
+        fig.suptitle('Gibbs ringing correction', y=1, fontsize=16)
+        for i in range(len(list_bval)):
+            shell_index = np.where(np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50))[0]
+            # plot the gibbs before, after and residual
+            axs[i, 0].imshow(previous[..., sl, shell_index[0]], cmap='gray')
+            axs[i, 0].set_axis_off()
+            axs[i, 0].set_title('Uncorrected at b=' + str(list_bval[i]))
+            axs[i, 1].imshow(gibbs_data[..., sl, shell_index[0]], cmap='gray')
+            axs[i, 1].set_axis_off()
+            axs[i, 1].set_title('Corrected at b=' + str(list_bval[i]))
+            axs[i, 2].imshow(np.abs(previous[..., sl, shell_index[0]] - gibbs_data[..., sl, shell_index[0]]),
+                             cmap='gray')
+            axs[i, 2].set_axis_off()
+            axs[i, 2].set_title('Residual at b=' + str(list_bval[i]))
+        plt.savefig(qc_path + "/gibbs.jpg", dpi=300, bbox_inches='tight')
+        list_images.append([qc_path + "/gibbs.jpg"])
+
+    """Noise correction""";
+
+    if bool_mppca:
+
+        # 1) DIPY SNR estimation =========================================================================
+
+        tenmodel = dti.TensorModel(gtab_raw)
+        tensorfit = tenmodel.fit(raw_data, mask=mask_raw)
+
+        threshold = (0.5, 1, 0, 0.3, 0, 0.3)
+        CC_box = np.zeros_like(raw_data[..., 0])
+        mins, maxs = bounding_box(mask_raw)
+        mins = np.array(mins)
+        maxs = np.array(maxs)
+        diff = (maxs - mins) // 4
+        bounds_min = mins + diff
+        bounds_max = maxs - diff
+        CC_box[bounds_min[0]:bounds_max[0], bounds_min[1]:bounds_max[1], bounds_min[2]:bounds_max[2]] = 1
+        mask_cc_part, cfa = segment_from_cfa(tensorfit, CC_box, threshold, return_cfa=True)
+
+        mean_signal = np.mean(raw_data[mask_cc_part], axis=0)
+
+        mask_noise = binary_dilation(mask_raw, iterations=20)
+        mask_noise[..., :mask_noise.shape[-1] // 2] = 1
+        mask_noise = ~mask_noise
+        noise_std = np.std(raw_data[mask_noise, :])
+
+        idx = np.sum(gtab_raw.bvecs, axis=-1) == 0
+        gtab_raw.bvecs[idx] = np.inf
+        axis_X = np.argmin(np.sum((gtab_raw.bvecs - np.array([1, 0, 0])) ** 2, axis=-1))
+        axis_Y = np.argmin(np.sum((gtab_raw.bvecs - np.array([0, 1, 0])) ** 2, axis=-1))
+        axis_Z = np.argmin(np.sum((gtab_raw.bvecs - np.array([0, 0, 1])) ** 2, axis=-1))
+
+        stock = []
+        for direction in [0, axis_X, axis_Y, axis_Z]:
+            SNR = mean_signal[direction] / noise_std
+            if direction == 0:
+                SNRb0 = int(SNR)
+            else:
+                stock.append(SNR)
+        stock = np.array(stock)
+
+        rows = ["SNR of the b0 image", "Estimated SNR range"]
+        cell_text = [[SNRb0], [str(int(np.min(stock))) + ' - ' + str(int(np.max(stock)))]]
+        region = np.shape(raw_data)[0] // 2
+        fig = plt.figure('Corpus callosum segmentation', figsize=(8, 4))
+        plt.subplot(1, 2, 1)
+        plt.title("Corpus callosum (CC)")
+        plt.axis('off')
+        red = cfa[..., 0]
+        plt.imshow(np.rot90(red[region, ...]))
+        plt.subplot(1, 2, 2)
+        plt.title("CC mask used for SNR computation")
+        plt.axis('off')
+        plt.imshow(np.rot90(mask_cc_part[region, ...]))
+        the_table = plt.table(cellText=cell_text, rowLabels=rows, rowColours=['lightsteelblue'] * 2,
+                              bbox=[-0.5, -0.6, 1.5, 0.5])
+        the_table.auto_set_font_size(False)
+        the_table.set_fontsize(12)
+        the_table.scale(2, 4)
+        plt.savefig(qc_path + "/dipyNoise.jpg", dpi=300, bbox_inches='tight')
+
+        # 2) MPPCA sigma + SNR estimation + before/after residual ==========================================
+
+        fig, axs = plt.subplots(len(list_bval), 3, figsize=(9, 3 * len(list_bval)))
+        fig.suptitle('MPPCA denoising', y=1, fontsize=16)
+        for i in range(len(list_bval)):
+            shell_index = np.where(np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50))[0]
+            # plot the gibbs before, after and residual
+            axs[i, 0].imshow(bet_data[..., sl, shell_index[0]], cmap='gray')
+            axs[i, 0].set_axis_off()
+            axs[i, 0].set_title('Original at b=' + str(list_bval[i]))
+            axs[i, 1].imshow(mppca_data[..., sl, shell_index[0]], cmap='gray')
+            axs[i, 1].set_axis_off()
+            axs[i, 1].set_title('Denoised at b=' + str(list_bval[i]))
+            axs[i, 2].imshow(np.abs(bet_data[..., sl, shell_index[0]] - mppca_data[..., sl, shell_index[0]]),
+                             cmap='gray')
+            axs[i, 2].set_axis_off()
+            axs[i, 2].set_title('Residual at b=' + str(list_bval[i]))
+        plt.savefig(qc_path + "/mppcaResidual.jpg", dpi=300, bbox_inches='tight')
+
+        masked_sigma = np.ma.array(np.nan_to_num(sigma), mask=1 - mask_raw)
+        mean_sigma = masked_sigma.mean()
+        b0 = np.ma.array(mppca_data[..., 0], mask=1 - mask_raw)
+        mean_signal = b0.mean()
+        snr = mean_signal / mean_sigma
+        sl = np.shape(sigma)[2] // 2
+        plot_sigma = np.zeros((np.shape(sigma)[0], np.shape(sigma)[1] * 5))
+        plot_sigma[:, 0:np.shape(sigma)[1]] = sigma[..., sl - 10]
+        plot_sigma[:, np.shape(sigma)[1]:(np.shape(sigma)[1] * 2)] = sigma[..., sl - 5]
+        plot_sigma[:, (np.shape(sigma)[1] * 2):(np.shape(sigma)[1] * 3)] = sigma[..., sl]
+        plot_sigma[:, (np.shape(sigma)[1] * 3):(np.shape(sigma)[1] * 4)] = sigma[..., sl + 5]
+        plot_sigma[:, (np.shape(sigma)[1] * 4):(np.shape(sigma)[1] * 5)] = sigma[..., sl + 10]
+        rows = ["MPPCA SNR estimation"]
+        cell_text = [[snr]]
+        fig = plt.figure(figsize=(14, 4))
+        plt.title("PCA Noise standard deviation estimation")
+        plt.axis('off')
+        plt.imshow(plot_sigma, cmap='gray')
+        the_table = plt.table(cellText=cell_text, rowLabels=rows, rowColours=['lightsteelblue'] * 2,
+                              bbox=[0.25, -0.3, 0.4, 0.2])
+        the_table.auto_set_font_size(False)
+        the_table.set_fontsize(12)
+        the_table.scale(1, 1)
+        plt.savefig(qc_path + "/mppcaSigma.jpg", dpi=300, bbox_inches='tight')
+
+        list_images.append([qc_path + "/dipyNoise.jpg", qc_path + "/mppcaSigma.jpg"])
+        list_images.append([qc_path + "/mppcaResidual.jpg"])
+
+        # 3) tSNR estimation ===============================================================================
+
+        for i in range(len(list_bval)):
+            shell_mask = np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50)
+            if np.sum(shell_mask) > 3:
+                # Compute the tSNR for raw and preproc
+                mean_vox = np.mean(bet_data[..., shell_mask], axis=-1)
+                std_vox = np.std(bet_data[..., shell_mask], axis=-1)
+                tsnr_raw = np.nan_to_num(mean_vox / std_vox) * mask_raw
+                mean_vox = np.mean(preproc_data[..., shell_mask], axis=-1)
+                std_vox = np.std(preproc_data[..., shell_mask], axis=-1)
+                tsnr_preproc = np.nan_to_num(mean_vox / std_vox) * mask_preproc
+
+                # Make the Plot
+                sl = np.shape(bet_data)[2] // 2
+                # image of raw
+                plot_raw = np.zeros((np.shape(bet_data)[0], np.shape(bet_data)[1] * 5))
+                plot_raw[:, 0:np.shape(bet_data)[1]] = tsnr_raw[..., sl - 10]
+                plot_raw[:, np.shape(bet_data)[1]:(np.shape(bet_data)[1] * 2)] = tsnr_raw[..., sl - 5]
+                plot_raw[:, (np.shape(bet_data)[1] * 2):(np.shape(bet_data)[1] * 3)] = tsnr_raw[..., sl]
+                plot_raw[:, (np.shape(bet_data)[1] * 3):(np.shape(bet_data)[1] * 4)] = tsnr_raw[..., sl + 5]
+                plot_raw[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = tsnr_raw[..., sl + 10]
+                # image of preproc
+                plot_preproc = np.zeros((np.shape(preproc_data)[0], np.shape(preproc_data)[1] * 5))
+                plot_preproc[:, 0:np.shape(preproc_data)[1]] = tsnr_preproc[..., sl - 10]
+                plot_preproc[:, np.shape(preproc_data)[1]:(np.shape(preproc_data)[1] * 2)] = tsnr_preproc[..., sl - 5]
+                plot_preproc[:, (np.shape(preproc_data)[1] * 2):(np.shape(preproc_data)[1] * 3)] = tsnr_preproc[..., sl]
+                plot_preproc[:, (np.shape(preproc_data)[1] * 3):(np.shape(preproc_data)[1] * 4)] = tsnr_preproc[
+                    ..., sl + 5]
+                plot_preproc[:, (np.shape(preproc_data)[1] * 4):(np.shape(preproc_data)[1] * 5)] = tsnr_preproc[
+                    ..., sl + 10]
+                # image of difference
+                plot_diff = np.zeros((np.shape(preproc_data)[0], np.shape(preproc_data)[1] * 5))
+                plot_diff[:, 0:np.shape(preproc_data)[1]] = tsnr_raw[..., sl - 10] - tsnr_preproc[..., sl - 10]
+                plot_diff[:, np.shape(preproc_data)[1]:(np.shape(preproc_data)[1] * 2)] = tsnr_raw[..., sl - 5] - \
+                                                                                          tsnr_preproc[..., sl - 5]
+                plot_diff[:, (np.shape(preproc_data)[1] * 2):(np.shape(preproc_data)[1] * 3)] = tsnr_raw[..., sl] - \
+                                                                                                tsnr_preproc[..., sl]
+                plot_diff[:, (np.shape(preproc_data)[1] * 3):(np.shape(preproc_data)[1] * 4)] = tsnr_raw[..., sl + 5] - \
+                                                                                                tsnr_preproc[
+                                                                                                    ..., sl + 5]
+                plot_diff[:, (np.shape(preproc_data)[1] * 4):(np.shape(preproc_data)[1] * 5)] = tsnr_raw[..., sl + 10] - \
+                                                                                                tsnr_preproc[
+                                                                                                    ..., sl + 10]
+
+                masked_tsnr_preproc = np.ma.array(tsnr_preproc, mask=1 - mask_preproc)
+                masked_tsnr_raw = np.ma.array(tsnr_raw, mask=1 - mask_raw)
+                masked_tsnr_diff = np.ma.array(tsnr_raw - tsnr_preproc, mask=1 - mask_preproc)
+                max_plot = max(masked_tsnr_preproc.mean() + 2 * masked_tsnr_preproc.std(),
+                               masked_tsnr_raw.mean() + 2 * masked_tsnr_raw.std())
+                min_plot = min(masked_tsnr_preproc.mean() - 2 * masked_tsnr_preproc.std(),
+                               masked_tsnr_raw.mean() - 2 * masked_tsnr_raw.std())
+
+                fig, axs = plt.subplots(3, 1, figsize=(14, 10))
+                fig.suptitle('tSNR for shell b=' + str(list_bval[i]), y=0.95, fontsize=16)
+                axs[0].imshow(plot_raw, cmap='hot', vmax=max_plot, vmin=min_plot)
+                axs[0].set_axis_off()
+                axs[0].set_title('Raw data tSNR')
+                axs[1].imshow(plot_preproc, cmap='hot', vmax=max_plot, vmin=min_plot)
+                axs[1].set_axis_off()
+                axs[1].set_title('Processed data tSNR')
+                axs[2].imshow(plot_diff, cmap='jet', vmax=0, vmin=masked_tsnr_diff.mean() - 3 * masked_tsnr_diff.std())
+                axs[2].set_axis_off()
+                axs[2].set_title('difference: raw_tSNR - processed_tSNR')
+                fig.colorbar(axs[2].imshow(plot_diff, cmap='jet', vmax=0,
+                                           vmin=masked_tsnr_diff.mean() - 3 * masked_tsnr_diff.std()), ax=axs,
+                             orientation='horizontal', pad=0.02, shrink=0.7)
+                plt.savefig(qc_path + "/tsnr" + str(i) + ".jpg", dpi=300, bbox_inches='tight')
+                list_images.append([qc_path + "/tsnr" + str(i) + ".jpg"])
+
+    """Topup (synb0 + field)""";
+    if bool_topup:
+        fig, axs = plt.subplots(3, 1, figsize=(10, 6))
+        fig.suptitle('Topup estimated field coefficients', y=1.1, fontsize=16)
+
+        sl = np.shape(field_data)[2] // 2
+        plot_field = np.zeros((np.shape(field_data)[0], np.shape(field_data)[1] * 5))
+        plot_field[:, 0:np.shape(field_data)[1]] = field_data[..., sl - 10]
+        plot_field[:, np.shape(field_data)[1]:(np.shape(field_data)[1] * 2)] = field_data[..., sl - 5]
+        plot_field[:, (np.shape(field_data)[1] * 2):(np.shape(field_data)[1] * 3)] = field_data[..., sl]
+        plot_field[:, (np.shape(field_data)[1] * 3):(np.shape(field_data)[1] * 4)] = field_data[..., sl + 5]
+        plot_field[:, (np.shape(field_data)[1] * 4):(np.shape(field_data)[1] * 5)] = field_data[..., sl + 10]
+        axs[0].imshow(plot_field, cmap='gray')
+        axs[0].set_axis_off()
+
+        sl = np.shape(field_data)[1] // 2
+        plot_field = np.zeros((np.shape(field_data)[2], np.shape(field_data)[0] * 5))
+        plot_field[:, 0:np.shape(field_data)[0]] = np.rot90(field_data[..., sl - 10, :])
+        plot_field[:, np.shape(field_data)[0]:(np.shape(field_data)[0] * 2)] = np.rot90(field_data[..., sl - 5, :])
+        plot_field[:, (np.shape(field_data)[0] * 2):(np.shape(field_data)[0] * 3)] = np.rot90(field_data[..., sl, :])
+        plot_field[:, (np.shape(field_data)[0] * 3):(np.shape(field_data)[0] * 4)] = np.rot90(
+            field_data[..., sl + 5, :])
+        plot_field[:, (np.shape(field_data)[0] * 4):(np.shape(field_data)[0] * 5)] = np.rot90(
+            field_data[..., sl + 10, :])
+        axs[1].imshow(plot_field, cmap='gray')
+        axs[1].set_axis_off()
+
+        sl = np.shape(field_data)[0] // 2
+        plot_field = np.zeros((np.shape(field_data)[2], np.shape(field_data)[1] * 5))
+        plot_field[:, 0:np.shape(field_data)[1]] = np.rot90(field_data[sl - 10, ...])
+        plot_field[:, np.shape(field_data)[1]:(np.shape(field_data)[1] * 2)] = np.rot90(field_data[sl - 5, ...])
+        plot_field[:, (np.shape(field_data)[1] * 2):(np.shape(field_data)[1] * 3)] = np.rot90(field_data[sl, ...])
+        plot_field[:, (np.shape(field_data)[1] * 3):(np.shape(field_data)[1] * 4)] = np.rot90(field_data[sl + 5, ...])
+        plot_field[:, (np.shape(field_data)[1] * 4):(np.shape(field_data)[1] * 5)] = np.rot90(field_data[sl + 10, ...])
+        axs[2].imshow(plot_field, cmap='gray')
+        axs[2].set_axis_off()
+        plt.tight_layout()
+        plt.savefig(qc_path + "/topup_field.jpg", dpi=300, bbox_inches='tight')
+        list_images.append([qc_path + "/topup_field.jpg"])
+
+    """Motion registration""";
+    if bool_eddy:
+        nbins = 32
+        sampling_prop = None
+        metric = MutualInformationMetric(nbins, sampling_prop)
+        level_iters = [10000, 1000, 100]
+        sigmas = [3.0, 1.0, 0.0]
+        factors = [4, 2, 1]
+        affreg = AffineRegistration(metric=metric, level_iters=level_iters, sigmas=sigmas, factors=factors, verbosity=0)
+        params0 = None
+        transform = RigidTransform3D()
+
+        # ===========================================================
+        S0s_raw = bet_data[:, :, :, gtab_raw.b0s_mask]
+        S0s_preproc = preproc_data[:, :, :, gtab_preproc.b0s_mask]
+        volume = []
+        motion_raw = []
+        motion_proc = []
+        for i in range(np.shape(preproc_data)[3]):
+            #print('current iteration : ', i, end="\r")
+            volume.append(i)
+
+            rigid = affreg.optimize(np.copy(S0s_raw[..., 0]), np.copy(bet_data[..., i]), transform, params0, bet_affine,
+                                    bet_affine, ret_metric=True)
+            motion_raw.append(rigid[1])
+
+            rigid = affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_data[..., i]), transform, params0,
+                                    preproc_affine, preproc_affine, ret_metric=True)
+            motion_proc.append(rigid[1])
+        # ============================================================
+
+        motion_unproc = np.array(motion_raw)
+        motion_proc = np.array(motion_proc)
+
+        fig, (ax1, ax2) = plt.subplots(2, sharey=True, figsize=(10, 6))
+        ax1.bar(volume, np.abs(motion_unproc[:, 3]) + np.abs(motion_unproc[:, 4]) + np.abs(motion_unproc[:, 5]),
+                label='z')
+        ax1.bar(volume, np.abs(motion_unproc[:, 3]) + np.abs(motion_unproc[:, 4]), label='y')
+        ax1.bar(volume, np.abs(motion_unproc[:, 3]), label='x')
+        ax1.legend(title='Translation', bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax1.set_title('raw data translation')
+        ax2.bar(volume, np.abs(motion_proc[:, 3]) + np.abs(motion_proc[:, 4]) + np.abs(motion_proc[:, 5]),
+                label='z translation')
+        ax2.bar(volume, np.abs(motion_proc[:, 3]) + np.abs(motion_proc[:, 4]), label='y translation')
+        ax2.bar(volume, np.abs(motion_proc[:, 3]), label='x translation')
+        ax2.set_title('processed data translation')
+        plt.savefig(qc_path + "/motion1.jpg", dpi=300, bbox_inches='tight')
+
+        fig, (ax1, ax2) = plt.subplots(2, sharey=True, figsize=(10, 6))
+        ax1.bar(volume, np.abs(motion_unproc[:, 0]) + np.abs(motion_unproc[:, 1]) + np.abs(motion_unproc[:, 2]),
+                label='z')
+        ax1.bar(volume, np.abs(motion_unproc[:, 0]) + np.abs(motion_unproc[:, 1]), label='y')
+        ax1.bar(volume, np.abs(motion_unproc[:, 0]), label='x')
+        ax1.legend(title='Rotation', bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax1.set_title('raw data rotation')
+        ax2.bar(volume, np.abs(motion_proc[:, 0]) + np.abs(motion_proc[:, 1]) + np.abs(motion_proc[:, 2]),
+                label='z rotation')
+        ax2.bar(volume, np.abs(motion_proc[:, 0]) + np.abs(motion_proc[:, 2]), label='y rotation')
+        ax2.bar(volume, np.abs(motion_proc[:, 0]), label='x rotation')
+        ax2.set_title('processed data rotation');
+        plt.savefig(qc_path + "/motion2.jpg", dpi=300, bbox_inches='tight');
+
+        list_images.append([qc_path + "/motion1.jpg", qc_path + "/motion2.jpg"])
+
+    """Save as a pdf"""
+
+    # list_images = [qc_path+'/'+i for i in os.listdir(qc_path) if i.endswith(".jpg")]
+
+    from fpdf import FPDF
+    class PDF(FPDF):
+        def __init__(self):
+            super().__init__()
+            self.WIDTH = 210
+            self.HEIGHT = 297
+
+        def header(self):
+            # self.image('assets/logo.png', 10, 8, 33)
+            self.set_font('Arial', 'B', 11)
+            self.cell(self.WIDTH - 80)
+            self.cell(60, 1, 'Quality control report - Preprocessing', 0, 0, 'R')
+            self.ln(20)
+
+        def footer(self):
+            # Page numbers in the footer
+            self.set_y(-15)
+            self.set_font('Arial', 'I', 8)
+            self.set_text_color(128)
+            self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
+
+        def page_body(self, images):
+            # Determine how many plots there are per page and set positions
+            # and margins accordingly
+            if len(images) == 3:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
+                self.image(images[2], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
+            elif len(images) == 2:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
+            else:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+
+        def print_page(self, images):
+            # Generates the report
+            self.add_page()
+            self.page_body(images)
+
+    pdf = PDF()
+
+    for elem in list_images:
+        pdf.print_page(elem)
+
+    pdf.output(qc_path + '/qc_report.pdf', 'F');
+
+    """Eddy quad + SNR/CNR""";
+
+    if bool_eddy:
+        # Do Eddy quad for the subject
+        slspec_path = folder_path + '/' + patient_path + '/dMRI/raw/' + 'slspec.txt'
+        if os.path.isfile(slspec_path):
+            if topup:
+                bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" -s "' + slspec_path + '" -f "' + preproc_path + 'topup/' + patient_path + '_topup_estimate_fieldcoef.nii.gz"'
+            else:
+                bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" -s "' + slspec_path + '"'
+        else:
+            if topup:
+                bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" -f "' + preproc_path + 'topup/' + patient_path + '_topup_estimate_fieldcoef.nii.gz"'
+            else:
+                bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval"'
+
+        bashcmd = bashCommand.split()
+        qc_log = open(qc_path + "/qc_logs.txt", "a+")
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=qc_log,
+                                   stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+        qc_log.close()
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
