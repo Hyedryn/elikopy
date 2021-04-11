@@ -486,6 +486,135 @@ def dti_solo(folder_path, p):
                residual.astype(np.float32), affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
+    f.close()
+
+    import matplotlib.pyplot as plt
+
+    metric1 = np.copy(RGB)
+    metric2 = np.copy(MD)
+    qc_path = folder_path + '/' + patient_path + "/dMRI/microstructure/dti/quality_control"
+    makedir(qc_path, folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
+
+    mse = np.mean(residual ** 2, axis=-1)
+    R2 = np.zeros_like(mse)
+    (itot, jtot, ktot) = np.shape(R2)
+    for i in range(itot):
+        for j in range(jtot):
+            for k in range(ktot):
+                R2[i, j, k] = np.corrcoef(data[i, j, k, :], reconstructed[i, j, k, :])[0, 1] ** 2
+
+    fig, axs = plt.subplots(2, 1, figsize=(2, 1))
+    fig.suptitle('Elikopy : Quality control report - DTI', fontsize=50)
+    axs[0].set_axis_off()
+    axs[1].set_axis_off()
+    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+    plt.show()
+
+    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+    sl = np.shape(mse)[2] // 2
+    masked_mse = np.ma.array(mse, mask=1 - mask)
+    max_plot = masked_mse.mean() + 0.5 * masked_mse.std()
+    plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
+    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
+    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
+    plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
+    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
+    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
+    im0 = axs[0].imshow(plot_mse, cmap='gray', vmax=max_plot)
+    axs[0].set_title('MSE')
+    axs[0].set_axis_off()
+    fig.colorbar(im0, ax=axs[0], orientation='horizontal')
+    sl = np.shape(R2)[2] // 2
+    plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
+    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
+    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
+    plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
+    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
+    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
+    im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
+    axs[1].set_title('R2')
+    axs[1].set_axis_off()
+    fig.colorbar(im1, ax=axs[1], orientation='horizontal');
+    plt.tight_layout()
+    plt.savefig(qc_path + "/error.jpg", dpi=300, bbox_inches='tight');
+
+    fig, axs = plt.subplots(2, 1, figsize=(12, 6))
+    sl = np.shape(metric1)[2] // 2
+    plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5, 3), dtype=np.int16)
+    plot_metric1[:, 0:np.shape(metric1)[1], :] = metric1[..., sl - 10, :]
+    plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2), :] = metric1[..., sl - 5, :]
+    plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3), :] = metric1[..., sl, :]
+    plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4), :] = metric1[..., sl + 5, :]
+    plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5), :] = metric1[..., sl + 10, :]
+    axs[0].imshow(plot_metric1)
+    axs[0].set_title('Fractional anisotropy')
+    axs[0].set_axis_off()
+    sl = np.shape(metric2)[2] // 2
+    plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
+    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
+    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
+    plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
+    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
+    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
+    im1 = axs[1].imshow(plot_metric2, cmap='gray')
+    axs[1].set_title('Mean diffusivity')
+    axs[1].set_axis_off()
+    plt.tight_layout();
+    plt.savefig(qc_path + "/metrics.jpg", dpi=300, bbox_inches='tight');
+
+    """Save as a pdf"""
+
+    elem = [qc_path + "/title.jpg", qc_path + "/error.jpg", qc_path + "/metrics.jpg"]
+
+    from fpdf import FPDF
+
+    class PDF(FPDF):
+        def __init__(self):
+            super().__init__()
+            self.WIDTH = 210
+            self.HEIGHT = 297
+
+        def header(self):
+            # self.image('assets/logo.png', 10, 8, 33)
+            self.set_font('Arial', 'B', 11)
+            self.cell(self.WIDTH - 80)
+            self.cell(60, 1, 'Quality control report - Preprocessing', 0, 0, 'R')
+            self.ln(20)
+
+        def footer(self):
+            # Page numbers in the footer
+            self.set_y(-15)
+            self.set_font('Arial', 'I', 8)
+            self.set_text_color(128)
+            self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
+
+        def page_body(self, images):
+            # Determine how many plots there are per page and set positions
+            # and margins accordingly
+            if len(images) == 3:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
+                self.image(images[2], 15, self.WIDTH / 2 + 75, self.WIDTH - 30)
+            elif len(images) == 2:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
+            else:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+
+        def print_page(self, images):
+            # Generates the report
+            self.add_page()
+            self.page_body(images)
+
+    pdf = PDF()
+    pdf.print_page(elem)
+    pdf.output(qc_path + '/qc_report.pdf', 'F');
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
