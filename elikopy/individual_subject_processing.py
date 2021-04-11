@@ -1432,6 +1432,176 @@ def white_mask_solo(folder_path, p):
     save_nifti(folder_path + '/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz', segmentation.astype(np.float32), anat_affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control  %s \n" % p)
+    f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+    f.close()
+
+    """Imports"""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from fpdf import FPDF
+    from PyPDF2 import PdfFileMerger
+
+    wm_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    seg_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz'
+    T1_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
+    T1gibbs_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_gibbscorrected.nii.gz'
+    T1brain_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain_brain.nii.gz'
+    ap_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_ap.nii.gz'
+    preproc_path = folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
+    qc_path = folder_path + '/' + patient_path + '/masks/' + 'quality_control'
+    makedir(qc_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
+
+    fig, axs = plt.subplots(2, 1, figsize=(2, 1))
+    fig.suptitle('Elikopy : Quality control report - White matter mask', fontsize=50)
+    axs[0].set_axis_off()
+    axs[1].set_axis_off()
+    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+
+    fig, axs = plt.subplots(2, 1, figsize=(8, 6))
+    # fig.suptitle('White matter segmentation', y=1.05,fontsize=16)
+    seg_data, seg_affine = load_nifti(seg_path)
+    sl = np.shape(seg_data)[2] // 2
+    plot_seg = np.zeros((np.shape(seg_data)[0], np.shape(seg_data)[1] * 3))
+    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., sl - 10]
+    plot_seg[:, np.shape(seg_data)[1]:(np.shape(seg_data)[1] * 2)] = seg_data[..., sl]
+    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., sl + 10]
+    axs[0].imshow(plot_seg)
+    axs[0].set_axis_off()
+    seg_data, seg_affine = load_nifti(preproc_path)
+    sl = np.shape(seg_data)[2] // 2
+    plot_seg = np.zeros((np.shape(seg_data)[0], np.shape(seg_data)[1] * 3))
+    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., sl - 10, 0]
+    plot_seg[:, np.shape(seg_data)[1]:(np.shape(seg_data)[1] * 2)] = seg_data[..., sl, 0]
+    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., sl + 10, 0]
+    axs[1].imshow(plot_seg, cmap='gray')
+    axs[1].set_axis_off()
+    seg_data, seg_affine = load_nifti(wm_path)
+    sl = np.shape(seg_data)[2] // 2
+    plot_seg = np.zeros((np.shape(seg_data)[0], np.shape(seg_data)[1] * 3))
+    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., sl - 10]
+    plot_seg[:, np.shape(seg_data)[1]:(np.shape(seg_data)[1] * 2)] = seg_data[..., sl]
+    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., sl + 10]
+    test = np.ma.masked_where(plot_seg < 0.9, plot_seg)
+    axs[1].imshow(test, cmap='hsv', interpolation='none')
+    axs[1].set_axis_off()
+    plt.tight_layout()
+    plt.savefig(qc_path + "/segmentation.jpg", dpi=300, bbox_inches='tight')
+
+    if os.path.isfile(T1_path):
+        fig, axs = plt.subplots(3, 1, figsize=(10, 6))
+        anat_data, anat_affine = load_nifti(T1_path)
+        sl = np.shape(anat_data)[2] // 2 + 15
+        plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
+        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
+        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+        plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
+        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
+        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+        axs[0].imshow(plot_anat, cmap='gray')
+        axs[0].set_title('T1')
+        axs[0].set_axis_off()
+        anat_data, anat_affine = load_nifti(T1gibbs_path)
+        sl = np.shape(anat_data)[2] // 2 + 15
+        plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
+        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
+        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+        plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
+        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
+        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+        axs[1].imshow(plot_anat, cmap='gray')
+        axs[1].set_title('T1 gibbs ringing corrected')
+        axs[1].set_axis_off()
+        anat_data, anat_affine = load_nifti(T1brain_path)
+        sl = np.shape(anat_data)[2] // 2 + 15
+        plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
+        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
+        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+        plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
+        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
+        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+        axs[2].imshow(plot_anat, cmap='gray')
+        axs[2].set_title('T1 brain extracted')
+        axs[2].set_axis_off()
+        plt.tight_layout()
+        plt.savefig(qc_path + "/origin.jpg", dpi=300, bbox_inches='tight')
+    else:
+        plt.figure(figsize=(10, 6))
+        anat_data, anat_affine = load_nifti(ap_path)
+        sl = np.shape(anat_data)[2] // 2
+        plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
+        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
+        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+        plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
+        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
+        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+        plt.imshow(plot_anat, cmap='gray')
+        plt.title('Anisotropic power map')
+        plt.axis('off')
+        plt.tight_layout()
+        plt.savefig(qc_path + "/origin.jpg", dpi=300, bbox_inches='tight')
+
+    elem = [qc_path + "/title.jpg", qc_path + "/segmentation.jpg", qc_path + "/origin.jpg", ]
+
+    class PDF(FPDF):
+        def __init__(self):
+            super().__init__()
+            self.WIDTH = 210
+            self.HEIGHT = 297
+
+        def header(self):
+            # self.image('assets/logo.png', 10, 8, 33)
+            self.set_font('Arial', 'B', 11)
+            self.cell(self.WIDTH - 80)
+            self.cell(60, 1, 'Quality control report - White matter mask', 0, 0, 'R')
+            self.ln(20)
+
+        def footer(self):
+            # Page numbers in the footer
+            self.set_y(-15)
+            self.set_font('Arial', 'I', 8)
+            self.set_text_color(128)
+            self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
+
+        def page_body(self, images):
+            # Determine how many plots there are per page and set positions
+            # and margins accordingly
+            if len(images) == 3:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
+                self.image(images[2], 15, self.WIDTH / 2 + 75, self.WIDTH - 30)
+            elif len(images) == 2:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
+            else:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+
+        def print_page(self, images):
+            # Generates the report
+            self.add_page()
+            self.page_body(images)
+
+    pdf = PDF()
+    pdf.print_page(elem)
+    pdf.output(qc_path + '/qc_report.pdf', 'F');
+
+    """Merge with QC of preproc""";
+
+    pdfs = [folder_path + '/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+    merger = PdfFileMerger()
+    for pdf in pdfs:
+        merger.append(pdf)
+    merger.write(folder_path + '/' + patient_path + '/quality_control_wm.pdf')
+    merger.close()
+
+    os.remove(folder_path + '/' + patient_path + '/quality_control.pdf')
+    os.rename(folder_path + '/' + patient_path + '/quality_control_wm.pdf',folder_path + '/' + patient_path + '/quality_control.pdf')
+
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
