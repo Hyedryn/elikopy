@@ -697,11 +697,12 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         # 1) DIPY SNR estimation =========================================================================
 
         tenmodel = dti.TensorModel(gtab_raw)
-        tensorfit = tenmodel.fit(raw_data, mask=mask_raw)
+        _, maskSNR = median_otsu(raw_data, vol_idx=[0])
+        tensorfit = tenmodel.fit(raw_data, mask=maskSNR)
 
         threshold = (0.5, 1, 0, 0.3, 0, 0.3)
         CC_box = np.zeros_like(raw_data[..., 0])
-        mins, maxs = bounding_box(mask_raw)
+        mins, maxs = bounding_box(maskSNR)
         mins = np.array(mins)
         maxs = np.array(maxs)
         diff = (maxs - mins) // 4
@@ -712,7 +713,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         mean_signal = np.mean(raw_data[mask_cc_part], axis=0)
 
-        mask_noise = binary_dilation(mask_raw, iterations=20)
+        mask_noise = binary_dilation(maskSNR, iterations=20)
         mask_noise[..., :mask_noise.shape[-1] // 2] = 1
         mask_noise = ~mask_noise
         noise_std = np.std(raw_data[mask_noise, :])
