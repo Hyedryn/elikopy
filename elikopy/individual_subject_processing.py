@@ -1,6 +1,5 @@
 import datetime
 import os
-import os
 import shutil
 import json
 import numpy as np
@@ -419,27 +418,18 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     from dipy.io.image import load_nifti, load_nifti_data
     from dipy.io import read_bvals_bvecs
     from dipy.core.gradients import gradient_table
-    from dipy.io.image import save_nifti
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    import numpy as np
-    from dipy.segment.mask import median_otsu
     import dipy.reconst.dti as dti
-    from dipy.reconst.dti import fractional_anisotropy, color_fa
-    from dipy.viz import colormap
     from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
     from dipy.align.transforms import RigidTransform3D
     from dipy.segment.mask import segment_from_cfa
     from dipy.segment.mask import bounding_box
     from scipy.ndimage.morphology import binary_dilation
-    from os import listdir
     from os.path import isdir
     from skimage import measure
-    import img2pdf
-    import os
     from fpdf import FPDF
-    from PyPDF2 import PdfFileMerger
 
     preproc_path = folder_path + '/' + patient_path + '/dMRI/preproc/'
     raw_path = folder_path + '/' + patient_path + '/dMRI/raw/'
@@ -986,7 +976,6 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
     # list_images = [qc_path+'/'+i for i in os.listdir(qc_path) if i.endswith(".jpg")]
 
-    from fpdf import FPDF
     class PDF(FPDF):
         def __init__(self):
             super().__init__()
