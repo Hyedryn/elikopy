@@ -492,6 +492,8 @@ def dti_solo(folder_path, p):
         "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
     f.close()
 
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 
     metric1 = np.copy(RGB)
@@ -512,7 +514,6 @@ def dti_solo(folder_path, p):
     axs[0].set_axis_off()
     axs[1].set_axis_off()
     plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
-    plt.show()
 
     fig, axs = plt.subplots(2, 1, figsize=(12, 8))
     sl = np.shape(mse)[2] // 2
