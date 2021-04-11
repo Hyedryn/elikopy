@@ -33,6 +33,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     :param olrep: list of parameters eddy outlier replacement (see Eddy FSL documentation): [repol,ol_nstd,ol_nvox,ol_type].
     """
 
+    in_reslice = reslice
     assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy"), 'invalid starting state!'
     if starting_state == "denoising":
         assert denoising == True, 'if starting_state is denoising, denoising must be True!'
@@ -488,7 +489,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
     rows = ["patient id", "reslice", "denoising", "gibbs", "topup", "eddy", "bet_median_radius", "bet_numpass",
             "bet_dilate", "cuda", "s2v", "olrep"]
-    cell_text = [[p], [reslice], [denoising], [gibbs], [topup], [eddy], [bet_median_radius], [bet_numpass],
+    cell_text = [[p], [in_reslice], [denoising], [gibbs], [topup], [eddy], [bet_median_radius], [bet_numpass],
                  [bet_dilate], [cuda], [s2v], [olrep]]
 
     fig, ax = plt.subplots()
@@ -652,12 +653,12 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         axs[0, 1].set_title('Raw data')
         axs[0, 2].imshow(np.rot90(raw_data[np.shape(raw_data)[0] // 2, :, :, 0]), cmap='gray')
         axs[0, 2].set_axis_off()
-        axs[1, 0].imshow(np.rot90(reslice_data[:, :, np.shape(raw_data)[2] // 2, 0]), cmap='gray')
+        axs[1, 0].imshow(np.rot90(reslice_data[:, :, np.shape(reslice_data)[2] // 2, 0]), cmap='gray')
         axs[1, 0].set_axis_off()
-        axs[1, 1].imshow(np.rot90(reslice_data[:, np.shape(raw_data)[1] // 2, :, 0]), cmap='gray')
+        axs[1, 1].imshow(np.rot90(reslice_data[:, np.shape(reslice_data)[1] // 2, :, 0]), cmap='gray')
         axs[1, 1].set_axis_off()
         axs[1, 1].set_title('Reslice data')
-        axs[1, 2].imshow(np.rot90(reslice_data[np.shape(raw_data)[0] // 2, :, :, 0]), cmap='gray')
+        axs[1, 2].imshow(np.rot90(reslice_data[np.shape(reslice_data)[0] // 2, :, :, 0]), cmap='gray')
         axs[1, 2].set_axis_off()
         plt.savefig(qc_path + "/reslice.jpg", dpi=300, bbox_inches='tight')
         list_images.append([qc_path + "/reslice.jpg"])
