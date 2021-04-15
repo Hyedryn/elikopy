@@ -431,26 +431,34 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         else:
             inputImage = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
 
-        image = sitk.ReadImage(inputImage, sitk.sitkFloat32)
+        bashCommand= "N4BiasFieldCorrection -i " + inputImage + " -o [" + folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz, " + folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz] -d 4"
 
-        #maskImage = sitk.ReadImage(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', sitk.sitkUInt8)
+        import subprocess
+        bashcmd = bashCommand.split()
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Bias Field launched for patient %s \n" % p + " with bash command " + bashCommand)
+        f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Bias Field launched for patient %s \n" % p + " with bash command " + bashCommand)
+        f.close()
 
-        corrector = sitk.N4BiasFieldCorrectionImageFilter()
+        biasfield_log = open(folder_path + '/' + patient_path + "/dMRI/preproc/biasfield/biasfield_logs.txt", "a+")
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=biasfield_log,
+                                   stderr=subprocess.STDOUT)
 
+        # wait until biasfield finish
+        output, error = process.communicate()
+        biasfield_log.close()
 
-        output = corrector.Execute(image)#, maskImage)
-
-        log_bias_field = corrector.GetLogBiasFieldAsImage(inputImage)
-
-        output = inputImage / sitk.Exp(log_bias_field)
-
-        sitk.WriteImage(output, folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz')
+        shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz',
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz')
 
         data, affine = load_nifti(
             folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz')
         b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
+
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
-                   b0_mask.astype(np.float32), affine)
+                       b0_mask.astype(np.float32), affine)
         save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
                    mask.astype(np.float32), affine)
 
