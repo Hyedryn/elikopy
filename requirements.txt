@@ -13,3 +13,4 @@ sphinx
 matplotlib
 torch
 torchvision
+SimpleITK

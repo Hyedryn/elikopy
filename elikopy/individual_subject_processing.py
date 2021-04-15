@@ -11,7 +11,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw']):
+def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw']):
     """
     Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final.
@@ -23,6 +23,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     :param gibbs: If true, Gibbs ringing artefacts of images volumes will be suppressed.
     :param topup: If true, topup will estimate and correct susceptibility induced distortions.
     :param eddy: If true, eddy will correct eddy currents and movements in diffusion data.
+    :param biasfield: If true, correct low frequency intensity non-uniformity present in MRI image data known as a bias or gain field.
     :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup or eddy.
     :param bet_median_radius: Radius (in voxels) of the applied median filter during bet.
     :param bet_numpass: Number of pass of the median filter during bet.
@@ -34,7 +35,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     """
 
     in_reslice = reslice
-    assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy"), 'invalid starting state!'
+    assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield"), 'invalid starting state!'
     if starting_state == "denoising":
         assert denoising == True, 'if starting_state is denoising, denoising must be True!'
     if starting_state == "gibbs":
@@ -43,6 +44,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         assert topup == True, 'if starting_state is topup, topup must be True!'
     if starting_state == "eddy":
         assert eddy == True, 'if starting_state is eddy, eddy must be True!'
+    if starting_state == "biasfield":
+        assert biasfield == True, 'if starting_state is biasfield, biasfield must be True!'
     if starting_state == "None":
         starting_state = None
 
@@ -87,6 +90,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         b0_mask, mask = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass, vol_idx=range(0, np.shape(data)[3]), dilate=bet_dilate)
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',mask.astype(np.float32), affine)
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz',b0_mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                   mask.astype(np.float32), affine)
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
@@ -398,8 +403,10 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         data, affine = load_nifti(
             folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.nii.gz")
         b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
-        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
-                   b0_mask.astype(np.float32), affine)
+
+        if not biasfield:
+            save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+                       b0_mask.astype(np.float32), affine)
         save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
                    mask.astype(np.float32), affine)
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
@@ -407,6 +414,51 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         shutil.copyfile(
             folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.eddy_rotated_bvecs",
             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+
+
+    if biasfield:
+
+        import SimpleITK as sitk
+
+        if eddy:
+            inputImage = folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.nii.gz'
+        elif topup:
+            inputImage = folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr.nii.gz'
+        elif gibbs:
+            inputImage = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz'
+        elif denoising:
+            inputImage = folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz'
+        else:
+            inputImage = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
+
+        image = sitk.ReadImage(inputImage, sitk.sitkFloat32)
+
+        maskImage = sitk.ReadImage(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', sitk.sitkUint8)
+
+        corrector = sitk.N4BiasFieldCorrectionImageFilter()
+
+
+        output = corrector.Execute(image, maskImage)
+
+        log_bias_field = corrector.GetLogBiasFieldAsImage(inputImage)
+
+        output = inputImage / sitk.Exp(log_bias_field)
+
+        sitk.WriteImage(output, folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz')
+
+        data, affine = load_nifti(
+            folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz')
+        b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
+        save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+                   b0_mask.astype(np.float32), affine)
+        save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                   mask.astype(np.float32), affine)
+
+        if not eddy:
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
+                            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
+            shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
+                            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)

@@ -182,7 +182,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, biasfield=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Wrapper function for the preprocessing. Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
         located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final
 
@@ -192,6 +192,7 @@ class Elikopy:
         :param gibbs: If true, Gibbs ringing artefacts of images volumes will be suppressed.
         :param topup: If true, topup will estimate and correct susceptibility induced distortions.
         :param eddy: If true, eddy will correct eddy currents and movements in diffusion data.
+        :param biasfield: If true, correct low frequency intensity non-uniformity present in MRI image data known as a bias or gain field.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
         :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup or eddy.
         :param bet_median_radius: Radius (in voxels) of the applied median filter during bet.
@@ -217,6 +218,8 @@ class Elikopy:
             assert topup == True, 'if starting_state is topup, topup must be True!'
         if starting_state=="eddy":
             assert eddy == True, 'if starting_state is eddy, eddy must be True!'
+        if starting_state == "biasfield":
+            assert biasfield == True, 'if starting_state is biasfield, biasfield must be True!'
 
         log_prefix = "PREPROC"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -245,7 +248,7 @@ class Elikopy:
             if slurm:
                 p_job = {
                     "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
-                        eddy) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
+                        eddy) + ",biasfield=" + str(biasfield) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
                         gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
                         bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
                     "job_name": "preproc_" + p,
@@ -290,7 +293,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,starting_state=starting_state,bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda)
+                preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,biasfield=biasfield,starting_state=starting_state,bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
                 f.flush()
         f.close()
