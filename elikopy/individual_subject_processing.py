@@ -433,7 +433,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         image = sitk.ReadImage(inputImage, sitk.sitkFloat32)
 
-        maskImage = sitk.ReadImage(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', sitk.sitkUint8)
+        maskImage = sitk.ReadImage(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', sitk.sitkUInt8)
 
         corrector = sitk.N4BiasFieldCorrectionImageFilter()
 
