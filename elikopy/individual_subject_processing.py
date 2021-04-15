@@ -263,6 +263,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             curr_z=acq[3]
 
         if multiple_encoding:
+            makedir(topup_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
             f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Patient %s \n" % p + " has multiple direction of gradient encoding, launching topup directly ")
