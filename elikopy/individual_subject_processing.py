@@ -99,7 +99,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             "%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
         f.close()
 
-    if not denoising and not eddy and not gibbs and not topup:
+    if not denoising and not eddy and not gibbs and not topup and not biasfield:
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32), affine)
         save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32), affine)
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
@@ -108,7 +108,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
                         folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
     denoising_path = folder_path + '/' + patient_path + '/dMRI/preproc/mppca'
-    if denoising and starting_state!="gibbs" and starting_state!="eddy" and starting_state!="topup":
+    if denoising and starting_state!="gibbs" and starting_state!="eddy" and starting_state!="topup" and starting_state!="biasfield":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
@@ -149,7 +149,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         b0_mask = denoised
 
-        if not eddy and not gibbs and not topup:
+        if not eddy and not gibbs and not topup and not biasfield:
             save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
                        b0_mask.astype(np.float32), affine)
             save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
@@ -159,7 +159,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if gibbs and starting_state!="eddy" and starting_state!="topup":
+    if gibbs and starting_state!="eddy" and starting_state!="topup" and starting_state!="biasfield":
         gibbs_path = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs'
         makedir(gibbs_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
@@ -176,7 +176,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         corrected_path = folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/" + patient_path + '_gibbscorrected.nii.gz'
         save_nifti(corrected_path, data.astype(np.float32), affine)
 
-        if not eddy and not topup:
+        if not eddy and not topup and not biasfield:
             save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
                        data.astype(np.float32), affine)
             save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
@@ -196,7 +196,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     gc.collect()
 
     topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
-    if topup and starting_state!="eddy":
+    if topup and starting_state!="eddy" and starting_state!="biasfield":
 
         import subprocess
         #cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config=b02b0.cnf --out=my_output"'
@@ -329,7 +329,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
         f.close()
 
-        if not eddy:
+        if not eddy and not biasfield:
             data, affine = load_nifti(
                 folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + "_unwarped.nii.gz")
             b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
@@ -342,7 +342,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if eddy:
+    if eddy and starting_state!="biasfield":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of eddy for patient %s \n" % p)
 
