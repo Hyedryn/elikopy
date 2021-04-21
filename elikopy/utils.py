@@ -472,7 +472,8 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
         if starting_state == "design":
             copy_tree(folder_path + "/TBSS/backup/tbss_prestats/stats", folder_path + "/TBSS/stats")
 
-        bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numcontrol) + ' ' + str(numpatient)
+        #bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numcontrol) + ' ' + str(numpatient)
+        bashCommand = 'cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numpatient) + ' ' + str(numcontrol)
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
         tbss_log.write(bashCommand+"\n")
@@ -745,7 +746,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
+#from torchvision import datasets, transforms
 
 import nibabel as nib
 
