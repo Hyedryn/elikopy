@@ -419,6 +419,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     if biasfield and starting_state!="report":
 
         #import SimpleITK as sitk
+        makedir(folder_path + '/' + patient_path + "/dMRI/preproc/biasfield/", folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         if eddy:
             inputImage = folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.nii.gz'
