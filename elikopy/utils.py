@@ -267,8 +267,8 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     :return:
     :param folder_path: path to the root directory.
-    :param grp1: List of number corresponding to the type of the patients to put in the first group.
-    :param grp2: List of number corresponding to the type of the patients to put in the second group.
+    :param grp1: List of number corresponding to the type of the patients to put in the first group (control group).
+    :param grp2: List of number corresponding to the type of the patients to put in the second group (case group).
     :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise.
     :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats, design or randomise.
     :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.

@@ -1,7 +1,12 @@
 import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+import io
+
+try:
+    with io.open("README.md", "r", encoding="utf-8") as fh:
+        long_description = fh.read()
+except (IOError, OSError) as e:
+    print(e.errno)
 
 setuptools.setup(
     name="elikopy-qdessain-msimon", # Replace with your own username

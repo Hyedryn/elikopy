@@ -35,7 +35,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     """
 
     in_reslice = reslice
-    assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield"), 'invalid starting state!'
+    assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield", "report"), 'invalid starting state!'
     if starting_state == "denoising":
         assert denoising == True, 'if starting_state is denoising, denoising must be True!'
     if starting_state == "gibbs":
@@ -99,7 +99,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             "%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
         f.close()
 
-    if not denoising and not eddy and not gibbs and not topup and not biasfield:
+    if not denoising and not eddy and not gibbs and not topup and not biasfield and not report:
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32), affine)
         save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32), affine)
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
@@ -108,7 +108,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
                         folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
     denoising_path = folder_path + '/' + patient_path + '/dMRI/preproc/mppca'
-    if denoising and starting_state!="gibbs" and starting_state!="eddy" and starting_state!="topup" and starting_state!="biasfield":
+    if denoising and starting_state!="gibbs" and starting_state!="eddy" and starting_state!="topup" and starting_state!="biasfield" and starting_state!="report":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
@@ -159,7 +159,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if gibbs and starting_state!="eddy" and starting_state!="topup" and starting_state!="biasfield":
+    if gibbs and starting_state!="eddy" and starting_state!="topup" and starting_state!="biasfield" and starting_state!="report":
         gibbs_path = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs'
         makedir(gibbs_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
@@ -196,7 +196,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     gc.collect()
 
     topup_path = folder_path + '/' + patient_path + "/dMRI/preproc/topup"
-    if topup and starting_state!="eddy" and starting_state!="biasfield":
+    if topup and starting_state!="eddy" and starting_state!="biasfield" and starting_state!="report":
 
         import subprocess
         #cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config=b02b0.cnf --out=my_output"'
@@ -342,7 +342,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if eddy and starting_state!="biasfield":
+    if eddy and starting_state!="biasfield" and starting_state!="report":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of eddy for patient %s \n" % p)
 
@@ -416,7 +416,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
 
-    if biasfield:
+    if biasfield and starting_state!="report":
 
         import SimpleITK as sitk
 

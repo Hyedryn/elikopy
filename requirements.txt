@@ -13,4 +13,7 @@ sphinx
 matplotlib
 torch
 torchvision
-SimpleITK
+future
+fpdf
+skimage
+PyPDF2
