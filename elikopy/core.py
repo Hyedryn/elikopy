@@ -861,3 +861,150 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of TBSS\n")
         f.close()
+
+
+    def export(self, folder_path=None, raw=False, preprocessing=False, dti=False, noddi=False, diamond=False, mf=False, wm_mask=False, report=False,patient_list_m=None):
+        """Wrapper function for tensor reconstruction and computation of DTI metrics using Weighted Least-Squares.
+        Performs a tensor reconstruction and saves the DTI metrics.
+
+        :param folder_path: the path to the root directory.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param raw:
+        :param preprocessing:
+        :param dti:
+        :param noddi:
+        :param diamond:
+        :param mf:
+        :param wm_mask:
+        :param report:
+        """
+
+
+        def safe_copy(src,dst):
+            if not os.path.exists(os.path.dirname(dst)):
+                os.makedirs(os.path.dirname(dst))
+
+            if os.path.exists(src):
+                shutil.copyfile(src,dst)
+
+
+        log_prefix = "Export"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        #slurm = self._slurm if slurm is None else slurm
+        #slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Export\n")# with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        dest_success = folder_path + "/subjects/subj_list.json"
+        with open(dest_success, 'r') as f:
+            patient_list = json.load(f)
+
+        if patient_list_m:
+            patient_list = patient_list_m
+
+        raw_path = "/dMRI/raw/"
+        preprocessing_path = "/dMRI/preproc/"
+        dti_path = "/dMRI/microstructure/dti/"
+        noddi_path = "/dMRI/microstructure/noddi/"
+        diamond_path = "/dMRI/microstructure/diamond/"
+        mf_path = "/dMRI/microstructure/mf/"
+        wm_mask_path = "/masks/"
+
+        makedir(folder_path + '/export/', folder_path + '/logs.txt', log_prefix)
+        makedir(folder_path + '/export/' + raw_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
+        makedir(folder_path + '/export/' + preprocessing_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
+        makedir(folder_path + '/export/' + dti_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
+        makedir(folder_path + '/export/' + noddi_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
+        makedir(folder_path + '/export/' + diamond_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
+        makedir(folder_path + '/export/' + mf_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
+        makedir(folder_path + '/export/' + wm_mask_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
+        makedir(folder_path + '/export/qc/', folder_path + '/export/' + '/export_logs.txt', log_prefix)
+
+        f=open(folder_path + "/logs.txt", "a+")
+        for p in patient_list:
+
+            patient_name = os.path.splitext(p)[0]
+            patient_path = folder_path + '/subjects/' + patient_name
+
+            if raw:
+                safe_copy(patient_path + raw_path + patient_name + "_dmri_preproc.bval",
+                                folder_path + '/export/' + raw_path + patient_name + "_raw_dmri.bval")
+                safe_copy(patient_path + raw_path + patient_name + "_dmri_preproc.bvec",
+                                folder_path + '/export/' + raw_path + patient_name + "_raw_dmri.bvec")
+                safe_copy(patient_path + raw_path + patient_name + '_dmri_preproc.nii.gz',
+                                folder_path + '/export/' + raw_path + patient_name + '_raw_dmri.nii.gz')
+
+            if preprocessing:
+                safe_copy(patient_path + preprocessing_path + patient_name + "_dmri_preproc.bval",
+                                folder_path + '/export/' + preprocessing_path + patient_name + "_dmri_preproc.bval")
+                safe_copy(patient_path + preprocessing_path + patient_name + "_dmri_preproc.bvec",
+                                folder_path + '/export/' + preprocessing_path + patient_name + "_dmri_preproc.bvec")
+                safe_copy(patient_path + preprocessing_path + patient_name + '_dmri_preproc.nii.gz',
+                                folder_path + '/export/' + preprocessing_path + patient_name + '_dmri_preproc.nii.gz')
+                safe_copy(patient_path + preprocessing_path + 'quality_control/qc_report.pdf',
+                                folder_path + '/export/' + preprocessing_path + patient_name + '_qc_report.pdf')
+
+            if dti:
+                safe_copy(patient_path + dti_path + patient_name + "_FA.nii.gz",
+                                folder_path + '/export/' + dti_path + patient_name + "_FA.nii.gz")
+                safe_copy(patient_path + dti_path + patient_name + "_MD.nii.gz",
+                                folder_path + '/export/' + dti_path + patient_name + "_MD.nii.gz")
+                safe_copy(patient_path + dti_path + patient_name + "_residual.nii.gz",
+                                folder_path + '/export/' + dti_path + patient_name + "_residual.nii.gz")
+                safe_copy(patient_path + dti_path + 'quality_control/qc_report.pdf',
+                                folder_path + '/export/' + dti_path + patient_name + '_qc_report.pdf')
+
+            if noddi:
+                safe_copy(patient_path + noddi_path + patient_name + "_noddi_icvf.nii.gz",
+                                folder_path + '/export/' + noddi_path + patient_name + "_noddi_icvf.nii.gz")
+                safe_copy(patient_path + noddi_path + patient_name + "_noddi_mse.nii.gz",
+                                folder_path + '/export/' + noddi_path + patient_name + "_noddi_mse.nii.gz")
+                safe_copy(patient_path + noddi_path + patient_name + "_noddi_fextra.nii.gz",
+                                folder_path + '/export/' + noddi_path + patient_name + "_noddi_fextra.nii.gz")
+                safe_copy(patient_path + noddi_path + 'quality_control/qc_report.pdf',
+                                folder_path + '/export/' + noddi_path + patient_name + '_qc_report.pdf')
+
+            if diamond:
+                safe_copy(patient_path + diamond_path + patient_name + "_diamond_mosemap.nii.gz",
+                                folder_path + '/export/' + diamond_path + patient_name + "_diamond_mosemap.nii.gz")
+                safe_copy(patient_path + diamond_path + patient_name + "_diamond_fractions.nii.gz",
+                                folder_path + '/export/' + diamond_path + patient_name + "_diamond_fractions.nii.gz")
+                safe_copy(patient_path + diamond_path + patient_name + "_diamond_residuals.nii.gz",
+                                folder_path + '/export/' + diamond_path + patient_name + "_diamond_residuals.nii.gz")
+                safe_copy(patient_path + diamond_path + 'quality_control/qc_report.pdf',
+                                folder_path + '/export/' + diamond_path + patient_name + '_qc_report.pdf')
+
+            if mf:
+                safe_copy(patient_path + mf_path + patient_name + "_mf_MSE.nii.gz",
+                                folder_path + '/export/' + mf_path + patient_name + "_mf_MSE.nii.gz")
+                safe_copy(patient_path + mf_path + patient_name + '_mf_peaks.nii.gz',
+                                folder_path + '/export/' + mf_path + patient_name + '_mf_peaks.nii.gz')
+                safe_copy(patient_path + mf_path + patient_name + '_mf_M0.nii.gz',
+                                folder_path + '/export/' + mf_path + patient_name + '_mf_M0.nii.gz')
+                safe_copy(patient_path + mf_path + 'quality_control/qc_report.pdf',
+                                folder_path + '/export/' + mf_path + patient_name + '_qc_report.pdf')
+
+            if wm_mask:
+                safe_copy(patient_path + wm_mask_path + patient_name + '_wm_mask.nii.gz',
+                                folder_path + '/export/' + wm_mask_path + patient_name + '_wm_mask.nii.gz')
+                safe_copy(patient_path + wm_mask_path + patient_name + '_segmentation.nii.gz',
+                                folder_path + '/export/' + wm_mask_path + patient_name + '_segmentation.nii.gz')
+                safe_copy(patient_path + wm_mask_path + 'quality_control/qc_report.pdf',
+                                folder_path + '/export/' + wm_mask_path + patient_name + '_qc_report.pdf')
+
+            if report:
+                safe_copy(patient_path + 'quality_control.pdf',
+                                folder_path + '/export/qc/' + patient_name + '_quality_control.pdf')
+
+            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s has been exported succesfully\n" % p)
+
+        f.close()
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of Export\n")
+        f.close()
+

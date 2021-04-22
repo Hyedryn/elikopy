@@ -15,5 +15,5 @@ torch
 torchvision
 future
 fpdf
-skimage
+scikit-image
 PyPDF2
