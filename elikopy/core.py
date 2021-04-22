@@ -209,7 +209,7 @@ class Elikopy:
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
         """
 
-        assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report"), 'invalid starting state!'
+        assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "post_report"), 'invalid starting state!'
         if starting_state=="denoising":
             assert denoising == True, 'if starting_state is denoising, denoising must be True!'
         if starting_state=="gibbs":
@@ -240,67 +240,68 @@ class Elikopy:
         job_list = []
 
         f=open(folder_path + "/logs.txt", "a+")
-        for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
-            preproc_path = folder_path + '/subjects/' + patient_path + "/dMRI/preproc/bet"
-            makedir(preproc_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
+        if starting_state!="post_report":
+            for p in patient_list:
+                patient_path = os.path.splitext(p)[0]
+                preproc_path = folder_path + '/subjects/' + patient_path + "/dMRI/preproc/bet"
+                makedir(preproc_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
-            if slurm:
-                p_job = {
-                    "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
-                        eddy) + ",biasfield=" + str(biasfield) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
-                        gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
-                        bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
-                    "job_name": "preproc_" + p,
-                    "ntasks": 1,
-                    "cpus_per_task": 8,
-                    "mem_per_cpu": 6096,
-                    "time": "03:30:00",
-                    "mail_user": slurm_email,
-                    "mail_type": "FAIL",
-                    "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
-                    "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
-                }
-                if not denoising and not eddy:
-                    p_job["time"] = "00:30:00"
-                    p_job["cpus_per_task"] = 1
-                    p_job["mem_per_cpu"] = 8096
-                elif denoising and eddy:
-                    p_job["time"] = "14:00:00"
-                    p_job["cpus_per_task"] = 8
-                    p_job["mem_per_cpu"] = 6096
-                elif denoising and not eddy:
-                    p_job["time"] = "3:00:00"
-                    p_job["cpus_per_task"] = 1
-                    p_job["mem_per_cpu"] = 9096
-                elif not denoising and eddy:
-                    p_job["time"] = "12:00:00"
-                    p_job["cpus_per_task"] = 4
-                    p_job["mem_per_cpu"] = 6096
+                if slurm:
+                    p_job = {
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
+                            eddy) + ",biasfield=" + str(biasfield) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
+                            gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
+                            bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
+                        "job_name": "preproc_" + p,
+                        "ntasks": 1,
+                        "cpus_per_task": 8,
+                        "mem_per_cpu": 6096,
+                        "time": "03:30:00",
+                        "mail_user": slurm_email,
+                        "mail_type": "FAIL",
+                        "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
+                        "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
+                    }
+                    if not denoising and not eddy:
+                        p_job["time"] = "00:30:00"
+                        p_job["cpus_per_task"] = 1
+                        p_job["mem_per_cpu"] = 8096
+                    elif denoising and eddy:
+                        p_job["time"] = "14:00:00"
+                        p_job["cpus_per_task"] = 8
+                        p_job["mem_per_cpu"] = 6096
+                    elif denoising and not eddy:
+                        p_job["time"] = "3:00:00"
+                        p_job["cpus_per_task"] = 1
+                        p_job["mem_per_cpu"] = 9096
+                    elif not denoising and eddy:
+                        p_job["time"] = "12:00:00"
+                        p_job["cpus_per_task"] = 4
+                        p_job["mem_per_cpu"] = 6096
+                    else:
+                        p_job["time"] = "1:00:00"
+                        p_job["cpus_per_task"] = 1
+                        p_job["mem_per_cpu"] = 8096
+                    p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                    p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                    p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+
+                    p_job_id={}
+                    p_job_id["id"] = submit_job(p_job)
+                    p_job_id["name"] = p
+
+                    job_list.append(p_job_id)
+                    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+                    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
                 else:
-                    p_job["time"] = "1:00:00"
-                    p_job["cpus_per_task"] = 1
-                    p_job["mem_per_cpu"] = 8096
-                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
-                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+                    preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,biasfield=biasfield,starting_state=starting_state,bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda)
+                    f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
+                    f.flush()
+            f.close()
 
-                p_job_id={}
-                p_job_id["id"] = submit_job(p_job)
-                p_job_id["name"] = p
-
-                job_list.append(p_job_id)
-                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
-                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
-            else:
-                preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,biasfield=biasfield,starting_state=starting_state,bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda)
-                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
-                f.flush()
-        f.close()
-
-        #Wait for all jobs to finish
-        if slurm:
-            elikopy.utils.getJobsState(folder_path, job_list, log_prefix)
+            #Wait for all jobs to finish
+            if slurm:
+                elikopy.utils.getJobsState(folder_path, job_list, log_prefix)
 
         """Outside of preprocsolo : Eddy squad + Merge both individual QC pdf""";
         if eddy:
