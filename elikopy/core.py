@@ -993,6 +993,8 @@ class Elikopy:
                                 folder_path + '/export/' + wm_mask_path + patient_name + '_wm_mask.nii.gz')
                 safe_copy(patient_path + wm_mask_path + patient_name + '_segmentation.nii.gz',
                                 folder_path + '/export/' + wm_mask_path + patient_name + '_segmentation.nii.gz')
+                safe_copy(patient_path + wm_mask_path + patient_name + '_brain_mask.nii.gz',
+                          folder_path + '/export/' + wm_mask_path + patient_name + '_brain_mask.nii.gz')
                 safe_copy(patient_path + wm_mask_path + 'quality_control/qc_report.pdf',
                                 folder_path + '/export/' + wm_mask_path + patient_name + '_qc_report.pdf')
 
