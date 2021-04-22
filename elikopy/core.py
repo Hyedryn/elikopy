@@ -209,7 +209,7 @@ class Elikopy:
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
         """
 
-        assert starting_state in (None, "denoising", "gibbs", "topup", "eddy"), 'invalid starting state!'
+        assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report"), 'invalid starting state!'
         if starting_state=="denoising":
             assert denoising == True, 'if starting_state is denoising, denoising must be True!'
         if starting_state=="gibbs":
