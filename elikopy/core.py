@@ -323,13 +323,18 @@ class Elikopy:
             from PyPDF2 import PdfFileMerger
             for p in patient_list:
                 patient_path = os.path.splitext(p)[0]
-                pdfs = [folder_path + '/subjects/' + patient_path + '/dMRI/preproc/quality_control/qc_report.pdf',
-                        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.qc/qc_updated.pdf']
-                merger = PdfFileMerger()
-                for pdf in pdfs:
-                    merger.append(pdf)
-                merger.write(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-                merger.close()
+                if os.path.exists(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.qc/qc_updated.pdf'):
+                    pdfs = [folder_path + '/subjects/' + patient_path + '/dMRI/preproc/quality_control/qc_report.pdf',
+                            folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.qc/qc_updated.pdf']
+                    merger = PdfFileMerger()
+                    for pdf in pdfs:
+                        merger.append(pdf)
+                    merger.write(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+                    merger.close()
+                else:
+                    shutil.copyfile(
+                        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/quality_control/qc_report.pdf',
+                        folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
         else:
             for p in patient_list:
                 patient_path = os.path.splitext(p)[0]
