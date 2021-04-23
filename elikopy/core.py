@@ -1005,7 +1005,7 @@ class Elikopy:
                                 folder_path + '/export/' + wm_mask_path + patient_name + '_qc_report.pdf')
 
             if report:
-                safe_copy(patient_path + 'quality_control.pdf',
+                safe_copy(patient_path + '/quality_control.pdf',
                                 folder_path + '/export/qc/' + patient_name + '_quality_control.pdf')
 
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s has been exported succesfully\n" % p)
