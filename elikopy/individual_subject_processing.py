@@ -1324,23 +1324,26 @@ def dti_solo(folder_path, p):
     pdf.print_page(elem)
     pdf.output(qc_path + '/qc_report.pdf', 'F');
 
-    """Merge with QC of preproc""";
-    from PyPDF2 import PdfFileMerger
-    pdfs = [folder_path + '/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-    merger = PdfFileMerger()
-    for pdf in pdfs:
-        merger.append(pdf)
-    merger.write(folder_path + '/' + patient_path + '/quality_control_dti.pdf')
-    merger.close()
-    os.remove(folder_path + '/' + patient_path + '/quality_control.pdf')
-    os.rename(folder_path + '/' + patient_path + '/quality_control_dti.pdf',folder_path + '/' + patient_path + '/quality_control.pdf')
+    if not os.path.exists(folder_path + '/' + patient_path + '/quality_control.pdf'):
+        shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/' + patient_path + '/quality_control.pdf')
+    else:
+        """Merge with QC of preproc""";
+        from PyPDF2 import PdfFileMerger
+        pdfs = [folder_path + '/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+        merger = PdfFileMerger()
+        for pdf in pdfs:
+            merger.append(pdf)
+        merger.write(folder_path + '/' + patient_path + '/quality_control_dti.pdf')
+        merger.close()
+        os.remove(folder_path + '/' + patient_path + '/quality_control.pdf')
+        os.rename(folder_path + '/' + patient_path + '/quality_control_dti.pdf',folder_path + '/' + patient_path + '/quality_control.pdf')
 
-    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f.close()
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f.close()
 
 
 def white_mask_solo(folder_path, p):
