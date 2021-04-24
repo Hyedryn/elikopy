@@ -247,8 +247,9 @@ class Elikopy:
                 makedir(preproc_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
                 if slurm:
+                    tot_cpu = 8 if slurm_cpus is None else slurm_cpus
                     p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
+                        "wrap": "export OMP_NUM_THREADS="+str(tot_cpu)+" ; python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
                             eddy) + ",biasfield=" + str(biasfield) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
                             gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
                             bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
@@ -474,7 +475,6 @@ class Elikopy:
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
-
                 p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
                 p_job_id["name"] = p
@@ -838,7 +838,7 @@ class Elikopy:
             job = {
                 "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",last_state=\"" + str(last_state) + "\",registration_type=\"" + str(registration_type) + "\",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + ",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ")'",
                 "job_name": "tbss",
-                "ntasks": 8,
+                "ntasks": 2,
                 "cpus_per_task": 1,
                 "mem_per_cpu": 8096,
                 "time": "20:00:00",
