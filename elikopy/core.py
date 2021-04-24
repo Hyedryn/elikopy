@@ -86,6 +86,8 @@ class Elikopy:
         log_prefix = "PATIENT LIST"
         folder_path = self._folder_path if folder_path is None else folder_path
 
+        makedir(folder_path + '/subjects/', folder_path + "/logs.txt", log_prefix)
+
         import os
         import re
 

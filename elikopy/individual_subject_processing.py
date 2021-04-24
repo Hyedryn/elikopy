@@ -354,7 +354,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         else:
             eddycmd = "eddy"
 
-        if s2v[0] == 0:
+        if s2v[0] != 0:
             slspec_path = folder_path + '/' + patient_path + '/dMRI/raw/' + 'slspec.txt'
             if os.path.isfile(slspec_path):
                 if topup:
