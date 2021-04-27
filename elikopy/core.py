@@ -320,7 +320,8 @@ class Elikopy:
                 f.write(elem)
             f.close()
 
-            bashCommand = 'eddy_squad "' + dest_list + '" --update'
+            shutil.rmtree(folder_path + '/eddy_squad', ignore_errors=True)
+            bashCommand = 'eddy_squad "' + dest_list + '" --update -o ' + folder_path + '/eddy_squad'
             bashcmd = bashCommand.split()
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
             output, error = process.communicate()
