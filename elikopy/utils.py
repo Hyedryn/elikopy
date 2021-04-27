@@ -826,12 +826,12 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
     assert postreg_type in ("-S", "-T"), 'invalid postreg type!'
 
     # create the output directory
-    log_prefix = "TBSS"
-    outputdir = folder_path + "/TBSS"
+    log_prefix = "registration"
+    outputdir = folder_path + "/registration"
     makedir(outputdir, folder_path + "/logs.txt", log_prefix)
 
     import subprocess
-    tbss_log = open(folder_path + "/TBSS/TBSS_logs.txt", "a+")
+    registration_log = open(folder_path + "/registration/registration_logs.txt", "a+")
 
     from distutils.dir_util import copy_tree
 
@@ -845,15 +845,15 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
 
     if starting_state == None:
 
-        makedir(folder_path + "/TBSS/FA", folder_path + "/logs.txt", log_prefix)
-        makedir(folder_path + "/TBSS/origdata", folder_path + "/logs.txt", log_prefix)
+        makedir(folder_path + "/registration/FA", folder_path + "/logs.txt", log_prefix)
+        makedir(folder_path + "/registration/origdata", folder_path + "/logs.txt", log_prefix)
 
         # transfer the FA files to the TBSS directory
         numpatient = 0
         numcontrol = 0
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Beginning of preproc\n")
-        tbss_log.flush()
+        registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of registration\n")
+        registration_log.flush()
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
             control_info = subj_type[patient_path]
@@ -885,116 +885,133 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
             bashCommand = 'cd ' + outputdir + '; ' + cmd1 + '; ' + cmd2 + '; ' + cmd3
             bashcmd = bashCommand.split()
             print("Bash command is:\n{}\n".format(bashcmd))
-            tbss_log.write(bashCommand+"\n")
-            tbss_log.flush()
-            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+            registration_log.write(bashCommand+"\n")
+            registration_log.flush()
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
 
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": End of preproc\n")
-        tbss_log.flush()
+        registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of step 1\n")
+        registration_log.flush()
 
         # PERFORMS BACKUP FOR STARTING STATE
-        copy_tree(folder_path + "/TBSS/origdata", folder_path + "/TBSS/backup/tbss_preproc/origdata")
-        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/backup/tbss_preproc/FA")
+        copy_tree(folder_path + "/registration/origdata", folder_path + "/registration/backup/registration_preproc/origdata")
+        copy_tree(folder_path + "/registration/FA", folder_path + "/registration/backup/registration_preproc/FA")
 
         if last_state=="preproc":
-            tbss_log.close()
+            registration_log.close()
             return
 
     if starting_state in (None, "reg"):
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
 
         if starting_state == "reg":
-            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
-            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/FA", folder_path + "/TBSS/FA")
+            copy_tree(folder_path + "/registration/backup/registration_preproc/origdata", folder_path + "/registration/origdata")
+            copy_tree(folder_path + "/registration/backup/registration_preproc/FA", folder_path + "/registration/FA")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_2_reg '+ registration_type
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
-        tbss_log.write(bashCommand+"\n")
-        tbss_log.flush()
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+        registration_log.write(bashCommand+"\n")
+        registration_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of reg\n")
-        tbss_log.flush()
+        registration_log.flush()
 
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/backup/tbss_reg/FA")
+        copy_tree(folder_path + "/registration/FA", folder_path + "/registration/backup/registration_reg/FA")
 
         if last_state=="reg":
-            tbss_log.close()
+            registration_log.close()
             return
 
     if starting_state in (None, "reg", "postreg"):
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of postreg\n")
-        tbss_log.flush()
+        registration_log.flush()
 
         if starting_state == "postreg":
-            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
-            copy_tree(folder_path + "/TBSS/backup/tbss_reg/FA", folder_path + "/TBSS/FA")
+            copy_tree(folder_path + "/registration/backup/registration_preproc/origdata", folder_path + "/registration/origdata")
+            copy_tree(folder_path + "/registration/backup/registration_reg/FA", folder_path + "/registration/FA")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
-        tbss_log.write(bashCommand+"\n")
-        tbss_log.flush()
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+        registration_log.write(bashCommand+"\n")
+        registration_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of postreg\n")
-        tbss_log.flush()
+        registration_log.flush()
 
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/tbss_postreg/stats")
+        copy_tree(folder_path + "/registration/stats", folder_path + "/registration/backup/registration_postreg/stats")
 
         if last_state=="postreg":
-            tbss_log.close()
+            registration_log.close()
             return
 
     if starting_state in (None, "reg", "postreg", "prestats"):
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
-        tbss_log.flush()
+        registration_log.flush()
 
         if starting_state == "prestats":
-            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
-            copy_tree(folder_path + "/TBSS/backup/tbss_reg/FA", folder_path + "/TBSS/FA")
-            copy_tree(folder_path + "/TBSS/backup/tbss_postreg/stats", folder_path + "/TBSS/stats")
+            copy_tree(folder_path + "/registration/backup/registration_preproc/origdata", folder_path + "/registration/origdata")
+            copy_tree(folder_path + "/registration/backup/registration_reg/FA", folder_path + "/registration/FA")
+            copy_tree(folder_path + "/registration/backup/registration_postreg/stats", folder_path + "/registration/stats")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold)
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
-        tbss_log.write(bashCommand+"\n")
-        tbss_log.flush()
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
+        registration_log.write(bashCommand+"\n")
+        registration_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,
                                    stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
-        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of prestats\n")
-        tbss_log.flush()
+        registration_log.flush()
 
         # PERFORMS BACKUP FOR STARTING STATE
         from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/tbss_prestats/stats")
+        copy_tree(folder_path + "/registration/stats", folder_path + "/registration/backup/registration_prestats/stats")
 
         if last_state == "prestats":
-            tbss_log.close()
+            registration_log.close()
             return
 
-    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+    registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": End of FA TBSS, now starting non FA TBSS \n")
-    tbss_log.flush()
+    registration_log.flush()
 
     # ==================================================================================================================
     odi_path = folder_path + 'provisoire'
     if os.path.isfile(odi_path):
+        # create the directory for the metric
+        makedir(folder_path + "/registration/odi", folder_path + "/logs.txt", log_prefix)
+        for p in patient_list:
+            patient_path = os.path.splitext(p)[0]
+            control_info = subj_type[patient_path]
+            if control_info in grp1:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                    outputdir + "/origdata/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
+                pref = "control" + str(numcontrol) + "_"
+                numcontrol += 1
+            if control_info in grp2:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                    outputdir + "/origdata/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
+                pref = "case" + str(numpatient) + "_"
+                numpatient += 1
 
 
 
@@ -1004,7 +1021,7 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
     # ==================================================================================================================
     # reorganise the file and rename with registration all instead of TBSS
 
-    tbss_log.close()
+    registration_log.close()
 
 
 
