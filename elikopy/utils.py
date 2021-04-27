@@ -993,33 +993,101 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
     registration_log.flush()
 
     # ==================================================================================================================
-    odi_path = folder_path + 'provisoire'
-    if os.path.isfile(odi_path):
+    odi_bool = True
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        odi_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_noddi_odi.nii.gz"
+        if os.path.isfile(odi_path) == False:
+            odi_bool = False
+    if odi_bool:
         # create the directory for the metric
         makedir(folder_path + "/registration/odi", folder_path + "/logs.txt", log_prefix)
+        # copy metric in directory
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
             control_info = subj_type[patient_path]
             if control_info in grp1:
                 shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/origdata/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
-                pref = "control" + str(numcontrol) + "_"
-                numcontrol += 1
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_noddi_odi.nii.gz",
+                    outputdir + "/odi/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
             if control_info in grp2:
                 shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/origdata/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
-                pref = "case" + str(numpatient) + "_"
-                numpatient += 1
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_noddi_odi.nii.gz",
+                    outputdir + "/odi/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
 
-
-
-
-    # tbss_non_FA L2 => to make in top directory after copy all metrics in a file
-
+        bashCommand = 'cd ' + outputdir + ' && tbss_non_FA odi'
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        registration_log.write(bashCommand + "\n")
+        registration_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log, stderr=subprocess.STDOUT)
+        output, error = process.communicate()
     # ==================================================================================================================
-    # reorganise the file and rename with registration all instead of TBSS
+    kappa_bool = True
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        kappa_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_diamon_kappa.nii.gz"
+        if os.path.isfile(kappa_path) == False:
+            kappa_bool = False
+    if kappa_bool:
+        # create the directory for the metric
+        makedir(folder_path + "/registration/kappa", folder_path + "/logs.txt", log_prefix)
+        # copy metric in directory
+        for p in patient_list:
+            patient_path = os.path.splitext(p)[0]
+            control_info = subj_type[patient_path]
+            if control_info in grp1:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_diamond_kappa.nii.gz",
+                    outputdir + "/kappa/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
+            if control_info in grp2:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_diamond_kappa.nii.gz",
+                    outputdir + "/kappa/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
+
+        bashCommand = 'cd ' + outputdir + ' && tbss_non_FA kappa'
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        registration_log.write(bashCommand + "\n")
+        registration_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,
+                                   stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+    # ==================================================================================================================
+    fvf_tot_bool = True
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        fvf_tot_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_mf_fvf_tot.nii.gz"
+        if os.path.isfile(fvf_tot_path) == False:
+            fvf_tot_bool = False
+    if fvf_tot_bool:
+        # create the directory for the metric
+        makedir(folder_path + "/registration/fvf_tot", folder_path + "/logs.txt", log_prefix)
+        # copy metric in directory
+        for p in patient_list:
+            patient_path = os.path.splitext(p)[0]
+            control_info = subj_type[patient_path]
+            if control_info in grp1:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_mf_fvf_tot.nii.gz",
+                    outputdir + "/fvf_tot/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
+            if control_info in grp2:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_mf_fvf_tot.nii.gz",
+                    outputdir + "/fvf_tot/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
+
+        bashCommand = 'cd ' + outputdir + ' && tbss_non_FA fvf_tot'
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        registration_log.write(bashCommand + "\n")
+        registration_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,
+                                   stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+    # ==================================================================================================================
+
+    # suppress the backup
+    shutil.rmtree(folder_path + "/registration/backup")
 
     registration_log.close()
 
