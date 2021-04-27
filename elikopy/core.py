@@ -184,7 +184,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, biasfield=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None, qc_reg=True, core_count=1):
+    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, biasfield=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None, qc_reg=True, core_count=1):
         """Wrapper function for the preprocessing. Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
         located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final
 
@@ -500,13 +500,15 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def white_mask(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def white_mask(self, folder_path=None, patient_list_m=None, corr_bias=True, corr_gibbs=True, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """ Wrapper function for whitematter mask computation. Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
         T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
         a folder named anat in the root folder.
 
         :param folder_path: path to the root directory.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param corr_bias: Correct for bias field distortion.
+        :param corr_gibbs: Correct for gibbs oscillation.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 3h by a custom timeout.
@@ -535,7 +537,7 @@ class Elikopy:
             patient_path = os.path.splitext(p)[0]
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_bias=" + str(corr_bias) + ",corr_gibbs=" + str(corr_gibbs) + " )'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -558,7 +560,7 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                white_mask_solo(folder_path + "/subjects", p)
+                white_mask_solo(folder_path + "/subjects", p,corr_bias=corr_bias, corr_gibbs=corr_gibbs)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
         f.close()
