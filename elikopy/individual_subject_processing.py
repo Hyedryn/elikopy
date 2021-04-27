@@ -11,7 +11,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], core_count=1):
+def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1):
     """
     Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final.
@@ -641,16 +641,24 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         Y = Y1 + Y2 + Y3 + Y4 + Y5
         X = X1 + [x + np.shape(mask_raw)[1] for x in X2] + [x + np.shape(mask_raw)[1] * 2 for x in X3] + [
             x + np.shape(mask_raw)[1] * 3 for x in X4] + [x + np.shape(mask_raw)[1] * 4 for x in X5]
-        axs[current_subplot].scatter(X, Y, marker='.', s=1, c='red')
+        if numstep == 1:
+            plt.scatter(X, Y, marker='.', s=1, c='red')
+        else:
+            axs[current_subplot].scatter(X, Y, marker='.', s=1, c='red')
         plot_bet = np.zeros((np.shape(bet_data)[0], np.shape(bet_data)[1] * 5))
         plot_bet[:, 0:np.shape(bet_data)[1]] = bet_data[..., sl - 10, shell_index[0]]
         plot_bet[:, np.shape(bet_data)[1]:(np.shape(bet_data)[1] * 2)] = bet_data[..., sl - 5, shell_index[0]]
         plot_bet[:, (np.shape(bet_data)[1] * 2):(np.shape(bet_data)[1] * 3)] = bet_data[..., sl, shell_index[0]]
         plot_bet[:, (np.shape(bet_data)[1] * 3):(np.shape(bet_data)[1] * 4)] = bet_data[..., sl + 5, shell_index[0]]
         plot_bet[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = bet_data[..., sl + 10, shell_index[0]]
-        axs[current_subplot].imshow(plot_bet, cmap='gray')
-        axs[current_subplot].set_axis_off()
-        axs[current_subplot].set_title('brain extraction')
+        if numstep==1:
+            plt.imshow(plot_bet, cmap='gray')
+            plt.set_axis_off()
+            plt.set_title('brain extraction')
+        else:
+            axs[current_subplot].imshow(plot_bet, cmap='gray')
+            axs[current_subplot].set_axis_off()
+            axs[current_subplot].set_title('brain extraction')
         current_subplot = current_subplot + 1
         # plot mppca
         if bool_mppca:
@@ -991,7 +999,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         list_images.append([qc_path + "/topup_field.jpg"])
 
     """Motion registration""";
-    if bool_eddy:
+    if bool_eddy and qc_reg:
         nbins = 32
         sampling_prop = None
         metric = MutualInformationMetric(nbins, sampling_prop)

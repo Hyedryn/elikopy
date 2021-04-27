@@ -121,6 +121,7 @@ def anonymise_nifti(rootdir,anonymize_json,rename):
 
                 print()
 
+
 def getJobsState(folder_path,job_list,step_name):
     """
     Periodically check the status of all jobs in the job_list. When a job status change to complete or a failing state.
@@ -180,6 +181,7 @@ def getJobsState(folder_path,job_list,step_name):
         job_failed) + "\n")
     f.close()
 
+
 def export_files(folder_path, step, patient_list_m=None):
     """
     Create an export folder in the root folder containing the results of step for each patient in a single folder
@@ -236,6 +238,7 @@ def get_job_state(job_id):
             state = "NOSTATE"
     return state
 
+
 def makedir(dir_path,log_path,log_prefix):
     """
     Create a directory in the location specified by the dir_path and write the log in the log_path.
@@ -257,7 +260,6 @@ def makedir(dir_path,log_path,log_prefix):
             f=open(log_path, "a+")
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully created the directory %s \n" % dir_path)
             f.close()
-
 
 
 def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_numberofpermutation=5000):
@@ -552,6 +554,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
 
     tbss_log.close()
 
+
 def synb0DisCo(topuppath,patient_path,starting_step=None,topup=True,gpu=True):
     """
     synb0DISCO adapted from https://github.com/MASILab/Synb0-DISCO
@@ -798,6 +801,210 @@ def inference(T1_path, b0_d_path, model, device):
 
     # Return model
     return img_model
+
+
+def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2):
+    """
+    register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
+    statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
+
+    :return:
+    :param folder_path: path to the root directory.
+    :param grp1: List of number corresponding to the type of the patients to put in the first group (control group). Used so data is in right order for statistics
+    :param grp2: List of number corresponding to the type of the patients to put in the second group (case group). Used so data is in right order for statistics
+    :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats.
+    :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats.
+    :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
+    :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
+    :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
+    """
+    starting_state = None if starting_state == "None" else starting_state
+    last_state = None if last_state == "None" else last_state
+    assert starting_state in (None, "reg", "postreg", "prestats"), 'invalid starting state!'
+    assert last_state in (None, "preproc", "reg", "postreg", "prestats"), 'invalid last state!'
+    assert registration_type in ("-T", "-t", "-n"), 'invalid registration type!'
+    assert postreg_type in ("-S", "-T"), 'invalid postreg type!'
+
+    # create the output directory
+    log_prefix = "TBSS"
+    outputdir = folder_path + "/TBSS"
+    makedir(outputdir, folder_path + "/logs.txt", log_prefix)
+
+    import subprocess
+    tbss_log = open(folder_path + "/TBSS/TBSS_logs.txt", "a+")
+
+    from distutils.dir_util import copy_tree
+
+    # open the subject and is_control lists
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+    dest_subj_type = folder_path + "/subjects/subj_type.json"
+    with open(dest_subj_type, 'r') as f:
+        subj_type = json.load(f)
+
+    if starting_state == None:
+
+        makedir(folder_path + "/TBSS/FA", folder_path + "/logs.txt", log_prefix)
+        makedir(folder_path + "/TBSS/origdata", folder_path + "/logs.txt", log_prefix)
+
+        # transfer the FA files to the TBSS directory
+        numpatient = 0
+        numcontrol = 0
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of preproc\n")
+        tbss_log.flush()
+        for p in patient_list:
+            patient_path = os.path.splitext(p)[0]
+            control_info = subj_type[patient_path]
+            if control_info in grp1:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                    outputdir + "/origdata/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
+                pref = "control" + str(numcontrol) + "_"
+                numcontrol += 1
+            if control_info in grp2:
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                    outputdir + "/origdata/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
+                pref = "case" + str(numpatient) + "_"
+                numpatient += 1
+
+            x_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim1", shell=True));
+            x = x_val - 2
+            y_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim2", shell=True));
+            y = y_val - 2
+            z_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim3", shell=True));
+            z = z_val - 2
+
+            cmd1="fslmaths origdata/" + pref + patient_path + "_FA -min 1 -dilD -ero -ero -roi 1 "+str(x)+" 1 "+str(y)+" 1 "+str(z)+" 0 1 FA/" + pref + patient_path + "_FA"
+
+            # create mask (for use in FLIRT & FNIRT)
+            cmd2="fslmaths FA/" + pref + patient_path + "_FA -bin FA/" + pref + patient_path + "_FA_mask"
+            cmd3="fslmaths FA/" + pref + patient_path + "_FA_mask -dilD -dilD -sub 1 -abs -add FA/" + pref + patient_path + "_FA_mask FA/" + pref + patient_path + "_FA_mask -odt char"
+            bashCommand = 'cd ' + outputdir + '; ' + cmd1 + '; ' + cmd2 + '; ' + cmd3
+            bashcmd = bashCommand.split()
+            print("Bash command is:\n{}\n".format(bashcmd))
+            tbss_log.write(bashCommand+"\n")
+            tbss_log.flush()
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+            output, error = process.communicate()
+
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of preproc\n")
+        tbss_log.flush()
+
+        # PERFORMS BACKUP FOR STARTING STATE
+        copy_tree(folder_path + "/TBSS/origdata", folder_path + "/TBSS/backup/tbss_preproc/origdata")
+        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/backup/tbss_preproc/FA")
+
+        if last_state=="preproc":
+            tbss_log.close()
+            return
+
+    if starting_state in (None, "reg"):
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
+
+        if starting_state == "reg":
+            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/FA", folder_path + "/TBSS/FA")
+
+        bashCommand = 'cd ' + outputdir + ' && tbss_2_reg '+ registration_type
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        tbss_log.write(bashCommand+"\n")
+        tbss_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of reg\n")
+        tbss_log.flush()
+
+        # PERFORMS BACKUP FOR STARTING STATE
+        from distutils.dir_util import copy_tree
+        copy_tree(folder_path + "/TBSS/FA", folder_path + "/TBSS/backup/tbss_reg/FA")
+
+        if last_state=="reg":
+            tbss_log.close()
+            return
+
+    if starting_state in (None, "reg", "postreg"):
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of postreg\n")
+        tbss_log.flush()
+
+        if starting_state == "postreg":
+            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/backup/tbss_reg/FA", folder_path + "/TBSS/FA")
+
+        bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        tbss_log.write(bashCommand+"\n")
+        tbss_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of postreg\n")
+        tbss_log.flush()
+
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/tbss_postreg/stats")
+
+        if last_state=="postreg":
+            tbss_log.close()
+            return
+
+    if starting_state in (None, "reg", "postreg", "prestats"):
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
+        tbss_log.flush()
+
+        if starting_state == "prestats":
+            copy_tree(folder_path + "/TBSS/backup/tbss_preproc/origdata", folder_path + "/TBSS/origdata")
+            copy_tree(folder_path + "/TBSS/backup/tbss_reg/FA", folder_path + "/TBSS/FA")
+            copy_tree(folder_path + "/TBSS/backup/tbss_postreg/stats", folder_path + "/TBSS/stats")
+
+        bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold)
+        bashcmd = bashCommand.split()
+        print("Bash command is:\n{}\n".format(bashcmd))
+        tbss_log.write(bashCommand+"\n")
+        tbss_log.flush()
+        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tbss_log,
+                                   stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+
+        tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of prestats\n")
+        tbss_log.flush()
+
+        # PERFORMS BACKUP FOR STARTING STATE
+        from distutils.dir_util import copy_tree
+        copy_tree(folder_path + "/TBSS/stats", folder_path + "/TBSS/backup/tbss_prestats/stats")
+
+        if last_state == "prestats":
+            tbss_log.close()
+            return
+
+    tbss_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of FA TBSS, now starting non FA TBSS \n")
+    tbss_log.flush()
+
+    # ==================================================================================================================
+    odi_path = folder_path + 'provisoire'
+    if os.path.isfile(odi_path):
+
+
+
+
+    # tbss_non_FA L2 => to make in top directory after copy all metrics in a file
+
+    # ==================================================================================================================
+    # reorganise the file and rename with registration all instead of TBSS
+
+    tbss_log.close()
 
 
 
