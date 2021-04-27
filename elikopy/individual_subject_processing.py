@@ -11,7 +11,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw']):
+def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], core_count=1):
     """
     Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final.
@@ -99,7 +99,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             "%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
         f.close()
 
-    if not denoising and not eddy and not gibbs and not topup and not biasfield and not report:
+    if not denoising and not eddy and not gibbs and not topup and not biasfield:
         save_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', b0_mask.astype(np.float32), affine)
         save_nifti(folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', mask.astype(np.float32), affine)
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
@@ -442,6 +442,14 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         bashCommand= "N4BiasFieldCorrection -i " + inputImage + " -o [" + folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz, " + folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz] -d 4"
 
+        bashCommand = 'dwibiascorrect ants {} {} -fslgrad {} {} -mask {} -bias {} -scratch {} -force -nthreads {}'.format(
+            inputImage, folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz",
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec",
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+            folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+            folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz",
+            folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/tmp',
+            core_count)
         import subprocess
         bashcmd = bashCommand.split()
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -458,6 +466,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         # wait until biasfield finish
         output, error = process.communicate()
         biasfield_log.close()
+
+        #shutil.rmtree(folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/tmp', ignore_errors=True)
 
         shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz',
             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz')
