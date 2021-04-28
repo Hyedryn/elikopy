@@ -184,7 +184,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, biasfield=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None, qc_reg=True, core_count=1):
+    def preproc(self, folder_path=None, reslice=False, denoising=False, gibbs=False, topup=False, eddy=False, biasfield=False, patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True):
         """Wrapper function for the preprocessing. Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
         located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final
 
@@ -207,10 +207,9 @@ class Elikopy:
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout by a custom timeout.
-        :param slurm_cpus: Replace the default number of slurm cpus by a custom number of cpus.
+        :param cpus: Replace the default number of slurm cpus by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
         :param qc_reg: tell if do the motion registration step for the quality control.
-        :param core_count: Number of core available for processing
         """
 
         assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "post_report"), 'invalid starting state!'
@@ -252,9 +251,10 @@ class Elikopy:
                 makedir(preproc_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
                 if slurm:
-                    tot_cpu = 8 if slurm_cpus is None else slurm_cpus
+                    tot_cpu = 8 if cpus is None else cpus
+                    core_count = tot_cpu
                     p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(tot_cpu)+" ; python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
+                        "wrap": "export OMP_NUM_THREADS="+str(tot_cpu)+" ; export FSLPARALLEL="+str(tot_cpu)+" ; python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
                             eddy) + ",biasfield=" + str(biasfield) + ",denoising=" + str(denoising) + ",reslice=" + str(reslice) + ",gibbs=" + str(
                             gibbs) + ",topup=" + str(topup) + ",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
                             bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", core_count=" + str(core_count)+ ",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
@@ -289,7 +289,7 @@ class Elikopy:
                         p_job["cpus_per_task"] = 1
                         p_job["mem_per_cpu"] = 8096
                     p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                    p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                    p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                     p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
                     p_job_id={}
@@ -300,6 +300,7 @@ class Elikopy:
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
                 else:
+                    core_count = 1 if cpus is None else cpus
                     preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,biasfield=biasfield,starting_state=starting_state,bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda, qc_reg=qc_reg, core_count=core_count)
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preproceced patient %s\n" % p)
                     f.flush()
@@ -321,7 +322,7 @@ class Elikopy:
             f.close()
 
             shutil.rmtree(folder_path + '/eddy_squad', ignore_errors=True)
-            bashCommand = 'eddy_squad "' + dest_list + '" --update -o ' + folder_path + '/eddy_squad'
+            bashCommand = 'export OMP_NUM_THREADS='+str(tot_cpu)+' ; export FSLPARALLEL='+str(tot_cpu)+' ; eddy_squad "' + dest_list + '" --update -o ' + folder_path + '/eddy_squad'
             bashcmd = bashCommand.split()
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
             output, error = process.communicate()
@@ -501,7 +502,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def white_mask(self, folder_path=None, patient_list_m=None, corr_bias=True, corr_gibbs=True, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def white_mask(self, folder_path=None, patient_list_m=None, corr_bias=True, corr_gibbs=True, core_count=1, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Wrapper function for whitematter mask computation. Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
         T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
         a folder named anat in the root folder.
@@ -513,7 +514,7 @@ class Elikopy:
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 3h by a custom timeout.
-        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
+        :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
 
@@ -537,8 +538,9 @@ class Elikopy:
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
             if slurm:
+                core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_bias=" + str(corr_bias) + ",corr_gibbs=" + str(corr_gibbs) + " )'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_bias=" + str(corr_bias) + ",corr_gibbs=" + str(corr_gibbs) + ",core_count=" + str(core_count) + " )'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -550,7 +552,7 @@ class Elikopy:
                         "error": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.err",
                     }
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
 
@@ -561,7 +563,8 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                white_mask_solo(folder_path + "/subjects", p,corr_bias=corr_bias, corr_gibbs=corr_gibbs)
+                core_count = 1 if cpus is None else cpus
+                white_mask_solo(folder_path + "/subjects", p,corr_bias=corr_bias, corr_gibbs=corr_gibbs, core_count=core_count)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
         f.close()

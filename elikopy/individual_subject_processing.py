@@ -77,7 +77,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         from dipy.align.reslice import reslice
         new_voxel_size = (2., 2., 2.)
-        data, affine = reslice(data, affine, voxel_size, new_voxel_size)
+        data, affine = reslice(data, affine, voxel_size, new_voxel_size, num_processes=core_count)
         save_nifti(reslice_path + '/' + patient_path + '_reslice.nii.gz', data, affine)
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Reslice completed for patient %s \n" % p)
@@ -172,7 +172,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             b0_mask, affine, voxel_size = load_nifti(b0_mask_path, return_voxsize=True)
             mask, _ = load_nifti(mask_path)
 
-        data = gibbs_removal(b0_mask)
+        data = gibbs_removal(b0_mask, num_threads=core_count)
         corrected_path = folder_path + '/' + patient_path + "/dMRI/preproc/gibbs/" + patient_path + '_gibbscorrected.nii.gz'
         save_nifti(corrected_path, data.astype(np.float32), affine)
 
@@ -272,7 +272,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Patient %s \n" % p + " has multiple direction of gradient encoding, launching topup directly ")
-            bashCommand = 'topup --imain="' + topup_path + '/b0.nii.gz" --config="b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --verbose'
+            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; topup --imain="' + topup_path + '/b0.nii.gz" --config="b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --verbose'
             bashcmd = bashCommand.split()
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
@@ -312,7 +312,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             output, error = process.communicate()
             synb0DisCo(topup_path,patient_path,starting_step=None,topup=True,gpu=False)
 
-            bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+            bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
             process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
                                         stderr=subprocess.STDOUT)
@@ -352,7 +352,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         if cuda:
             eddycmd = cuda_name
         else:
-            eddycmd = "eddy"
+            eddycmd = "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; eddy"
 
         if s2v[0] != 0:
             slspec_path = folder_path + '/' + patient_path + '/dMRI/raw/' + 'slspec.txt'
@@ -442,7 +442,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         #bashCommand= "N4BiasFieldCorrection -i " + inputImage + " -o [" + folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz, " + folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz] -d 4"
 
-        bashCommand = 'dwibiascorrect ants {} {} -fslgrad {} {} -mask {} -bias {} -scratch {} -force -info -nthreads {}'.format(
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; dwibiascorrect ants {} {} -fslgrad {} {} -mask {} -bias {} -scratch {} -force -info -nthreads {}'.format(
             inputImage, folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz",
             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec",
             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
@@ -1364,7 +1364,7 @@ def dti_solo(folder_path, p):
         f.close()
 
 
-def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True):
+def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=1):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
     T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
     a folder named anat in the root folder.
@@ -1406,7 +1406,7 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True):
         # Correct for gibbs ringing
         if corr_gibbs:
             data_gibbs, affine_gibbs = load_nifti(anat_path)
-            data_gibbs = gibbs_removal(data_gibbs)
+            data_gibbs = gibbs_removal(data_gibbs,num_threads=core_count)
             corrected_gibbs_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_gibbscorrected.nii.gz'
             save_nifti(corrected_gibbs_path, data_gibbs.astype(np.float32), affine_gibbs)
 
@@ -1421,7 +1421,7 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True):
 
             fast_output_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_fast'
             corrected_bias_path = fast_output_path + '_bias.nii.gz'
-            bashCommand = 'fast -o ' + fast_output_path + ' -t 1 -B -b --nopve ' + input_bias_path
+            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; fast -o ' + fast_output_path + ' -t 1 -B -b --nopve ' + input_bias_path
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
 
@@ -1435,14 +1435,14 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True):
 
         # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'bet2 ' + input_bet_path + ' ' + bet_path + ' -f 1 -g -3'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet2 ' + input_bet_path + ' ' + bet_path + ' -f 1 -g -3'
         bashcmd = bashCommand.split()
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
         anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain_brain.nii.gz'
-        bashCommand = 'bet2 ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet2 ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2'
         bashcmd = bashCommand.split()
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
@@ -1535,8 +1535,14 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True):
         gtab = gradient_table(bvals, bvecs)
         sphere = get_sphere('symmetric724')
         qball_model = shm.QballModel(gtab, 8)
-        peaks = dp.peaks_from_model(model=qball_model, data=data, relative_peak_threshold=.5, min_separation_angle=25,
-                                    sphere=sphere, mask=mask)
+        if core_count > 1:
+            peaks = dp.peaks_from_model(model=qball_model, data=data, relative_peak_threshold=.5, min_separation_angle=25,
+                                    sphere=sphere, mask=mask, parallel=True, nbr_processes=core_count)
+        else:
+            peaks = dp.peaks_from_model(model=qball_model, data=data, relative_peak_threshold=.5,
+                                        min_separation_angle=25,
+                                        sphere=sphere, mask=mask, parallel=False)
+
         ap = shm.anisotropic_power(peaks.shm_coeff)
         save_nifti(folder_path + '/' + patient_path + "/masks/" + patient_path + '_ap.nii.gz', ap.astype(np.float32), affine)
         nclass = 3
