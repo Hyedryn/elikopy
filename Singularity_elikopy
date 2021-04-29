@@ -1,0 +1,136 @@
+Bootstrap: docker
+From: nvidia/cuda:9.1-devel-centos7
+
+%post -c /bin/bash
+    cd /
+
+    # Prepare directories for installing applications
+    mkdir -p Software
+    mkdir -p Installer_tmp
+
+    # Update all libraries
+    yum -y update
+	
+    # Install X11 + some utils
+    yum install -y xorg-x11-server-Xorg xorg-x11-xauth xorg-x11-apps nano
+	yum groupinstall "C Development Tools and Libraries"
+	
+	# Requirements FreeSurfer
+	yum update
+	yum install git wget tcsh gcc gcc-c++ libgfortran-static make vim-common ca-certificates
+	yum install lapack-devel lapack-static blas-devel blas-static zlib-devel
+	yum install python-devel python3-devel
+	yum install libX11-devel libXmu-devel mesa-libGL-devel
+	
+	# Requirements FSL
+	yum install expat-devel libX11-devel mesa-libGL-devel zlib-devel libpng-devel
+	
+	# Requirements MRTrix3
+	yum install git gcc-g++ python eigen3-devel zlib-devel mesa-libGL-devel fftw-devel libtiff-devel
+	python -m pip install numpy
+	python3 -m pip install numpy
+	yum install devtoolset-7
+	
+	#Requirements Convert3D
+	yum -y install wget tar
+	
+	#Requirements ANTs
+	yum -y install git gcc-c++ zlib-devel cmake cmake3
+	
+    # Install MRTrix3
+    cd /Software
+    git clone https://github.com/MRtrix3/mrtrix3.git
+    cd mrtrix3
+    git checkout 3.0.0
+    ./configure no-gui
+    ./build
+    cd /
+
+    # Install FSL
+	wget -O /Installer_tmp/fslinstaller.py "https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py"
+    cd /Installer_tmp
+    python fslinstaller.py -d /Software/fsl6 -V 6.0.4
+    cd /
+
+    # Install Convert3D (stable build 1.0.0)
+    wget -O /Installer_tmp/c3d-1.0.0-Linux-x86_64.tar.gz "https://downloads.sourceforge.net/project/c3d/c3d/1.0.0/c3d-1.0.0-Linux-x86_64.tar.gz?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fc3d%2Ffiles%2Fc3d%2F1.0.0%2Fc3d-1.0.0-Linux-x86_64.tar.gz%2Fdownload&ts=1571934949"
+    tar -xf /Installer_tmp/c3d-1.0.0-Linux-x86_64.tar.gz -C /Software/
+    cd /
+
+    # Clean up
+    rm -r /Installer_tmp/c3d-1.0.0-Linux-x86_64.tar.gz	
+	
+    # Install ANTs
+    cd /Installer_tmp
+    mkdir ants_installer
+    cd ants_installer
+    git clone https://github.com/stnava/ANTs.git
+    cd ANTs
+    git checkout v2.3.5
+    cd .. 
+    mkdir ants_build
+    cd ants_build
+    cmake3 /Installer_tmp/ants_installer/ANTs -DCMAKE_INSTALL_PREFIX=/Software/ants
+    make 2>&1 | tee build.log
+    cd ANTS-build
+    make install 2>&1 | tee install.log
+    cd /
+	
+    # Clean up
+    rm -r /Installer_tmp/ants_installer/
+
+    # Install FreeSurfer
+    yum -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev
+    wget -O /Installer_tmp/freesurfer-linux-centos7_x86_64-7.1.1.tar.gz "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.1/freesurfer-linux-centos7_x86_64-7.1.1.tar.gz"
+    tar -C /Software -xzvf /Installer_tmp/freesurfer-linux-centos7_x86_64-7.1.1.tar.gz
+    echo "This is a dummy license file. Please bind your freesurfer license file to this file." > /Software/freesurfer/license.txt
+    cd /
+	
+	# Clean up
+    rm -r /Installer_tmp/freesurfer-linux-centos7_x86_64-7.1.1.tar.gz
+    
+    # Make custom folders
+    mkdir -p PROJECTS
+
+    # Set Permissions
+    chmod 755 /PROJECTS
+    chmod 755 /Software
+	
+	# Install MF 
+	cd /Software
+	git clone https://github.com/rensonnetg/microstructure_fingerprinting.git
+	cd microstructure_fingerprinting
+	python setup.py install
+	cd /
+
+	# Install ElikoPy
+	yum -y install git gcc libpq-dev python-dev python-pip python3 python3-dev python3-pip python3-venv python3-wheel
+	cd /Software
+	git clone https://github.com/Hyedryn/elikopy
+	cd elikopy
+	python3 -m pip install -r requirements.txt --user
+	python3 setup.py install --user
+	cd /
+
+    # Clean up
+    rm -r /Installer_tmp
+
+%environment
+    # MRTrix3
+    export PATH="/Software/mrtrix3/bin:$PATH"
+    # FSL
+    FSLDIR=/Software/fsl6
+    . ${FSLDIR}/etc/fslconf/fsl.sh
+    PATH=${FSLDIR}/bin:${PATH}
+    export FSLDIR PATH
+    # Convert3D
+    export PATH="/Software/c3d-1.0.0-Linux-x86_64/bin:$PATH"
+    # ANTs
+    export ANTSPATH=/Software/ants/bin/
+    export PATH=${ANTSPATH}:$PATH
+    # FreeSurfer
+    export FREESURFER_HOME=/Software/freesurfer
+    source $FREESURFER_HOME/SetUpFreeSurfer.sh
+
+%runscript
+    xvfb-run -a --server-num=$((65536+$$)) --server-args="-screen 0 1600x1280x24 -ac" bash /APPS/elikopy/run_elikopy.sh /PROJECTS "$@"
