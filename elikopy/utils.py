@@ -738,6 +738,7 @@ def synb0DisCo(topuppath,patient_path,starting_step=None,topup=True,gpu=True):
             "[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of topup \n\n")
         topup_log.close()
 
+
 import os
 import sys
 import glob
@@ -803,6 +804,7 @@ def inference(T1_path, b0_d_path, model, device):
 
     # Return model
     return img_model
+
 
 def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2):
     """
@@ -954,6 +956,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
     registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": End of FA Registration \n")
     registration_log.flush()
+
 
 def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamon_kappa':'diamond'}):
     """
