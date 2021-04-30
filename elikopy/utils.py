@@ -1010,7 +1010,7 @@ def regall(folder_path, grp1, grp2,metrics_dic={'noddi':'_noddi_odi','mf':'_mf_f
                 if os.path.isfile(metric_path):
                     shutil.copyfile(
                         folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value + ".nii.gz",
-                        outputdir + "/" + value + "/" + pref + patient_path + "_FA.nii.gz")
+                        outputdir + "/" + value + "/" + pref + patient_path + ".nii.gz")
                     type_dict[pref] = patient_path
             if control_info in grp2:
                 metric_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value +".nii.gz"
@@ -1019,7 +1019,7 @@ def regall(folder_path, grp1, grp2,metrics_dic={'noddi':'_noddi_odi','mf':'_mf_f
                 if os.path.isfile(metric_path):
                     shutil.copyfile(
                         folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value + ".nii.gz",
-                        outputdir + "/" + value + "/" + pref + patient_path + "_FA.nii.gz")
+                        outputdir + "/" + value + "/" + pref + patient_path + ".nii.gz")
                     type_dict[pref] = patient_path
 
         # Verify that the matching between patient and FA is equivalent to the matching between patient and the computed metric
