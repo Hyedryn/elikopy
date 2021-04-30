@@ -1740,7 +1740,7 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
     f.close()
 
 
-def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False):
+def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
     """ Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
 
     :param folder_path: the path to the root directory.
@@ -1808,7 +1808,7 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
         NODDI_fit = amico_cvxpy.AmicoCvxpyOptimizer(acq_scheme_dmipy, data, mask=mask)
     else:
         # fit the model to the data
-        NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask)
+        NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask,use_parallel_processing=True,number_of_processors=core_count)
         # NODDI_fit = NODDI_mod.fit(acq_scheme_dmipy, data, mask=mask, solver='mix', maxiter=300)
 
     # exctract the metrics

@@ -264,7 +264,7 @@ def makedir(dir_path,log_path,log_prefix):
 
 def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_numberofpermutation=5000):
     """
-    Perform tract base spatial statistics between the control data and case data. DTI needs to have been
+    [Legacy] Perform tract base spatial statistics between the control data and case data. DTI needs to have been
     performed on the data first !!
 
     :return:
@@ -283,6 +283,8 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
     assert last_state in (None, "preproc", "reg", "postreg", "prestats", "design", "randomise"), 'invalid last state!'
     assert registration_type in ("-T", "-t", "-n"), 'invalid registration type!'
     assert postreg_type in ("-S", "-T"), 'invalid postreg type!'
+
+    print("You are using the legacy TBSS function. We recommend you to use regall_FA() function.")
 
     # create the output directory
     log_prefix = "TBSS"

@@ -502,7 +502,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def white_mask(self, folder_path=None, patient_list_m=None, corr_bias=True, corr_gibbs=True, core_count=1, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def white_mask(self, folder_path=None, patient_list_m=None, corr_bias=True, corr_gibbs=True, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Wrapper function for whitematter mask computation. Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
         T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
         a folder named anat in the root folder.
@@ -577,7 +577,7 @@ class Elikopy:
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of White mask\n")
         f.close()
 
-    def noddi(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def noddi(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Wrapper function for noddi. Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
 
         :param folder_path: path to the root directory.
@@ -615,8 +615,9 @@ class Elikopy:
                     log_prefix)
 
             if slurm:
+                core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\"," + str(force_brain_mask) + ")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\"," + str(force_brain_mask) + ",core_count="+str(core_count)+ ")'",
                         "job_name": "noddi_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -629,7 +630,7 @@ class Elikopy:
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
                 p_job_id = {}
@@ -639,7 +640,8 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                noddi_solo(folder_path + "/subjects",p,force_brain_mask)
+                core_count = 1 if cpus is None else cpus
+                noddi_solo(folder_path + "/subjects",p,force_brain_mask,core_count=cpus)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
                 f.flush()
         f.close()
