@@ -851,7 +851,7 @@ class Elikopy:
             job = {
                 "wrap": "python -c 'from elikopy.utils import tbss_utils; tbss_utils(\"" + str(folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",last_state=\"" + str(last_state) + "\",registration_type=\"" + str(registration_type) + "\",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + ",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ")'",
                 "job_name": "tbss",
-                "ntasks": 2,
+                "ntasks": 1,
                 "cpus_per_task": 1,
                 "mem_per_cpu": 8096,
                 "time": "20:00:00",
@@ -861,7 +861,7 @@ class Elikopy:
                 "error": tbss_path + '/' + "slurm-%j.err",
             }
             job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
-            job["ntasks"] = job["ntasks"] if slurm_tasks is None else slurm_tasks
+            job["cpus_per_task"] = job["cpus_per_task"] if slurm_tasks is None else slurm_tasks
             job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
             p_job_id = {}
             p_job_id["id"] = submit_job(job)

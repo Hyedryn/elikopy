@@ -832,7 +832,8 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
     registration_log = open(folder_path + "/registration/registration_logs.txt", "a+")
 
     from distutils.dir_util import copy_tree
-
+    import json
+    
     # open the subject and is_control lists
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
@@ -891,7 +892,6 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
 
-        import json
         with open(folder_path + "/registration/"+"tbss_id.json", "w") as write_file:
             json.dump(type_dict, write_file)
 
