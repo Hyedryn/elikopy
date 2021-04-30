@@ -833,7 +833,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
 
     from distutils.dir_util import copy_tree
     import json
-    
+
     # open the subject and is_control lists
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
@@ -955,7 +955,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
         "%d.%b %Y %H:%M:%S") + ": End of FA Registration \n")
     registration_log.flush()
 
-def regall(folder_path, grp1, grp2,metrics_dic={'noddi':'_noddi_odi','noddi':'_mf_fvf_tot','diamond':'_diamon_kappa'}):
+def regall(folder_path, grp1, grp2,metrics_dic={'noddi':'_noddi_odi','mf':'_mf_fvf_tot','diamond':'_diamon_kappa'}):
     """
     register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
     statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
@@ -999,6 +999,7 @@ def regall(folder_path, grp1, grp2,metrics_dic={'noddi':'_noddi_odi','noddi':'_m
         type_dict = {}
         numpatient = 0
         numcontrol = 0
+        makedir(folder_path + "/registration/" + value, folder_path + "/logs.txt", log_prefix)
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
             control_info = subj_type[patient_path]
@@ -1007,12 +1008,18 @@ def regall(folder_path, grp1, grp2,metrics_dic={'noddi':'_noddi_odi','noddi':'_m
                 pref = "control" + str(numcontrol) + "_"
                 numcontrol += 1
                 if os.path.isfile(metric_path):
+                    shutil.copyfile(
+                        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value + ".nii.gz",
+                        outputdir + "/" + value + "/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
                     type_dict[pref] = patient_path
             if control_info in grp2:
                 metric_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value +".nii.gz"
                 pref = "case" + str(numpatient) + "_"
                 numpatient += 1
                 if os.path.isfile(metric_path):
+                    shutil.copyfile(
+                        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value + ".nii.gz",
+                        outputdir + "/" + value + "/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
                     type_dict[pref] = patient_path
 
         # Verify that the matching between patient and FA is equivalent to the matching between patient and the computed metric
@@ -1020,25 +1027,12 @@ def regall(folder_path, grp1, grp2,metrics_dic={'noddi':'_noddi_odi','noddi':'_m
             metric_bool = False
             registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Unable to process the metric "+ key + " : " +value +"! Some subject have a FA but not the metric!\n")
-            registration_log.write("Subject with FA: \n" +json.dump(tbss_id))
-            registration_log.write("Subject with the metric: \n" + json.dump(type_dict))
+            registration_log.write("Subject with FA: \n" +json.encoder(tbss_id))
+            registration_log.write("Subject with the metric: \n" + json.encoder(type_dict))
+
+            shutil.rmtree(outputdir + "/" + value + "/",ignore_errors=True)
 
         if metric_bool:
-            # create the directory for the metric
-            makedir(folder_path + "/registration/" + value, folder_path + "/logs.txt", log_prefix)
-            # copy metric in directory
-            for p in patient_list:
-                patient_path = os.path.splitext(p)[0]
-                control_info = subj_type[patient_path]
-                if control_info in grp1:
-                    shutil.copyfile(
-                        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value + ".nii.gz",
-                        outputdir + "/"+value+"/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
-                if control_info in grp2:
-                    shutil.copyfile(
-                        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value + ".nii.gz",
-                        outputdir + "/"+value+"/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
-
             bashCommand = 'cd ' + outputdir + ' && tbss_non_FA ' + value
             bashcmd = bashCommand.split()
             print("Bash command is:\n{}\n".format(bashcmd))
