@@ -350,7 +350,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         makedir(eddy_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         if cuda:
-            eddycmd = cuda_name
+            eddycmd = "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; " + cuda_name
         else:
             eddycmd = "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; eddy"
 
