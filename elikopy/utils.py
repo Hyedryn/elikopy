@@ -802,8 +802,7 @@ def inference(T1_path, b0_d_path, model, device):
     # Return model
     return img_model
 
-
-def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2):
+def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2):
     """
     register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
     statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
@@ -813,15 +812,12 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
     :param grp1: List of number corresponding to the type of the patients to put in the first group (control group). Used so data is in right order for statistics
     :param grp2: List of number corresponding to the type of the patients to put in the second group (case group). Used so data is in right order for statistics
     :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats.
-    :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats.
     :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
     :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
     :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
     """
     starting_state = None if starting_state == "None" else starting_state
-    last_state = None if last_state == "None" else last_state
     assert starting_state in (None, "reg", "postreg", "prestats"), 'invalid starting state!'
-    assert last_state in (None, "preproc", "reg", "postreg", "prestats"), 'invalid last state!'
     assert registration_type in ("-T", "-t", "-n"), 'invalid registration type!'
     assert postreg_type in ("-S", "-T"), 'invalid postreg type!'
 
@@ -854,6 +850,7 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
         registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of registration\n")
         registration_log.flush()
+        type_dict = {}
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
             control_info = subj_type[patient_path]
@@ -863,12 +860,14 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
                     outputdir + "/origdata/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
                 pref = "control" + str(numcontrol) + "_"
                 numcontrol += 1
+                type_dict[pref] = patient_path
             if control_info in grp2:
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
                     outputdir + "/origdata/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
                 pref = "case" + str(numpatient) + "_"
                 numpatient += 1
+                type_dict[pref] = patient_path
 
             x_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim1", shell=True));
             x = x_val - 2
@@ -890,25 +889,18 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
 
+        import json
+        with open(folder_path + "/registration/"+"tbss_id.json", "w") as write_file:
+            json.dump(type_dict, write_file)
+
         registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of step 1\n")
         registration_log.flush()
 
-        # PERFORMS BACKUP FOR STARTING STATE
-        copy_tree(folder_path + "/registration/origdata", folder_path + "/registration/backup/registration_preproc/origdata")
-        copy_tree(folder_path + "/registration/FA", folder_path + "/registration/backup/registration_preproc/FA")
-
-        if last_state=="preproc":
-            registration_log.close()
-            return
 
     if starting_state in (None, "reg"):
         registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
-
-        if starting_state == "reg":
-            copy_tree(folder_path + "/registration/backup/registration_preproc/origdata", folder_path + "/registration/origdata")
-            copy_tree(folder_path + "/registration/backup/registration_preproc/FA", folder_path + "/registration/FA")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_2_reg '+ registration_type
         bashcmd = bashCommand.split()
@@ -922,22 +914,10 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
             "%d.%b %Y %H:%M:%S") + ": End of reg\n")
         registration_log.flush()
 
-        # PERFORMS BACKUP FOR STARTING STATE
-        from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/registration/FA", folder_path + "/registration/backup/registration_reg/FA")
-
-        if last_state=="reg":
-            registration_log.close()
-            return
-
     if starting_state in (None, "reg", "postreg"):
         registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of postreg\n")
         registration_log.flush()
-
-        if starting_state == "postreg":
-            copy_tree(folder_path + "/registration/backup/registration_preproc/origdata", folder_path + "/registration/origdata")
-            copy_tree(folder_path + "/registration/backup/registration_reg/FA", folder_path + "/registration/FA")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
         bashcmd = bashCommand.split()
@@ -951,21 +931,10 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
             "%d.%b %Y %H:%M:%S") + ": End of postreg\n")
         registration_log.flush()
 
-        copy_tree(folder_path + "/registration/stats", folder_path + "/registration/backup/registration_postreg/stats")
-
-        if last_state=="postreg":
-            registration_log.close()
-            return
-
     if starting_state in (None, "reg", "postreg", "prestats"):
         registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
         registration_log.flush()
-
-        if starting_state == "prestats":
-            copy_tree(folder_path + "/registration/backup/registration_preproc/origdata", folder_path + "/registration/origdata")
-            copy_tree(folder_path + "/registration/backup/registration_reg/FA", folder_path + "/registration/FA")
-            copy_tree(folder_path + "/registration/backup/registration_postreg/stats", folder_path + "/registration/stats")
 
         bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold)
         bashcmd = bashCommand.split()
@@ -980,114 +949,101 @@ def regall_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, 
             "%d.%b %Y %H:%M:%S") + ": End of prestats\n")
         registration_log.flush()
 
-        # PERFORMS BACKUP FOR STARTING STATE
-        from distutils.dir_util import copy_tree
-        copy_tree(folder_path + "/registration/stats", folder_path + "/registration/backup/registration_prestats/stats")
-
-        if last_state == "prestats":
-            registration_log.close()
-            return
-
     registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": End of FA TBSS, now starting non FA TBSS \n")
+        "%d.%b %Y %H:%M:%S") + ": End of FA Registration \n")
     registration_log.flush()
 
-    # ==================================================================================================================
-    odi_bool = True
-    for p in patient_list:
-        patient_path = os.path.splitext(p)[0]
-        odi_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_noddi_odi.nii.gz"
-        if os.path.isfile(odi_path) == False:
-            odi_bool = False
-    if odi_bool:
-        # create the directory for the metric
-        makedir(folder_path + "/registration/odi", folder_path + "/logs.txt", log_prefix)
-        # copy metric in directory
+def regall(folder_path, grp1, grp2,metrics_dic={'noddi':'_noddi_odi','noddi':'_mf_fvf_tot','diamond':'_diamon_kappa'}):
+    """
+    register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
+    statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
+
+    :return:
+    :param folder_path: path to the root directory.
+    :param grp1: List of number corresponding to the type of the patients to put in the first group (control group). Used so data is in right order for statistics
+    :param grp2: List of number corresponding to the type of the patients to put in the second group (case group). Used so data is in right order for statistics
+    :param metrics_dic: Dictionnary containing the microstructural metric that will be registered.
+    """
+
+    assert os.path.isdir(folder_path + "/registration/FA"),"No FA registration found! You first need to run regall_FA() before using this function!"
+
+    # create the output directory
+    log_prefix = "registration"
+    outputdir = folder_path + "/registration"
+    makedir(outputdir, folder_path + "/logs.txt", log_prefix)
+
+    import subprocess
+    registration_log = open(folder_path + "/registration/registration_logs.txt", "a+")
+
+    registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of microstructural metrics registration\n")
+    registration_log.flush()
+
+    # open the subject and is_control lists
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+    dest_subj_type = folder_path + "/subjects/subj_type.json"
+    with open(dest_subj_type, 'r') as f:
+        subj_type = json.load(f)
+
+    with open(folder_path + "/registration/"+"tbss_id.json") as json_file:
+        tbss_id = json.load(json_file)
+
+
+
+    for key, value in metrics_dic.items():
+        metric_bool = True
+        type_dict = {}
+        numpatient = 0
+        numcontrol = 0
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
             control_info = subj_type[patient_path]
             if control_info in grp1:
-                shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_noddi_odi.nii.gz",
-                    outputdir + "/odi/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
+                metric_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value +".nii.gz"
+                pref = "control" + str(numcontrol) + "_"
+                numcontrol += 1
+                if os.path.isfile(metric_path):
+                    type_dict[pref] = patient_path
             if control_info in grp2:
-                shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_noddi_odi.nii.gz",
-                    outputdir + "/odi/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
+                metric_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value +".nii.gz"
+                pref = "case" + str(numpatient) + "_"
+                numpatient += 1
+                if os.path.isfile(metric_path):
+                    type_dict[pref] = patient_path
 
-        bashCommand = 'cd ' + outputdir + ' && tbss_non_FA odi'
-        bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        registration_log.write(bashCommand + "\n")
-        registration_log.flush()
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log, stderr=subprocess.STDOUT)
-        output, error = process.communicate()
-    # ==================================================================================================================
-    kappa_bool = True
-    for p in patient_list:
-        patient_path = os.path.splitext(p)[0]
-        kappa_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_diamon_kappa.nii.gz"
-        if os.path.isfile(kappa_path) == False:
-            kappa_bool = False
-    if kappa_bool:
-        # create the directory for the metric
-        makedir(folder_path + "/registration/kappa", folder_path + "/logs.txt", log_prefix)
-        # copy metric in directory
-        for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
-            control_info = subj_type[patient_path]
-            if control_info in grp1:
-                shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_diamond_kappa.nii.gz",
-                    outputdir + "/kappa/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
-            if control_info in grp2:
-                shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_diamond_kappa.nii.gz",
-                    outputdir + "/kappa/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
+        # Verify that the matching between patient and FA is equivalent to the matching between patient and the computed metric
+        if type_dict != tbss_id:
+            metric_bool = False
+            registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Unable to process the metric "+ key + " : " +value +"! Some subject have a FA but not the metric!\n")
+            registration_log.write("Subject with FA: \n" +json.dump(tbss_id))
+            registration_log.write("Subject with the metric: \n" + json.dump(type_dict))
 
-        bashCommand = 'cd ' + outputdir + ' && tbss_non_FA kappa'
-        bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        registration_log.write(bashCommand + "\n")
-        registration_log.flush()
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,
-                                   stderr=subprocess.STDOUT)
-        output, error = process.communicate()
-    # ==================================================================================================================
-    fvf_tot_bool = True
-    for p in patient_list:
-        patient_path = os.path.splitext(p)[0]
-        fvf_tot_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_mf_fvf_tot.nii.gz"
-        if os.path.isfile(fvf_tot_path) == False:
-            fvf_tot_bool = False
-    if fvf_tot_bool:
-        # create the directory for the metric
-        makedir(folder_path + "/registration/fvf_tot", folder_path + "/logs.txt", log_prefix)
-        # copy metric in directory
-        for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
-            control_info = subj_type[patient_path]
-            if control_info in grp1:
-                shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_mf_fvf_tot.nii.gz",
-                    outputdir + "/fvf_tot/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
-            if control_info in grp2:
-                shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + patient_path + "_mf_fvf_tot.nii.gz",
-                    outputdir + "/fvf_tot/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
+        if metric_bool:
+            # create the directory for the metric
+            makedir(folder_path + "/registration/" + value, folder_path + "/logs.txt", log_prefix)
+            # copy metric in directory
+            for p in patient_list:
+                patient_path = os.path.splitext(p)[0]
+                control_info = subj_type[patient_path]
+                if control_info in grp1:
+                    shutil.copyfile(
+                        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value + ".nii.gz",
+                        outputdir + "/"+value+"/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
+                if control_info in grp2:
+                    shutil.copyfile(
+                        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + key + '/' + patient_path + value + ".nii.gz",
+                        outputdir + "/"+value+"/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
 
-        bashCommand = 'cd ' + outputdir + ' && tbss_non_FA fvf_tot'
-        bashcmd = bashCommand.split()
-        print("Bash command is:\n{}\n".format(bashcmd))
-        registration_log.write(bashCommand + "\n")
-        registration_log.flush()
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,
-                                   stderr=subprocess.STDOUT)
-        output, error = process.communicate()
-    # ==================================================================================================================
-
-    # suppress the backup
-    shutil.rmtree(folder_path + "/registration/backup")
+            bashCommand = 'cd ' + outputdir + ' && tbss_non_FA ' + value
+            bashcmd = bashCommand.split()
+            print("Bash command is:\n{}\n".format(bashcmd))
+            registration_log.write(bashCommand + "\n")
+            registration_log.flush()
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log, stderr=subprocess.STDOUT)
+            output, error = process.communicate()
 
     registration_log.close()
 
