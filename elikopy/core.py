@@ -324,7 +324,7 @@ class Elikopy:
             f.close()
 
             shutil.rmtree(folder_path + '/eddy_squad', ignore_errors=True)
-            bashCommand = 'export OMP_NUM_THREADS='+str(tot_cpu)+' ; export FSLPARALLEL='+str(tot_cpu)+' ; eddy_squad "' + dest_list + '" --update -o ' + folder_path + '/eddy_squad'
+            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; eddy_squad "' + dest_list + '" --update -o ' + folder_path + '/eddy_squad'
             bashcmd = bashCommand.split()
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True)
             output, error = process.communicate()
