@@ -350,7 +350,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         makedir(eddy_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         if cuda:
-            eddycmd = cuda_name
+            eddycmd = "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; " + cuda_name
         else:
             eddycmd = "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; eddy"
 
@@ -2267,6 +2267,11 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
     patient_path = os.path.splitext(p)[0]
 
+    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
+
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p)
+
     mf_path = folder_path + '/' + patient_path + "/dMRI/microstructure/mf"
     makedir(mf_path, folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", log_prefix)
 
@@ -2295,12 +2300,16 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
     # compute numfasc and peaks
     diamond_path = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond"
     if os.path.exists(diamond_path):
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Diamond Path found! MF will be based on diamond \n")
         tensor_files0 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t0.nii.gz'
         tensor_files1 = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t1.nii.gz'
         fracs_file = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nii.gz'
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,
                                                  peakmode='tensor', mask=mask, frac12=fracs_file)
     else:
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Diamond Path not found! MF will be based on CSD \n")
         sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue - 5) <= bvals, bvals <= (CSD_bvalue + 5)))
         data_CSD = data[..., sel_b]
         gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
@@ -2327,6 +2336,8 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
                                                  mask=mask, frac12=None)
 
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Loading of MF dic\n")
     # get the dictionary
     mf_model = mf.MFModel(dictionary_path)
 
@@ -2334,9 +2345,15 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
     csf_mask = True
     ear_mask = False  # (numfasc == 1)
 
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
+
     # Fit to data:
     MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask,
-                          ear_mask=ear_mask, verbose=3, parallel=False)
+                          ear_mask=ear_mask, verbose=3, parallel=True)
+
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of fitting\n")
 
     # extract info
     M0 = MF_fit.M0
@@ -2383,7 +2400,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
-    f = open(folder_path + '/' + patient_path + "/dMRI/microstructure/mf/mf_logs.txt", "a+")
+
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
     f.close()
