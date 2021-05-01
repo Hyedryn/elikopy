@@ -243,7 +243,7 @@ class Elikopy:
 
         job_list = []
 
-        f=open(folder_path + "/logs.txt", "a+"
+        f=open(folder_path + "/logs.txt", "a+")
 
         core_count = 1 if cpus is None else cpus
         
