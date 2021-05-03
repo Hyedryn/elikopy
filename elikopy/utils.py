@@ -1108,6 +1108,49 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
             "%d.%b %Y %H:%M:%S") + ": End of autoaq\n")
         randomise_log.flush()
 
+        randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Starting region based analysis\n")
+        randomise_log.flush()
+
+        import pandas as pd
+        import lxml.etree as etree
+        from dipy.io.image import load_nifti
+
+        # path to the atlas directory of FSL
+        fsldir = os.getenv('FSLDIR')
+        atlas_path = fsldir + "/data/atlases"
+
+        # list of directory and their labels
+        xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml", atlas_path + "/HarvardOxford-Subcortical.xml"]
+        atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz"]
+        name = ["MNI", "HarvardCortical", "HarvardSubcortical"]
+
+        # open the data
+        data, data_affine = load_nifti(outputdir + '/stats/all_' + key + 'nii.gz')
+
+        for iteration in range(len(atlases)):
+
+            # read the labels in xml file
+            x = etree.parse(xmlName[iteration])
+            labels = []
+            for elem in x.iter():
+                if elem.tag == 'label':
+                    labels.append([elem.attrib['index'], elem.text])
+            labels = np.array(labels)[:, 1]
+
+            # open the atlas
+            atlas, atlas_affine = load_nifti(atlases[iteration])
+
+            matrix = np.zeros((np.shape(data)[-1], np.shape(atlas)[-1]))
+            for i in range(np.shape(atlas)[-1]):
+                for j in range(np.shape(data)[-1]):
+                    patient = data[..., j]
+                    region = atlas[..., i]
+                    mean_fa = np.sum(patient * region) / np.sum(region)
+                    matrix[j, i] = mean_fa
+            df = pd.DataFrame(matrix, columns=labels)
+            df.to_csv(outputdir + '/stats/regionWise_' + name[iteration] + key + '.csv')
+
 
     randomise_log.close()
 
