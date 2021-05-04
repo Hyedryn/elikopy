@@ -647,7 +647,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         X = X1 + [x + np.shape(mask_raw)[1] for x in X2] + [x + np.shape(mask_raw)[1] * 2 for x in X3] + [
             x + np.shape(mask_raw)[1] * 3 for x in X4] + [x + np.shape(mask_raw)[1] * 4 for x in X5]
         if numstep == 1:
-            plt.scatter(X, Y, marker='.', s=1, c='red')
+            fig_scat = plt.scatter(X, Y, marker='.', s=1, c='red')
         else:
             axs[current_subplot].scatter(X, Y, marker='.', s=1, c='red')
         plot_bet = np.zeros((np.shape(bet_data)[0], np.shape(bet_data)[1] * 5))
@@ -658,8 +658,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         plot_bet[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = bet_data[..., sl + 10, shell_index[0]]
         if numstep==1:
             plt.imshow(plot_bet, cmap='gray')
-            plt.set_axis_off()
-            plt.set_title('brain extraction')
+            #fig_scat.set_axis_off()
+            #plt.set_title('brain extraction')
         else:
             axs[current_subplot].imshow(plot_bet, cmap='gray')
             axs[current_subplot].set_axis_off()

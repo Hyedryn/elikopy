@@ -1192,7 +1192,7 @@ def merge_all_reports(folder_path):
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
-    
+
     merger = PdfFileMerger()
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
