@@ -1154,8 +1154,8 @@ class Elikopy:
         if slurm:
             job = {
                 "wrap": "python -c 'from elikopy.utils import regall; regall(\"" + str(
-                    folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",metrics_dic=\'" + str(
-                    json.dumps(metrics_dic)) + "\')'",
+                    folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",metrics_dic=" + str(
+                    json.dumps(metrics_dic)) + ")'",
                 "job_name": "regall",
                 "ntasks": 1,
                 "cpus_per_task": 1,
@@ -1226,8 +1226,8 @@ class Elikopy:
         if slurm:
             job = {
                 "wrap": "python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
-                    folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",metrics_dic=\'" + str(
-                    json.dumps(metrics_dic)) + "\')'",
+                    folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",metrics_dic=" + str(
+                    json.dumps(metrics_dic)) + ")'",
                 "job_name": "randomise_all",
                 "ntasks": 1,
                 "cpus_per_task": 1,
