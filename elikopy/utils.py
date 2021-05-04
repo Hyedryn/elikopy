@@ -1186,7 +1186,7 @@ def get_patient_list_by_types(folder_path,type=None):
 
 
 def merge_all_reports(folder_path):
-    from PyPDF2 import PdfFileMerger, PdfFileWriter, PdfFileReader
+    from PyPDF2 import PdfFileWriter, PdfFileReader
     import json, os
 
     dest_success = folder_path + "/subjects/subj_list.json"
@@ -1205,5 +1205,13 @@ def merge_all_reports(folder_path):
                 page.compressContentStreams()
                 writer.addPage(page)
 
-    with open(folder_path + '/quality_control_all.pdf', 'wb') as f:
+    with open(folder_path + '/quality_control_all_tmp.pdf', 'wb') as f:
         writer.write(f)
+
+    #try to compress pdf with ghostscript
+    bashCommand = "command -v gc && gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dNOPAUSE -dQUIET -dBATCH -sOutputFile=" + folder_path + '/quality_control_all.pdf ' + folder_path + '/quality_control_all_tmp.pdf || mv ' + folder_path + '/quality_control_all_tmp.pdf '  + folder_path + '/quality_control_all.pdf'
+    bashcmd = bashCommand.split()
+    print("Bash command is:\n{}\n".format(bashcmd))
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True,
+                               stderr=subprocess.STDOUT)
+    output, error = process.communicate()
