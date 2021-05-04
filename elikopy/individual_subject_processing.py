@@ -2033,7 +2033,7 @@ def noddi_amico_solo(folder_path, p):
     f.close()
 
 
-def diamond_solo(folder_path, p, box=None):
+def diamond_solo(folder_path, p, core_count=4, box=None):
     """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
 
     :param folder_path: the path to the root directory.
@@ -2086,7 +2086,7 @@ def diamond_solo(folder_path, p, box=None):
             "%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
         f.close()
 
-    bashCommand = 'crlDCIEstimate --input "' + folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc 4 --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
+    bashCommand = 'export OMP_NUM_THREADS=' +str(core_count)+ ' ; crlDCIEstimate --input "' + folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc ' + str(core_count) + ' --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
 
     import subprocess
     bashcmd = bashCommand.split()

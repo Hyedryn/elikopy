@@ -247,7 +247,7 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
 
         core_count = 1 if cpus is None else cpus
-        
+
         if starting_state!="post_report":
             for p in patient_list:
                 patient_path = os.path.splitext(p)[0]
@@ -737,7 +737,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
         f.close()
 
-    def diamond(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def diamond(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Wrapper function for DIAMOND. Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
 
         :param folder_path: path to the root directory.
@@ -764,8 +764,11 @@ class Elikopy:
         if patient_list_m:
             patient_list = patient_list_m
 
+        core_count = 4 if cpus is None else cpus
+
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
+
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
 
@@ -775,19 +778,19 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/subjects\",\"" + p + "\", core_count="+str(core_count)+")'",
                         "job_name": "diamond_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 4,
                         "mem_per_cpu": 6096,
-                        "time": "14:00:00",
+                        "time": "30:00:00",
                         "mail_user": slurm_email,
                         "mail_type": "FAIL",
                         "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + "slurm-%j.out",
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + "slurm-%j.err",
                     }
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
 
@@ -798,7 +801,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                diamond_solo(folder_path + "/subjects",p)
+                diamond_solo(folder_path + "/subjects",p,core_count=core_count)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied diamond on patient %s\n" % p)
                 f.flush()
         f.close()
