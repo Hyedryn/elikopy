@@ -958,7 +958,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
     registration_log.flush()
 
 
-def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamon_kappa':'diamond'}):
+def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
     """
     register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
     statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
@@ -1045,7 +1045,7 @@ def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_to
     registration_log.close()
 
 
-def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamon_kappa':'diamond'}):
+def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
 
     outputdir = folder_path + "/registration"
     log_prefix = "randomise"
