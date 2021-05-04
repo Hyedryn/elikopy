@@ -1196,7 +1196,7 @@ def merge_all_reports(folder_path):
     merger = PdfFileMerger()
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
-        pdf_path= folder_path + '/' + patient_path + '/quality_control.pdf'
+        pdf_path= folder_path + '/subjects/' + patient_path + '/quality_control.pdf'
         if(os.path.exists(pdf_path)):
             merger.append(pdf_path)
 
