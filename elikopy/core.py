@@ -13,7 +13,7 @@ import subprocess
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
     mf_solo, noddi_amico_solo
-from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils
+from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall_FA, regall
 
 
 def dicom_to_nifti(folder_path):
@@ -1037,3 +1037,152 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of Export\n")
         f.close()
 
+    def regall_FA(self, folder_path=None, grp1=None, grp2=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
+        """ Wrapper function for TBSS. Perform tract base spatial statistics between the control data and case data.
+        DTI needs to have been performed on the data first !!
+
+        :param folder_path: path to the root directory.
+        :param grp1: List of number corresponding to the type of the patients to put in the first group.
+        :param grp2: List of number corresponding to the type of the patients to put in the second group.
+        :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise.
+        :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats, design or randomise.
+        :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
+        :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
+        :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
+
+        assert registration_type in ("-T", "-t", "-n"), 'invalid registration type!'
+        assert postreg_type in ("-S", "-T"), 'invalid postreg type!'
+        assert starting_state in (None, "reg", "postreg", "prestats"), 'invalid starting state!'
+
+        if grp1 is None:
+            grp1 = [1]
+        if grp2 is None:
+            grp2 = [2]
+
+        log_prefix = "REGALL_FA"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of regall_FA with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        reg_path = folder_path + "/registration"
+        makedir(reg_path,folder_path + "/logs.txt",log_prefix)
+
+        job_list = []
+        f = open(folder_path + "/logs.txt", "a+")
+        if slurm:
+            job = {
+                "wrap": "python -c 'from elikopy.utils import regall_FA; regall_FA(\"" + str(folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",registration_type=\"" + str(registration_type) + "\",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + ")'",
+                "job_name": "regall_FA",
+                "ntasks": 1,
+                "cpus_per_task": 1,
+                "mem_per_cpu": 8096,
+                "time": "20:00:00",
+                "mail_user": slurm_email,
+                "mail_type": "FAIL",
+                "output": reg_path + '/' + "slurm-%j.out",
+                "error": reg_path + '/' + "slurm-%j.err",
+            }
+            job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
+            job["cpus_per_task"] = job["cpus_per_task"] if slurm_tasks is None else slurm_tasks
+            job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+            p_job_id = {}
+            p_job_id["id"] = submit_job(job)
+            p_job_id["name"] = "regall_FA"
+            job_list.append(p_job_id)
+            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            regall_FA(folder_path=folder_path, grp1=grp1, grp2=grp2, starting_state=starting_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold)
+            f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied REGALL_FA \n")
+            f.flush()
+        f.close()
+
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, "REGALL_FA")
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of REGALL_FA\n")
+        f.close()
+
+    def regall(self, folder_path=None, grp1=None, grp2=None, metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamon_kappa':'diamond'},
+               slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
+        """ Wrapper function for TBSS. Perform tract base spatial statistics between the control data and case data.
+        DTI needs to have been performed on the data first !!
+
+        :param folder_path: path to the root directory.
+        :param grp1: List of number corresponding to the type of the patients to put in the first group.
+        :param grp2: List of number corresponding to the type of the patients to put in the second group.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
+
+        if grp1 is None:
+            grp1 = [1]
+        if grp2 is None:
+            grp2 = [2]
+
+        log_prefix = "REGALL"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of regall with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        reg_path = folder_path + "/registration"
+        makedir(reg_path, folder_path + "/logs.txt", log_prefix)
+
+        job_list = []
+        f = open(folder_path + "/logs.txt", "a+")
+        if slurm:
+            job = {
+                "wrap": "python -c 'from elikopy.utils import regall; regall(\"" + str(
+                    folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",metrics_dic=\"" + str(
+                    metrics_dic) + "\")'",
+                "job_name": "regall",
+                "ntasks": 1,
+                "cpus_per_task": 1,
+                "mem_per_cpu": 8096,
+                "time": "20:00:00",
+                "mail_user": slurm_email,
+                "mail_type": "FAIL",
+                "output": reg_path + '/' + "slurm-%j.out",
+                "error": reg_path + '/' + "slurm-%j.err",
+            }
+            job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
+            job["cpus_per_task"] = job["cpus_per_task"] if slurm_tasks is None else slurm_tasks
+            job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+            p_job_id = {}
+            p_job_id["id"] = submit_job(job)
+            p_job_id["name"] = "regall_FA"
+            job_list.append(p_job_id)
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            regall(folder_path=folder_path, grp1=grp1, grp2=grp2, metrics_dic=metrics_dic)
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully applied REGALL \n")
+            f.flush()
+        f.close()
+
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, "REGALL")
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write(
+            "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of REGALL\n")
+        f.close()
