@@ -1209,7 +1209,7 @@ def merge_all_reports(folder_path):
         writer.write(f)
 
     #try to compress pdf with ghostscript
-    bashCommand = "command -v gc && gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dNOPAUSE -dQUIET -dBATCH -sOutputFile=" + folder_path + '/quality_control_all.pdf ' + folder_path + '/quality_control_all_tmp.pdf || mv ' + folder_path + '/quality_control_all_tmp.pdf '  + folder_path + '/quality_control_all.pdf'
+    bashCommand = "command -v gs && gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dNOPAUSE -dQUIET -dBATCH -sOutputFile=" + folder_path + '/quality_control_all.pdf ' + folder_path + '/quality_control_all_tmp.pdf || mv ' + folder_path + '/quality_control_all_tmp.pdf '  + folder_path + '/quality_control_all.pdf'
     bashcmd = bashCommand.split()
     print("Bash command is:\n{}\n".format(bashcmd))
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True,
