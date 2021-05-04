@@ -1193,7 +1193,7 @@ class Elikopy:
 
 
 
-    def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamon_kappa':'diamond'},
+    def randomise_all(self, folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamon_kappa':'diamond'},
                slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
         """ Wrapper function for randomise_all. Perform tract base spatial statistics between the control data and case data.
         DTI needs to have been performed on the data first !!

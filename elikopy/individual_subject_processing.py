@@ -2392,7 +2392,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1):
     # save_nifti(mf_path + '/' + patient_path + '_mf_MSE.nii.gz', MSE.astype(np.float32), affine)
     # save_nifti(mf_path + '/' + patient_path + '_mf_R2.nii.gz', R2.astype(np.float32), affine)
 
-    MF_fit.write_nifti(mf_path + '/' + patient_path + '_mf_.nii.gz', affine=affine)
+    MF_fit.write_nifti(mf_path + '/' + patient_path + '_mf.nii.gz', affine=affine)
 
     #All the outputed metrics can be obtrained using MF_fit.param_names
     # Code used in MF:
