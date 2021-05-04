@@ -13,7 +13,7 @@ import subprocess
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
     mf_solo, noddi_amico_solo
-from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall_FA, regall
+from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall_FA, regall, randomise_all
 
 
 def dicom_to_nifti(folder_path):
@@ -1168,7 +1168,7 @@ class Elikopy:
             job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
             p_job_id = {}
             p_job_id["id"] = submit_job(job)
-            p_job_id["name"] = "regall_FA"
+            p_job_id["name"] = "regall"
             job_list.append(p_job_id)
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
@@ -1185,4 +1185,76 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         f.write(
             "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of REGALL\n")
+        f.close()
+
+
+
+
+    def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamon_kappa':'diamond'},
+               slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
+        """ Wrapper function for randomise_all. Perform tract base spatial statistics between the control data and case data.
+        DTI needs to have been performed on the data first !!
+
+        :param folder_path: path to the root directory.
+        :param grp1: List of number corresponding to the type of the patients to put in the first group.
+        :param grp2: List of number corresponding to the type of the patients to put in the second group.
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
+
+        log_prefix = "randomise_all"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of randomise_all with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        reg_path = folder_path + "/registration"
+        makedir(reg_path, folder_path + "/logs.txt", log_prefix)
+
+        job_list = []
+        f = open(folder_path + "/logs.txt", "a+")
+        if slurm:
+            job = {
+                "wrap": "python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
+                    folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",metrics_dic=\"" + str(
+                    metrics_dic) + "\")'",
+                "job_name": "randomise_all",
+                "ntasks": 1,
+                "cpus_per_task": 1,
+                "mem_per_cpu": 8096,
+                "time": "20:00:00",
+                "mail_user": slurm_email,
+                "mail_type": "FAIL",
+                "output": reg_path + '/' + "slurm-%j.out",
+                "error": reg_path + '/' + "slurm-%j.err",
+            }
+            job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
+            job["cpus_per_task"] = job["cpus_per_task"] if slurm_tasks is None else slurm_tasks
+            job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+            p_job_id = {}
+            p_job_id["id"] = submit_job(job)
+            p_job_id["name"] = "randomise_all"
+            job_list.append(p_job_id)
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            randomise_all(folder_path=folder_path, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic)
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully applied randomise_all \n")
+            f.flush()
+        f.close()
+
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, "randomise_all")
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write(
+            "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of randomise_all\n")
         f.close()
