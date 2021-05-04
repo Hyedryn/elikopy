@@ -1028,8 +1028,8 @@ def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_to
             metric_bool = False
             registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Unable to process the metric "+ key + " : " +value +"! Some subject have a FA but not the metric!\n")
-            registration_log.write("Subject with FA: \n" +json.encoder(tbss_id))
-            registration_log.write("Subject with the metric: \n" + json.encoder(type_dict))
+            registration_log.write("Subject with FA: \n" +json.dumps(tbss_id, sort_keys=True, indent=4))
+            registration_log.write("Subject with the metric: \n" + json.dumps(type_dict, sort_keys=True, indent=4))
 
             shutil.rmtree(outputdir + "/" + key + "/",ignore_errors=True)
 
