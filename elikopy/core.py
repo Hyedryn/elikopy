@@ -434,7 +434,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
         f.close()
 
-    def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Wrapper function for microstructure estimation. Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
 
         :param folder_path: the path to the root directory.
@@ -463,6 +463,8 @@ class Elikopy:
         if patient_list_m:
             patient_list = patient_list_m
 
+        core_count = 4 if cpus is None else cpus
+
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
@@ -473,10 +475,10 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + str(CSD_bvalue) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ")'",
                         "job_name": "mf_" + p,
                         "ntasks": 1,
-                        "cpus_per_task": 1,
+                        "cpus_per_task": core_count,
                         "mem_per_cpu": 8096,
                         "time": "20:00:00",
                         "mail_user": slurm_email,
@@ -486,7 +488,7 @@ class Elikopy:
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
+                p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
@@ -495,7 +497,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                mf_solo(folder_path + "/subjects", p, dictionary_path, CSD_bvalue = CSD_bvalue)
+                mf_solo(folder_path + "/subjects", p, dictionary_path, CSD_bvalue = CSD_bvalue, core_count=core_count)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
                 f.flush()
         f.close()

@@ -2259,7 +2259,7 @@ def diamond_solo(folder_path, p, core_count=4, box=None):
     f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None):
+def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1):
     """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
 
     :param folder_path: the path to the root directory.
