@@ -1155,3 +1155,50 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
     randomise_log.close()
 
 
+def get_patient_list_by_types(folder_path,type=None):
+
+    import json, os
+
+    # open the subject list and subj_type dic
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+    dest_subj_type = folder_path + "/subjects/subj_type.json"
+    with open(dest_subj_type, 'r') as f:
+        subj_type = json.load(f)
+
+    patients_by_id = {}
+
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        control_info = subj_type[patient_path]
+        if control_info not in patients_by_id:
+            patients_by_id[control_info] = []
+        patients_by_id[control_info].append(patient_path)
+
+    if type:
+        print(patients_by_id.get(type,"Type not found!"))
+    else:
+        for key, value in patients_by_id.items():
+            print("Patient list of cat " + str(key) + ": \n")
+            print(value)
+            print("\n")
+
+
+def merge_all_reports(folder_path):
+    from PyPDF2 import PdfFileMerger
+    import json, os
+
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
+    merger = PdfFileMerger()
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+        pdf_path= folder_path + '/subjects/' + patient_path + '/quality_control.pdf'
+        if(os.path.exists(pdf_path)):
+            merger.append(pdf_path)
+
+    merger.write(folder_path + '/quality_control_all.pdf')
+    merger.close()

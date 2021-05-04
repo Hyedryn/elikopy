@@ -1,4 +1,4 @@
-dipy>=1.2.0
+dipy>=1.4.0
 dmipy>=1.0.0
 scipy>=1.4.0
 numpy>=1.19.0

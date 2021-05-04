@@ -647,7 +647,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         X = X1 + [x + np.shape(mask_raw)[1] for x in X2] + [x + np.shape(mask_raw)[1] * 2 for x in X3] + [
             x + np.shape(mask_raw)[1] * 3 for x in X4] + [x + np.shape(mask_raw)[1] * 4 for x in X5]
         if numstep == 1:
-            plt.scatter(X, Y, marker='.', s=1, c='red')
+            fig_scat = plt.scatter(X, Y, marker='.', s=1, c='red')
         else:
             axs[current_subplot].scatter(X, Y, marker='.', s=1, c='red')
         plot_bet = np.zeros((np.shape(bet_data)[0], np.shape(bet_data)[1] * 5))
@@ -658,8 +658,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         plot_bet[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = bet_data[..., sl + 10, shell_index[0]]
         if numstep==1:
             plt.imshow(plot_bet, cmap='gray')
-            plt.set_axis_off()
-            plt.set_title('brain extraction')
+            #fig_scat.set_axis_off()
+            #plt.set_title('brain extraction')
         else:
             axs[current_subplot].imshow(plot_bet, cmap='gray')
             axs[current_subplot].set_axis_off()
@@ -2033,7 +2033,7 @@ def noddi_amico_solo(folder_path, p):
     f.close()
 
 
-def diamond_solo(folder_path, p, box=None):
+def diamond_solo(folder_path, p, core_count=4, box=None):
     """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
 
     :param folder_path: the path to the root directory.
@@ -2086,7 +2086,7 @@ def diamond_solo(folder_path, p, box=None):
             "%d.%b %Y %H:%M:%S") + ": brain mask based on diffusion data is used \n")
         f.close()
 
-    bashCommand = 'crlDCIEstimate --input "' + folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc 4 --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
+    bashCommand = 'export OMP_NUM_THREADS=' +str(core_count)+ ' ; crlDCIEstimate --input "' + folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc ' + str(core_count) + ' --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
 
     import subprocess
     bashcmd = bashCommand.split()
