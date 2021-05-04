@@ -1130,6 +1130,7 @@ class Elikopy:
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
 
+
         if grp1 is None:
             grp1 = [1]
         if grp2 is None:
@@ -1154,7 +1155,7 @@ class Elikopy:
             job = {
                 "wrap": "python -c 'from elikopy.utils import regall; regall(\"" + str(
                     folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",metrics_dic=\"" + str(
-                    metrics_dic) + "\")'",
+                    json.dumps(metrics_dic)) + "\")'",
                 "job_name": "regall",
                 "ntasks": 1,
                 "cpus_per_task": 1,
@@ -1226,7 +1227,7 @@ class Elikopy:
             job = {
                 "wrap": "python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
                     folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",metrics_dic=\"" + str(
-                    metrics_dic) + "\")'",
+                    json.dumps(metrics_dic)) + "\")'",
                 "job_name": "randomise_all",
                 "ntasks": 1,
                 "cpus_per_task": 1,
