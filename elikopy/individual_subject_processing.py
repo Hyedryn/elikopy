@@ -2121,7 +2121,8 @@ def diamond_solo(folder_path, p, box=None):
     fractions, _ = load_nifti(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + "_diamond_fractions.nii.gz")
     residual, _ = load_nifti(folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + "_diamond_residuals.nii.gz")
     data, _ = load_nifti(folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz')
-    reconstructed = data - np.squeeze(residual)
+    residual = np.squeeze(residual)
+    reconstructed = data - residual
 
     metric1 = np.copy(mosemap)
     metric2 = np.copy(fractions[...,0])
