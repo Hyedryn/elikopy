@@ -1186,19 +1186,24 @@ def get_patient_list_by_types(folder_path,type=None):
 
 
 def merge_all_reports(folder_path):
-    from PyPDF2 import PdfFileMerger
+    from PyPDF2 import PdfFileMerger, PdfFileWriter, PdfFileReader
     import json, os
 
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
-    merger = PdfFileMerger()
+    writer = PdfFileWriter()
+
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
-        pdf_path= folder_path + '/subjects/' + patient_path + '/quality_control.pdf'
-        if(os.path.exists(pdf_path)):
-            merger.append(pdf_path)
+        pdf_path = folder_path + '/subjects/' + patient_path + '/quality_control.pdf'
+        if (os.path.exists(pdf_path)):
+            reader = PdfFileReader(pdf_path)
+            for i in range(reader.numPages):
+                page = reader.getPage(i)
+                page.compressContentStreams()
+                writer.addPage(page)
 
-    merger.write(folder_path + '/quality_control_all.pdf')
-    merger.close()
+    with open(folder_path + '/quality_control_all.pdf', 'wb') as f:
+        writer.write(f)
