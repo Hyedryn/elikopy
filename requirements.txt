@@ -17,3 +17,4 @@ future
 fpdf
 scikit-image
 PyPDF2
+lxml

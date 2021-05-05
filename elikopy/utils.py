@@ -1131,7 +1131,7 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
         name = ["MNI", "HarvardCortical", "HarvardSubcortical"]
 
         # open the data
-        data, data_affine = load_nifti(outputdir + '/stats/all_' + key + 'nii.gz')
+        data, data_affine = load_nifti(outputdir + '/stats/all_' + key + '.nii.gz')
 
         for iteration in range(len(atlases)):
 
