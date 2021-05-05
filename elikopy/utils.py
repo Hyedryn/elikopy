@@ -1045,7 +1045,7 @@ def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_to
     registration_log.close()
 
 
-def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
+def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1):
 
     outputdir = folder_path + "/registration"
     log_prefix = "randomise"
@@ -1054,13 +1054,18 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
 
     randomise_log = open(folder_path + "/registration/stats/randomise_log.txt", "a+")
 
+    if core_count==1:
+        randomise_type= "randomise"
+    else:
+        randomise_type = "randomise_parallel"
+
     for key, value in metrics_dic.items():
         if skeletonised:
             outkey = key + '_skeletonised'
-            bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_' + key + '_skeletonised -o '+ outkey +' -m mean_FA_skeleton_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
+            bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && ' + randomise_type + ' -i all_' + key + '_skeletonised -o '+ outkey +' -m mean_FA_skeleton_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
         else:
             outkey = key
-            bashCommand1 = 'cd ' + outputdir + '/stats ' + ' && randomise -i all_' + key + ' -o ' + key + ' -m mean_FA_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
+            bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && ' + randomise_type + ' -i all_' + key + ' -o ' + key + ' -m mean_FA_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
 
         bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_cortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_cortical.txt'
         bashCommand3 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_cortical.txt'

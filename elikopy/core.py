@@ -1194,7 +1194,7 @@ class Elikopy:
 
 
     def randomise_all(self, folder_path=None,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
-               slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
+               slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Wrapper function for randomise_all. Perform tract base spatial statistics between the control data and case data.
         DTI needs to have been performed on the data first !!
 
@@ -1221,16 +1221,18 @@ class Elikopy:
         reg_path = folder_path + "/registration"
         makedir(reg_path, folder_path + "/logs.txt", log_prefix)
 
+        core_count = 1 if cpus is None else cpus
+
         job_list = []
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
                 "wrap": "python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
-                    folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",metrics_dic=" + str(
+                    folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",core_count=" + str(core_count) + ",metrics_dic=" + str(
                     json.dumps(metrics_dic)) + ")'",
                 "job_name": "randomise_all",
                 "ntasks": 1,
-                "cpus_per_task": 1,
+                "cpus_per_task": core_count,
                 "mem_per_cpu": 8096,
                 "time": "20:00:00",
                 "mail_user": slurm_email,
@@ -1239,7 +1241,6 @@ class Elikopy:
                 "error": reg_path + '/' + "slurm-%j.err",
             }
             job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
-            job["cpus_per_task"] = job["cpus_per_task"] if slurm_tasks is None else slurm_tasks
             job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
             p_job_id = {}
             p_job_id["id"] = submit_job(job)
@@ -1248,7 +1249,7 @@ class Elikopy:
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            randomise_all(folder_path=folder_path, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic)
+            randomise_all(folder_path=folder_path, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic,core_count=cpus)
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied randomise_all \n")
             f.flush()
