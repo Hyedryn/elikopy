@@ -220,8 +220,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         with open(folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt') as f:
             line = f.read()
-            line = line.replace('\r\n',' ')
-            line = line.replace('\n', ' ')
+            line = " ".join(line.split())
             topup_index = [int(s) for s in line.split(' ')]
 
         with open(folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
