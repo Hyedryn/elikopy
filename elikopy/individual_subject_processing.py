@@ -291,7 +291,15 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             output, error = process.communicate()
 
             if not eddy:
-                bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+                inindex=""
+                first=True
+                for r in roi:
+                    if first:
+                        inindex = str(topup_index[r])
+                    else:
+                        inindex = inindex + "," + str(topup_index[r])
+
+                bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex='+inindex+' --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
                 process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
                                             stderr=subprocess.STDOUT)
@@ -555,7 +563,8 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     # topup data
     bool_topup = isdir(preproc_path + "topup")
     if bool_topup:
-        topup_data, topup_affine = load_nifti(preproc_path + "topup/" + patient_path + "_topup_corr.nii.gz")
+        if not eddy:
+            topup_data, topup_affine = load_nifti(preproc_path + "topup/" + patient_path + "_topup_corr.nii.gz")
         field_data, field_affine = load_nifti(
             preproc_path + "topup/" + patient_path + "_topup_estimate_fieldcoef.nii.gz")
 
@@ -632,7 +641,9 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
     sl = np.shape(bet_data)[2] // 2
     for i in range(len(list_bval)):
         shell_index = np.where(np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50))[0]
-        numstep = 1 + bool_mppca + bool_gibbs + bool_topup + bool_eddy
+        numstep = 1 + bool_mppca + bool_gibbs  + bool_eddy
+        if not eddy:
+            numstep = numstep + bool_topup
 
         current_subplot = 0
         fig, axs = plt.subplots(numstep, 1, figsize=(14, 3 * numstep))
@@ -699,7 +710,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             axs[current_subplot].set_title('Gibbs ringing correction')
             current_subplot = current_subplot + 1
         # plot topup
-        if bool_topup:
+        if bool_topup and not eddy:
             plot_topup = np.zeros((np.shape(topup_data)[0], np.shape(topup_data)[1] * 5))
             plot_topup[:, 0:np.shape(topup_data)[1]] = topup_data[..., sl - 10, shell_index[0]]
             plot_topup[:, np.shape(topup_data)[1]:(np.shape(topup_data)[1] * 2)] = topup_data[
