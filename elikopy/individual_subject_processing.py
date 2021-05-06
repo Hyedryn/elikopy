@@ -228,10 +228,11 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         #Find all the bo to extract.
         current_index = 0
+        all_index ={}
         i=1
         roi=[]
         for ind in topup_index:
-            if ind!=current_index:
+            if ind!=current_index and ind in all_index:
                 roi.append(i)
                 fslroi = "fslroi " + imain_tot + " " + topup_path + "/b0_"+str(i)+".nii.gz "+str(i)+" 1"
                 process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=topup_log,
@@ -239,6 +240,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
                 output, error = process.communicate()
                 print("B0 of index" + str(i) + " extracted!")
             current_index=ind
+            all_index[ind] = all_index.get(ind,0) + 1
             i=i+1
 
         #Merge b0
