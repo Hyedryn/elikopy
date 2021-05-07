@@ -276,7 +276,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
             f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Patient %s \n" % p + " has multiple direction of gradient encoding, launching topup directly ")
-            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; topup --imain="' + topup_path + '/b0.nii.gz" --config="b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --verbose'
+            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; topup --imain="' + topup_path + '/b0.nii.gz" --config="b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --fout="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_fout_estimate" --iout="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_iout_estimate" --verbose'
             bashcmd = bashCommand.split()
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
