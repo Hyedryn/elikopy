@@ -1441,6 +1441,7 @@ def white_mask_solo(folder_path, p, corr_bias=False, corr_gibbs=True, core_count
             bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; fast -o ' + fast_output_path + ' -t 1 -B -b --nopve ' + input_bias_path
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
+            corrected_bias_path = fast_output_path + '_restore.nii.gz'
 
 
         if corr_bias:
@@ -1471,28 +1472,8 @@ def white_mask_solo(folder_path, p, corr_bias=False, corr_gibbs=True, core_count
         moving = moving_data
         moving_grid2world = moving_affine
         # Read the static image ====================================
-        if os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/biasfield/"):
-            print("Biasfield correction detected: load nifti from previous preprocessing step!")
-            if os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/eddy/"+ patient_path +"_eddy_corr.nii.gz"):
-                static_data, static_affine = load_nifti(folder_path + "/" + patient_path + "/dMRI/preproc/eddy/"+ patient_path +"_eddy_corr.nii.gz")
-            elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/topup/"+ patient_path +"_topup_corr.nii.gz"):
-                static_data, static_affine = load_nifti(
-                    folder_path + "/" + patient_path + "/dMRI/preproc/topup/"+ patient_path +"_topup_corr.nii.gz")
-            elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/gibbs/"+ patient_path +"_gibbscorrected.nii.gz"):
-                static_data, static_affine = load_nifti(
-                    folder_path + "/" + patient_path + "/dMRI/preproc/gibbs/"+ patient_path +"_gibbscorrected.nii.gz")
-            elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/mppca/"+ patient_path +"_mppca.nii.gz"):
-                static_data, static_affine = load_nifti(
-                    folder_path + "/" + patient_path + "/dMRI/preproc/mppca/" + patient_path + "_mppca.nii.gz")
-            elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/reslice/" + patient_path + "_reslice.nii.gz"):
-                static_data, static_affine = load_nifti(
-                    folder_path + "/" + patient_path + "/dMRI/preproc/reslice/" + patient_path + "_reslice.nii.gz")
-            else:
-                static_data, static_affine = load_nifti(
-                    folder_path + "/" + patient_path + "/dMRI/preproc/bet/" + patient_path + "_mask.nii.gz")
-        else:
-            static_data, static_affine = load_nifti(
-                folder_path + "/" + patient_path + "/dMRI/preproc/" + patient_path + "_dmri_preproc.nii.gz")
+        static_data, static_affine = load_nifti(
+            folder_path + "/" + patient_path + "/dMRI/preproc/" + patient_path + "_dmri_preproc.nii.gz")
 
         static = np.squeeze(static_data)[..., 0]
         static_grid2world = static_affine
