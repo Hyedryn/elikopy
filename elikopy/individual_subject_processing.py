@@ -234,7 +234,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         for ind in topup_index:
             if ind!=current_index and ind not in all_index:
                 roi.append(i)
-                fslroi = "fslroi " + imain_tot + " " + topup_path + "/b0_"+str(i)+".nii.gz "+str(i)+" 1"
+                fslroi = "fslroi " + imain_tot + " " + topup_path + "/b0_"+str(i)+".nii.gz "+str(i-1)+" 1"
                 process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=topup_log,
                                            stderr=subprocess.STDOUT)
                 output, error = process.communicate()
