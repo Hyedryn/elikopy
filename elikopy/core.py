@@ -892,7 +892,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of TBSS\n")
         f.close()
 
-    def export(self, folder_path=None, raw=False, preprocessing=False, dti=False, noddi=False, diamond=False, mf=False, wm_mask=False, report=False,patient_list_m=None):
+    def export(self, folder_path=None, raw=False, preprocessing=False, dti=False, noddi=False, diamond=False, mf=False, wm_mask=False, report=False, preprocessed_first_b0=False, patient_list_m=None):
         """Wrapper function for tensor reconstruction and computation of DTI metrics using Weighted Least-Squares.
         Performs a tensor reconstruction and saves the DTI metrics.
 
@@ -976,6 +976,14 @@ class Elikopy:
                                 folder_path + '/export/' + preprocessing_path + patient_name + '_dmri_preproc.nii.gz')
                 safe_copy(patient_path + preprocessing_path + 'quality_control/qc_report.pdf',
                                 folder_path + '/export/' + preprocessing_path + patient_name + '_qc_report.pdf')
+
+            if preprocessed_first_b0:
+                fslroi = "fslroi " + patient_path + preprocessing_path + patient_name + '_dmri_preproc.nii.gz' + " " + patient_path + preprocessing_path + patient_name + '_b0_1_preproc.nii.gz ' + 0 + " 1"
+                process = subprocess.Popen(fslroi, universal_newlines=True, shell=True,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+                safe_copy(patient_path + preprocessing_path + patient_name + '_b0_1_preproc.nii.gz',
+                                folder_path + '/export/' + preprocessing_path + patient_name + '_b0_1_preproc.nii.gz')
 
             if dti:
                 safe_copy(patient_path + dti_path + patient_name + "_FA.nii.gz",
