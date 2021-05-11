@@ -1381,7 +1381,7 @@ def dti_solo(folder_path, p):
         f.close()
 
 
-def white_mask_solo(folder_path, p, corr_bias=False, corr_gibbs=True, core_count=1):
+def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=1):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
     T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
     a folder named anat in the root folder.
