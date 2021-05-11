@@ -1471,8 +1471,27 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
         moving = moving_data
         moving_grid2world = moving_affine
         # Read the static image ====================================
-        static_data, static_affine = load_nifti(
-            folder_path + "/" + patient_path + "/dMRI/preproc/" + patient_path + "_dmri_preproc.nii.gz")
+        if os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/biasfield/"):
+            if os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/eddy/"+ patient_path +"_eddy_corr.nii.gz"):
+                static_data, static_affine = load_nifti(folder_path + "/" + patient_path + "/dMRI/preproc/eddy/"+ patient_path +"_eddy_corr.nii.gz")
+            elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/topup/"+ patient_path +"_topup_corr.nii.gz"):
+                static_data, static_affine = load_nifti(
+                    folder_path + "/" + patient_path + "/dMRI/preproc/topup/"+ patient_path +"_topup_corr.nii.gz")
+            elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/gibbs/"+ patient_path +"_gibbscorrected.nii.gz"):
+                static_data, static_affine = load_nifti(
+                    folder_path + "/" + patient_path + "/dMRI/preproc/gibbs/"+ patient_path +"_gibbscorrected.nii.gz")
+            elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/mppca/"+ patient_path +"_mppca.nii.gz"):
+                static_data, static_affine = load_nifti(
+                    folder_path + "/" + patient_path + "/dMRI/preproc/mppca/" + patient_path + "_mppca.nii.gz")
+            elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/reslice/" + patient_path + "_reslice.nii.gz"):
+                static_data, static_affine = load_nifti(
+                    folder_path + "/" + patient_path + "/dMRI/preproc/reslice/" + patient_path + "_reslice.nii.gz")
+            else:
+                static_data, static_affine = load_nifti(
+                    folder_path + "/" + patient_path + "/dMRI/preproc/bet/" + patient_path + "_mask.nii.gz")
+        else:
+            static_data, static_affine = load_nifti(
+                folder_path + "/" + patient_path + "/dMRI/preproc/" + patient_path + "_dmri_preproc.nii.gz")
         static = np.squeeze(static_data)[..., 0]
         static_grid2world = static_affine
         # Reslice the moving image ====================================
