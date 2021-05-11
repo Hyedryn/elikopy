@@ -978,7 +978,7 @@ class Elikopy:
                                 folder_path + '/export/' + preprocessing_path + patient_name + '_qc_report.pdf')
 
             if preprocessed_first_b0:
-                fslroi = "fslroi " + patient_path + preprocessing_path + patient_name + '_dmri_preproc.nii.gz' + " " + patient_path + preprocessing_path + patient_name + '_b0_1_preproc.nii.gz ' + 0 + " 1"
+                fslroi = "fslroi " + patient_path + preprocessing_path + patient_name + '_dmri_preproc.nii.gz' + " " + patient_path + preprocessing_path + patient_name + '_b0_1_preproc.nii.gz ' + str(0) + " 1"
                 process = subprocess.Popen(fslroi, universal_newlines=True, shell=True,
                                            stderr=subprocess.STDOUT)
                 output, error = process.communicate()
