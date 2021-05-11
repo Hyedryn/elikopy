@@ -1381,7 +1381,7 @@ def dti_solo(folder_path, p):
         f.close()
 
 
-def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=1):
+def white_mask_solo(folder_path, p, corr_bias=False, corr_gibbs=True, core_count=1):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
     T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
     a folder named anat in the root folder.
@@ -1472,6 +1472,7 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
         moving_grid2world = moving_affine
         # Read the static image ====================================
         if os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/biasfield/"):
+            print("Biasfield correction detected: load nifti from previous preprocessing step!")
             if os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/eddy/"+ patient_path +"_eddy_corr.nii.gz"):
                 static_data, static_affine = load_nifti(folder_path + "/" + patient_path + "/dMRI/preproc/eddy/"+ patient_path +"_eddy_corr.nii.gz")
             elif os.path.exists(folder_path + "/" + patient_path + "/dMRI/preproc/topup/"+ patient_path +"_topup_corr.nii.gz"):
@@ -1492,6 +1493,7 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
         else:
             static_data, static_affine = load_nifti(
                 folder_path + "/" + patient_path + "/dMRI/preproc/" + patient_path + "_dmri_preproc.nii.gz")
+
         static = np.squeeze(static_data)[..., 0]
         static_grid2world = static_affine
         # Reslice the moving image ====================================
