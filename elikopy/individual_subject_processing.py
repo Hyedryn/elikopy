@@ -1419,14 +1419,25 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
         # Read the moving image ====================================
         anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
 
+        wm_log = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
+
         # Correct for gibbs ringing
         if corr_gibbs:
+            wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Beginning of gibbs for patient %s \n" % p)
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Beginning of gibbs for patient %s \n" % p)
+
             data_gibbs, affine_gibbs = load_nifti(anat_path)
             data_gibbs = gibbs_removal(data_gibbs,num_threads=core_count)
             corrected_gibbs_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_gibbscorrected.nii.gz'
             save_nifti(corrected_gibbs_path, data_gibbs.astype(np.float32), affine_gibbs)
 
-        wm_log = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
+
+            wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of gibbs for patient %s \n" % p)
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of gibbs for patient %s \n" % p)
 
         if corr_gibbs:
             input_bet_path = corrected_gibbs_path
@@ -1439,12 +1450,17 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
         bashcmd = bashCommand.split()
 
         wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Bet2 part 1 launched for patient %s \n" % p + " with bash command " + bashCommand)
+            "%d.%b %Y %H:%M:%S") + ": Bet launched for patient %s \n" % p + " with bash command " + bashCommand)
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Bet2 part 1 launched for patient %s \n" % p + " with bash command " + bashCommand)
+            "%d.%b %Y %H:%M:%S") + ": Bet launched for patient %s \n" % p + " with bash command " + bashCommand)
 
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
+
+        wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of BET for patient %s \n" % p)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": End of BET for patient %s \n" % p)
 
         wm_log.close()
 
