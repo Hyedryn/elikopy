@@ -1453,14 +1453,14 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
 
         # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet2 ' + input_bet_path + ' ' + bet_path + ' -f 1 -g -3'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet2 ' + input_bet_path + ' ' + bet_path + ' -f 0.4 -g -2 -R'
         bashcmd = bashCommand.split()
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
         anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet2 ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet2 ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2 -S'
         bashcmd = bashCommand.split()
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
