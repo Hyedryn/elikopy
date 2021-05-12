@@ -571,7 +571,7 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
                 core_count = 1 if cpus is None else cpus
-                white_mask_solo(folder_path + "/subjects", corr_gibbs=corr_gibbs, core_count=core_count)
+                white_mask_solo(folder_path + "/subjects", p, corr_gibbs=corr_gibbs, core_count=core_count)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
         f.close()
