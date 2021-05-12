@@ -1381,14 +1381,13 @@ def dti_solo(folder_path, p):
         f.close()
 
 
-def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=1):
+def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
     T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
     a folder named anat in the root folder.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param corr_bias: Correct for bias field distortion.
     :param corr_gibbs: Correct for gibbs oscillation.
     """
 
@@ -1429,38 +1428,14 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
 
         wm_log = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
 
-        #Correct for bias field
-        if corr_bias:
-            if corr_bias:
-                input_bias_path = corrected_gibbs_path
-            else:
-                input_bias_path = anat_path
-
-            fast_output_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_fast'
-            corrected_bias_path = fast_output_path + '_bias.nii.gz'
-            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; fast -o ' + fast_output_path + ' -t 1 -B -b --nopve ' + input_bias_path
-
-            wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                "%d.%b %Y %H:%M:%S") + ": Bias Field launched for patient %s \n" % p + " with bash command " + bashCommand)
-            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                "%d.%b %Y %H:%M:%S") + ": Bias Field launched for patient %s \n" % p + " with bash command " + bashCommand)
-
-            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
-            output, error = process.communicate()
-            corrected_bias_path = fast_output_path + '_restore.nii.gz'
-
-
-
-        if corr_bias:
-            input_bet_path = corrected_bias_path
-        elif corr_gibbs:
+        if corr_gibbs:
             input_bet_path = corrected_gibbs_path
         else:
             input_bet_path = anat_path
 
         # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -R'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -B'
         bashcmd = bashCommand.split()
 
         wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -1468,22 +1443,10 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Bet2 part 1 launched for patient %s \n" % p + " with bash command " + bashCommand)
 
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
-        output, error = process.communicate()
-
-        anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2'
-        bashcmd = bashCommand.split()
-        wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Bet2 part 2 launched for patient %s \n" % p + " with bash command " + bashCommand)
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Bet2 part 2 launched for patient %s \n" % p + " with bash command " + bashCommand)
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
         wm_log.close()
-
 
         moving_data, moving_affine = load_nifti(bet_path)
         moving = moving_data
