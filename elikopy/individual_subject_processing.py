@@ -1623,7 +1623,7 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
     makedir(qc_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
     fig, axs = plt.subplots(2, 1, figsize=(2, 1))
-    fig.suptitle('Elikopy : Quality control report - White matter mask', fontsize=50)
+    fig.suptitle('Elikopy : Quality control report - White matter mask - ' + patient_path, fontsize=50)
     axs[0].set_axis_off()
     axs[1].set_axis_off()
     plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
@@ -1723,7 +1723,7 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
             # self.image('assets/logo.png', 10, 8, 33)
             self.set_font('Arial', 'B', 11)
             self.cell(self.WIDTH - 80)
-            self.cell(60, 1, 'Quality control report - White matter mask', 0, 0, 'R')
+            self.cell(60, 1, 'Quality control report - White matter mask - ' + patient_path, 0, 0, 'R')
             self.ln(20)
 
         def footer(self):
