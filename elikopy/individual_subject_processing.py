@@ -1439,9 +1439,16 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
             fast_output_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_fast'
             corrected_bias_path = fast_output_path + '_bias.nii.gz'
             bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; fast -o ' + fast_output_path + ' -t 1 -B -b --nopve ' + input_bias_path
+
+            wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Bias Field launched for patient %s \n" % p + " with bash command " + bashCommand)
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Bias Field launched for patient %s \n" % p + " with bash command " + bashCommand)
+
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
             corrected_bias_path = fast_output_path + '_restore.nii.gz'
+
 
 
         if corr_bias:
@@ -1453,15 +1460,25 @@ def white_mask_solo(folder_path, p, corr_bias=True, corr_gibbs=True, core_count=
 
         # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet2 ' + input_bet_path + ' ' + bet_path + ' -f 0.4 -g -2 -R'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -R'
         bashcmd = bashCommand.split()
+
+        wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Bet2 part 1 launched for patient %s \n" % p + " with bash command " + bashCommand)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Bet2 part 1 launched for patient %s \n" % p + " with bash command " + bashCommand)
+
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
         anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet2 ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2 -S'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + anat_path + ' ' + bet_path + ' -f 0.4 -g -0.2'
         bashcmd = bashCommand.split()
+        wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Bet2 part 2 launched for patient %s \n" % p + " with bash command " + bashCommand)
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Bet2 part 2 launched for patient %s \n" % p + " with bash command " + bashCommand)
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
         output, error = process.communicate()
 
