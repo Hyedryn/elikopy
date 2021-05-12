@@ -1220,3 +1220,31 @@ def merge_all_reports(folder_path):
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True,
                                stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
+def merge_all_specific_reports(folder_path, merge_wm_report):
+    from PyPDF2 import PdfFileWriter, PdfFileReader
+    import json, os
+
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
+    if merge_wm_report:
+        wm_writer = PdfFileWriter()
+
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+
+        if merge_wm_report:
+
+            if (os.path.exists(pdf_path)):
+                pdf_path = folder_path + '/subjects/' + patient_path + '/masks/quality_control/qc_report.pdf'
+                reader = PdfFileReader(pdf_path)
+                for i in range(reader.numPages):
+                    page = reader.getPage(i)
+                    page.compressContentStreams()
+                    wm_writer.addPage(page)
+
+    if merge_wm_report:
+        with open(folder_path + '/wm_mask_qc_report_all.pdf', 'wb') as f:
+            wm_writer.write(f)
