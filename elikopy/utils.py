@@ -1221,7 +1221,7 @@ def merge_all_reports(folder_path):
                                stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
-def merge_all_specific_reports(folder_path, merge_wm_report):
+def merge_all_specific_reports(folder_path, merge_wm_report=False):
     from PyPDF2 import PdfFileWriter, PdfFileReader
     import json, os
 
@@ -1236,9 +1236,8 @@ def merge_all_specific_reports(folder_path, merge_wm_report):
         patient_path = os.path.splitext(p)[0]
 
         if merge_wm_report:
-
+            pdf_path = folder_path + '/subjects/' + patient_path + '/masks/quality_control/qc_report.pdf'
             if (os.path.exists(pdf_path)):
-                pdf_path = folder_path + '/subjects/' + patient_path + '/masks/quality_control/qc_report.pdf'
                 reader = PdfFileReader(pdf_path)
                 for i in range(reader.numPages):
                     page = reader.getPage(i)
