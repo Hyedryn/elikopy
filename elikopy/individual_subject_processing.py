@@ -1446,7 +1446,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
 
         # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -B'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -B -d'
         bashcmd = bashCommand.split()
 
         wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
