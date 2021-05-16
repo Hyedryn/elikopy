@@ -510,7 +510,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def white_mask(self, folder_path=None, patient_list_m=None, corr_gibbs=True, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def white_mask(self, folder_path=None, patient_list_m=None, corr_gibbs=True, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Wrapper function for whitematter mask computation. Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
         T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
         a folder named anat in the root folder.
@@ -547,7 +547,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",core_count=" + str(core_count) + " )'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -571,7 +571,7 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
                 core_count = 1 if cpus is None else cpus
-                white_mask_solo(folder_path + "/subjects", p, corr_gibbs=corr_gibbs, core_count=core_count)
+                white_mask_solo(folder_path + "/subjects", p, corr_gibbs=corr_gibbs, core_count=core_count, debug=debug)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
         f.close()

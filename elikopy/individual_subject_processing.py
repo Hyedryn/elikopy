@@ -1381,7 +1381,7 @@ def dti_solo(folder_path, p):
         f.close()
 
 
-def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
+def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePowerMap=False, debug=False):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
     T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
     a folder named anat in the root folder.
@@ -1409,7 +1409,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
 
     patient_path = os.path.splitext(p)[0]
     anat_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
-    if os.path.isfile(anat_path):
+    if os.path.isfile(anat_path) and not forceUsePowerMap:
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
         f = open(folder_path + '/' + patient_path + "/masks/wm_logs.txt", "a+")
@@ -1446,7 +1446,9 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
 
         # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
         bet_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -B -d'
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -B'
+        if debug:
+            bashCommand = bashCommand + " -d"
         bashcmd = bashCommand.split()
 
         wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -1501,6 +1503,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
         starting_affine = rigid.affine
         affine = affreg.optimize(static, moving, transform, params0, static_grid2world, moving_grid2world,
                                  starting_affine=starting_affine)
+
         """"
         transformed = affine.transform(moving)
         # final result of registration ==========================================
@@ -1529,6 +1532,10 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
         white_mask[white_mask != 0] = 1
         anat_affine = static_grid2world
         segmentation = affine.transform(final_segmentation)
+
+        # Save corrected projected T1
+        out_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_corr_projected.nii.gz'
+        save_nifti(out_path, affine.transform(moving_data).astype(np.float32), anat_affine)
     else:
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
@@ -1595,7 +1602,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1):
     seg_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz'
     T1_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
     T1gibbs_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_gibbscorrected.nii.gz'
-    T1brain_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain_brain.nii.gz'
+    T1brain_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
     ap_path = folder_path + '/' + patient_path + "/masks/" + patient_path + '_ap.nii.gz'
     preproc_path = folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
     qc_path = folder_path + '/' + patient_path + '/masks/' + 'quality_control'
