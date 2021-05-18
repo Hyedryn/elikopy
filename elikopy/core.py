@@ -1308,11 +1308,11 @@ def noddi_fix_icvf_thresholding(self, folder_path=None, patient_list_m=None, fin
 
             if use_brain_mask and os.path.exists(brain_mask_path):
                 data_brain_mask, affine_brain_mask, voxel_size_brain_mask = load_nifti(brain_mask_path, return_voxsize=True)
-                data_icvf_new = data_icvf_new * (data_brain_mask > 0.09)
+                data_icvf_new = data_icvf_new * (data_brain_mask > 0.95)
 
             if use_wm_mask and os.path.exists(wm_mask_path):
                 data_wm_mask, affine_wm_mask, voxel_size_wm_mask = load_nifti(wm_mask_path, return_voxsize=True)
-                data_icvf_new = data_icvf_new * (data_wm_mask > 0.09)
+                data_icvf_new = data_icvf_new * (data_wm_mask > 0.95)
 
             save_nifti(icvf_path, data_icvf_new.astype(np.float32), affine_fintra)
 
