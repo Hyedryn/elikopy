@@ -1269,3 +1269,56 @@ class Elikopy:
         f.write(
             "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of randomise_all\n")
         f.close()
+
+
+def noddi_fix_icvf_thresholding(self, folder_path=None, patient_list_m=None, fintra_threshold=0.99, fbundle_threshold=0.05,
+             use_brain_mask=False, use_wm_mask=False):
+    import numpy as np
+    from dipy.io.image import load_nifti, save_nifti
+
+    f = open(folder_path + "/logs.txt", "a+")
+    f.write("[Fix icvf] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of fix icvf \n")
+    f.close()
+
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+
+    if patient_list_m:
+        patient_list = patient_list_m
+
+    job_list = []
+    f = open(folder_path + "/logs.txt", "a+")
+    for p in patient_list:
+        patient_path = os.path.splitext(p)[0]
+
+        fintra_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_fintra.nii.gz"
+        fbundle_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_fbundle.nii.gz"
+
+        brain_mask_path = folder_path + "/subjects/" + p + "/masks/" + p + "_brain_mask.nii.gz"
+        wm_mask_path = folder_path + "/subjects/" + p + "/masks/" + p + "_wm_mask.nii.gz"
+
+        icvf_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_icvf.nii.gz"
+
+        if os.path.exists(fintra_path) and os.path.exists(fbundle_path):
+            data_fintra, affine_fintra, voxel_size_fintra = load_nifti(fintra_path, return_voxsize=True)
+            data_fbundle, affine_fbundle, voxel_size_fbundle = load_nifti(fbundle_path, return_voxsize=True)
+
+            data_icvf_new = data_fintra * (data_fintra < fintra_threshold) * (data_fbundle > fbundle_threshold)
+
+            if use_brain_mask and os.path.exists(brain_mask_path):
+                data_brain_mask, affine_brain_mask, voxel_size_brain_mask = load_nifti(brain_mask_path, return_voxsize=True)
+                data_icvf_new = data_icvf_new * (data_brain_mask > 0.09)
+
+            if use_wm_mask and os.path.exists(wm_mask_path):
+                data_wm_mask, affine_wm_mask, voxel_size_wm_mask = load_nifti(wm_mask_path, return_voxsize=True)
+                data_icvf_new = data_icvf_new * (data_wm_mask > 0.09)
+
+            save_nifti(icvf_path, data_icvf_new.astype(np.float32), affine_fintra)
+
+        f.write("[Fix icvf] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully applied fix icvf on patient %s\n" % p)
+        f.flush()
+
+    f.write("[Fix icvf] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of fix icvf\n")
+    f.close()
