@@ -1274,7 +1274,8 @@ class Elikopy:
                  use_brain_mask=False, use_wm_mask=False):
         import numpy as np
         from dipy.io.image import load_nifti, save_nifti
-
+        folder_path = self._folder_path if folder_path is None else folder_path
+        
         f = open(folder_path + "/logs.txt", "a+")
         f.write("[Fix icvf] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of fix icvf \n")
         f.close()
