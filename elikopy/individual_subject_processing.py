@@ -1840,7 +1840,7 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     f_iso = fitted_parameters["partial_volume_0"]
     f_bundle = fitted_parameters["partial_volume_1"]
     f_intra = (fitted_parameters['SD1WatsonDistributed_1_partial_volume_0'] * fitted_parameters['partial_volume_1'])
-    f_icvf = fitted_parameters['SD1WatsonDistributed_1_partial_volume_0'] * fitted_parameters['partial_volume_1']>0.05
+    f_icvf = fitted_parameters['SD1WatsonDistributed_1_partial_volume_0'] * (fitted_parameters['partial_volume_1']>0.05)
     f_extra = ((1 - fitted_parameters['SD1WatsonDistributed_1_partial_volume_0']) * fitted_parameters[
         'partial_volume_1'])
     mse = NODDI_fit.mean_squared_error(data)
