@@ -76,7 +76,7 @@ class Elikopy:
         self._slurm_email = slurm_email
         self._cuda = cuda
 
-    def patient_list(self, folder_path=None):
+    def patient_list(self, folder_path=None, bids_path=None):
         """ Verify the validity of all the nifti present in the root folder. If some nifti does not posses an associated
         bval and bvec file, they are discarded and the user is notified by the mean of a summary file named
         patient_error.json generated in the out sub-directory. All the valid patient are stored in a file named patient_list.json
@@ -96,6 +96,102 @@ class Elikopy:
         type = {}
         pattern = re.compile("data_\\d")
 
+
+        if bids_path:
+            for subj in os.listdir(bids_path):
+                subjectType = 99
+                dwi_path = bids_path + "/" + subj + "/dwi/"
+
+                if os.path.exists(dwi_path):
+                    for file in os.listdir(dwi_path):
+                        DWI_present=False
+                        if file.endswith(".nii"):
+                            nii = True
+                            DWI_present=True
+
+                            name = os.path.splitext(file)[0]
+                            bvec = os.path.splitext(file)[0] + ".bvec"
+                            bval = os.path.splitext(file)[0] + ".bval"
+                            entities_0 = name.split('_')[0]
+
+                        if file.endswith(".nii.gz"):
+                            nii = False
+                            DWI_present = True
+                            name = os.path.splitext(os.path.splitext(file)[0])[0]
+                            bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
+                            bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
+                            json = os.path.splitext(os.path.splitext(file)[0])[0] + ".json"
+
+                        anat_path = bids_path + "/" + subj + "/anat/" + name + "_T1w.nii.gz"
+
+                        if os.path.exists(bids_path + "/" + subj + "/anat/" + name + "_T1w.nii"):
+                            import gzip
+                            f_in = open(bids_path + "/" + subj + "/anat/" + name + "_T1w.nii")
+                            f_out = gzip.open(
+                                folder_path + "/subjects/" + entities_0 + "/T1/" + entities_0 + "_T1.nii.gz",
+                                'wb')
+                            f_out.writelines(f_in)
+                            f_out.close()
+                            f_in.close()
+                            anat_path_json = bids_path + "/" + subj + "/anat/" + entities_0 + '_T1w.json'
+                            if os.path.isfile(anat_path_json):
+                                shutil.copyfile(anat_path_json,
+                                                folder_path + "/subjects/" + entities_0 + "/T1/" + entities_0 + "_T1.json")
+
+                        if DWI_present and bvec not in os.listdir(dwi_path) or bval not in os.listdir(dwi_path):
+                            error.append(entities_0)
+                        else:
+                            success.append(entities_0)
+                            type[entities_0] = subjectType
+                            dest = folder_path + "/subjects/" + name + "/dMRI/raw/"
+                            makedir(dest, folder_path + "/logs.txt", log_prefix)
+
+                            shutil.copyfile(dwi_path + name + ".bvec",
+                                            folder_path + "/subjects/" + entities_0 + "/dMRI/raw/" + entities_0 + "_raw_dmri.bvec")
+                            shutil.copyfile(dwi_path + name + ".bval",
+                                            folder_path + "/subjects/" + entities_0 + "/dMRI/raw/" + entities_0 + "_raw_dmri.bval")
+                            if nii:
+                                import gzip
+                                f_in = open(dwi_path + name + ".nii")
+                                f_out = gzip.open(folder_path + "/subjects/" + entities_0 + "/dMRI/raw/" + entities_0 + "_raw_dmri.nii.gz", 'wb')
+                                f_out.writelines(f_in)
+                                f_out.close()
+                                f_in.close()
+                            else:
+                                shutil.copyfile(dwi_path + name + ".nii.gz",
+                                                folder_path + "/subjects/" + entities_0 + "/dMRI/raw/" + entities_0 + "_raw_dmri.nii.gz")
+                            try:
+                                shutil.copyfile(dwi_path + name + ".json",
+                                                folder_path + "/subjects/" + entities_0 + "/dMRI/raw/" + entities_0 + "_raw_dmri.json")
+                            except:
+                                print('WARNING: JSON missing for patient', entities_0)
+
+                            try:
+                                shutil.copyfile(dwi_path + "index.txt",
+                                                folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                                shutil.copyfile(dwi_path + "acqparams.txt",
+                                                folder_path + "/subjects/" + entities_0 + "/dMRI/raw/" + "acqparams.txt")
+                            except:
+                                print(
+                                    'WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
+
+                            try:
+                                shutil.copyfile(dwi_path + "slspec.txt",
+                                                folder_path + "/subjects/" + entities_0 + "/dMRI/raw/" + "slspec.txt")
+                            except:
+                                print(
+                                    'WARNING: slspec missing, EDDY outlier replacement and slice-to-volume motion correction will not correct properly')
+
+                            if os.path.isfile(anat_path):
+                                dest = folder_path + "/subjects/" + entities_0 + "/T1/"
+                                makedir(dest, folder_path + "/logs.txt", log_prefix)
+                                shutil.copyfile(anat_path,
+                                                folder_path + "/subjects/" + entities_0 + "/T1/" + entities_0 + "_T1.nii.gz")
+                                anat_path_json = bids_path + "/" + subj + "/anat/" + entities_0 + '_T1w.json'
+                                if os.path.isfile(anat_path_json):
+                                    shutil.copyfile(anat_path_json,
+                                                    folder_path + "/subjects/" + entities_0 + "/T1/" + entities_0 + "_T1.json")
+
         for typeFolder in os.listdir(folder_path):
             if pattern.match(typeFolder):
                 subjectType = int(re.findall(r'\d+', typeFolder)[0])
@@ -103,67 +199,106 @@ class Elikopy:
 
                 for file in os.listdir(folder_path + typeFolderName):
 
+                    DWI_present = False
+
                     if file.endswith(".nii"):
+                        DWI_present = True
+                        nii = True
                         name = os.path.splitext(file)[0]
                         bvec = os.path.splitext(file)[0] + ".bvec"
                         bval = os.path.splitext(file)[0] + ".bval"
-                        if bvec not in os.listdir(folder_path) or bval not in os.listdir(folder_path):
-                            error.append(name)
-                        else:
-                            success.append(name)
-                            type[name]=subjectType
 
                     if file.endswith(".nii.gz"):
+                        DWI_present = True
+                        nii = False
                         name = os.path.splitext(os.path.splitext(file)[0])[0]
                         bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
                         bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
-                        if bvec not in os.listdir(folder_path + typeFolderName) or bval not in os.listdir(folder_path + typeFolderName):
-                            error.append(name)
+
+                    if DWI_present and bvec not in os.listdir(folder_path + typeFolderName) or bval not in os.listdir(folder_path + typeFolderName):
+                        error.append(name)
+                    else:
+                        success.append(name)
+                        type[name]=subjectType
+                        dest = folder_path + "/subjects/" + name + "/dMRI/raw/"
+                        makedir(dest, folder_path + "/logs.txt", log_prefix)
+
+                        shutil.copyfile(folder_path + typeFolderName + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
+                        shutil.copyfile(folder_path + typeFolderName + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
+                        if nii:
+                            import gzip
+                            f_in = open(folder_path + typeFolderName + name + ".nii")
+                            f_out = gzip.open(
+                                folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz", 'wb')
+                            f_out.writelines(f_in)
+                            f_out.close()
+                            f_in.close()
                         else:
-                            success.append(name)
-                            type[name]=subjectType
-                            dest = folder_path + "/subjects/" + name + "/dMRI/raw/"
+                            shutil.copyfile(folder_path + typeFolderName + name + ".nii.gz",
+                                            folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
+                        try:
+                            shutil.copyfile(folder_path + typeFolderName + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
+                        except:
+                            print('WARNING: JSON missing for patient', name)
+
+                        try:
+                            shutil.copyfile(folder_path + typeFolderName + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                            shutil.copyfile(folder_path + typeFolderName + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
+                        except:
+                            print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
+
+                        try:
+                            shutil.copyfile(folder_path + typeFolderName + "slspec.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "slspec.txt")
+                        except:
+                            print('WARNING: slspec missing, EDDY outlier replacement and slice-to-volume motion correction will not correct properly')
+
+                        anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
+                        anat_path_json = folder_path + '/T1/' + name + '_T1.json'
+                        if os.path.isfile(anat_path):
+                            dest = folder_path + "/subjects/" + name + "/T1/"
                             makedir(dest, folder_path + "/logs.txt", log_prefix)
+                            shutil.copyfile(anat_path, folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
+                            if os.path.isfile(anat_path_json):
+                                shutil.copyfile(anat_path_json,
+                                            folder_path + "/subjects/" + name + "/T1/" + name + "_T1.json")
 
-                            shutil.copyfile(folder_path + typeFolderName + name + ".bvec",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec")
-                            shutil.copyfile(folder_path + typeFolderName + name + ".bval",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval")
-                            shutil.copyfile(folder_path + typeFolderName + name + ".nii.gz",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz")
-                            try:
-                                shutil.copyfile(folder_path + typeFolderName + name + ".json",folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.json")
-                            except:
-                                print('WARNING: JSON missing for patient', name)
-
-                            try:
-                                shutil.copyfile(folder_path + typeFolderName + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
-                                shutil.copyfile(folder_path + typeFolderName + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
-                            except:
-                                print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
-
-                            try:
-                                shutil.copyfile(folder_path + typeFolderName + "slspec.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "slspec.txt")
-                            except:
-                                print('WARNING: slspec missing, EDDY outlier replacement and slice-to-volume motion correction will not correct properly')
-
-                            anat_path = folder_path + '/T1/' + name + '_T1.nii.gz'
-                            if os.path.isfile(anat_path):
-                                dest = folder_path + "/subjects/" + name + "/T1/"
-                                makedir(dest, folder_path + "/logs.txt", log_prefix)
-                                shutil.copyfile(folder_path + "/T1/" + name + "_T1.nii.gz", folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
-                                anat_path_json = folder_path + '/T1/' + name + '_T1.json'
-                                if os.path.isfile(anat_path_json):
-                                    shutil.copyfile(folder_path + "/T1/" + name + "_T1.json",
+                        anat_path = folder_path + '/T1/' + name + '.nii.gz'
+                        anat_path_json = folder_path + '/T1/' + name + '.json'
+                        if os.path.isfile(anat_path):
+                            dest = folder_path + "/subjects/" + name + "/T1/"
+                            makedir(dest, folder_path + "/logs.txt", log_prefix)
+                            shutil.copyfile(anat_path, folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
+                            if os.path.isfile(anat_path_json):
+                                shutil.copyfile(anat_path_json,
                                                 folder_path + "/subjects/" + name + "/T1/" + name + "_T1.json")
 
-                            anat_path = folder_path + '/T1/' + name + '.nii.gz'
-                            if os.path.isfile(anat_path):
-                                dest = folder_path + "/subjects/" + name + "/T1/"
-                                makedir(dest, folder_path + "/logs.txt", log_prefix)
-                                shutil.copyfile(folder_path + "/T1/" + name + ".nii.gz",
-                                                folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz")
-                                anat_path_json = folder_path + '/T1/' + name + '.json'
-                                if os.path.isfile(anat_path_json):
-                                    shutil.copyfile(folder_path + "/T1/" + name + ".json",
-                                                    folder_path + "/subjects/" + name + "/T1/" + name + "_T1.json")
+                        if os.path.exists(folder_path + '/T1/' + name + '.nii'):
+                            import gzip
+                            f_in = open(folder_path + '/T1/' + name + '.nii')
+                            f_out = gzip.open(
+                                folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz",
+                                'wb')
+                            f_out.writelines(f_in)
+                            f_out.close()
+                            f_in.close()
+                            anat_path_json = folder_path + '/T1/' + name + '.json'
+                            if os.path.isfile(anat_path_json):
+                                shutil.copyfile(anat_path_json,
+                                                folder_path + "/subjects/" + name + "/T1/" + name + "_T1.json")
+
+                        if os.path.exists(folder_path + '/T1/' + name + '_T1.nii'):
+                            import gzip
+                            f_in = open(folder_path + '/T1/' + name + '_T1.nii')
+                            f_out = gzip.open(
+                                folder_path + "/subjects/" + name + "/T1/" + name + "_T1.nii.gz",
+                                'wb')
+                            f_out.writelines(f_in)
+                            f_out.close()
+                            f_in.close()
+                            anat_path_json = folder_path + '/T1/' + name + '_T1.json'
+                            if os.path.isfile(anat_path_json):
+                                shutil.copyfile(anat_path_json,
+                                                folder_path + "/subjects/" + name + "/T1/" + name + "_T1.json")
 
         error = list(dict.fromkeys(error))
         success = list(dict.fromkeys(success))
@@ -1275,7 +1410,7 @@ class Elikopy:
         import numpy as np
         from dipy.io.image import load_nifti, save_nifti
         folder_path = self._folder_path if folder_path is None else folder_path
-        
+
         f = open(folder_path + "/logs.txt", "a+")
         f.write("[Fix icvf] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of fix icvf \n")
         f.close()
