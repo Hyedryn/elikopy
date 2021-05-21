@@ -46,9 +46,6 @@ Want to contribute? Great!
 Do not hesitate to open issue or pull request!
 ### Todos
 
- - Fully implement TBSS
- - Fully implement Quality Control Metrics
- - Implement visualisation functions
  - Release a complete and accurate documentation for the library
 
 
