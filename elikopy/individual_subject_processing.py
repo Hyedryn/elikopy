@@ -119,7 +119,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         makedir(denoising_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
-        if (starting_state == denoising):
+        if (starting_state == "denoising"):
             mask_path = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz'
             b0_mask_path = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
             b0_mask, affine, voxel_size = load_nifti(b0_mask_path, return_voxsize=True)
@@ -164,7 +164,7 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
         gibbs_path = folder_path + '/' + patient_path + '/dMRI/preproc/gibbs'
         makedir(gibbs_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
-        if (starting_state == denoising):
+        if (starting_state == "gibbs"):
             mask_path = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz'
             if not denoising:
                 b0_mask_path = folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
