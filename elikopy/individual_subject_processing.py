@@ -11,7 +11,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5):
+def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, topup=False,  eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """
     Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final.
@@ -373,7 +373,14 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
 
         if s2v[0] != 0:
             slspec_path = folder_path + '/' + patient_path + '/dMRI/raw/' + 'slspec.txt'
-            if os.path.isfile(slspec_path):
+            if os.path.isfile(slspec_gc_path):
+                if gibbs:
+                    bashCommand = eddycmd + ' --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                elif denoising:
+                    bashCommand = eddycmd + ' --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/mppca/' + patient_path + '_mppca.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                else:
+                    bashCommand = eddycmd + ' --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+            elif os.path.isfile(slspec_path):
                 if gibbs:
                     bashCommand = eddycmd + ' --imain="' + folder_path + '/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --slspec="' + slspec_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
                 elif denoising:
@@ -500,6 +507,9 @@ def preproc_solo(folder_path, p, reslice=False, denoising=False,gibbs=False, top
                             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
             shutil.copyfile(folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+
+    if not report:
+        return
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
