@@ -1457,3 +1457,30 @@ class Elikopy:
 
         f.write("[Fix icvf] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of fix icvf\n")
         f.close()
+
+
+    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None):
+        folder_path = self._folder_path if folder_path is None else folder_path
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write("[PatientList Wrapper] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of wrap function on patient list \n")
+
+
+        dest_success = folder_path + "/subjects/subj_list.json"
+        with open(dest_success, 'r') as f:
+            patient_list = json.load(f)
+
+        if patient_list_m:
+            patient_list = patient_list_m
+
+        for p in patient_list:
+            patient_path = os.path.splitext(p)[0]
+
+            function(folder_path, patient_path, *func_args)
+
+            f.write("[PatientList Wrapper] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully applied wrap function on patient list on patient %s\n" % p)
+            f.flush()
+
+        f.write("[PatientList Wrapper] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of wrap function on patient list\n")
+        f.close()
