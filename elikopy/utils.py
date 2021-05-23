@@ -860,9 +860,9 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
             patient_path = os.path.splitext(p)[0]
             control_info = subj_type[patient_path]
 
-            if control_info not in grp1 and not in grp2:
+            if control_info not in grp1 and control_info not in grp2:
                 continue
-                
+
             if control_info in grp1:
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
