@@ -1045,7 +1045,7 @@ def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_to
     registration_log.close()
 
 
-def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1):
+def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1,regionWiseMean=True):
 
     outputdir = folder_path + "/registration"
     log_prefix = "randomise"
@@ -1060,6 +1060,7 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
         randomise_type = "randomise_parallel"
 
     for key, value in metrics_dic.items():
+
         if skeletonised:
             outkey = key + '_skeletonised'
             bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && ' + randomise_type + ' -i all_' + key + '_skeletonised -o '+ outkey +' -m mean_FA_skeleton_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
@@ -1071,90 +1072,92 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
         bashCommand3 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_cortical.txt'
 
 
-        randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
-        randomise_log.flush()
+        if randomise_numberofpermutation > 0:
+            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
+            randomise_log.flush()
 
 
 
-        bashcmd1 = bashCommand1.split()
-        print("Bash command is:\n{}\n".format(bashcmd1))
-        randomise_log.write(bashCommand1+"\n")
-        randomise_log.flush()
-        process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=randomise_log,
-                                   stderr=subprocess.STDOUT)
-        output, error = process.communicate()
+            bashcmd1 = bashCommand1.split()
+            print("Bash command is:\n{}\n".format(bashcmd1))
+            randomise_log.write(bashCommand1+"\n")
+            randomise_log.flush()
+            process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=randomise_log,
+                                       stderr=subprocess.STDOUT)
+            output, error = process.communicate()
 
-        randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": End of randomise\n")
-        randomise_log.flush()
+            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of randomise\n")
+            randomise_log.flush()
 
 
-        randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Beginning of autoaq\n")
-        randomise_log.flush()
+            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Beginning of autoaq\n")
+            randomise_log.flush()
 
-        bashcmd2 = bashCommand2.split()
-        print("Bash command is:\n{}\n".format(bashcmd2))
-        randomise_log.write(bashCommand2+"\n")
-        randomise_log.flush()
-        process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=randomise_log,stderr=subprocess.STDOUT)
-        output, error = process.communicate()
+            bashcmd2 = bashCommand2.split()
+            print("Bash command is:\n{}\n".format(bashcmd2))
+            randomise_log.write(bashCommand2+"\n")
+            randomise_log.flush()
+            process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=randomise_log,stderr=subprocess.STDOUT)
+            output, error = process.communicate()
 
-        bashcmd3 = bashCommand3.split()
-        print("Bash command is:\n{}\n".format(bashcmd3))
-        randomise_log.write(bashCommand3 + "\n")
-        randomise_log.flush()
-        process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=randomise_log,
-                                   stderr=subprocess.STDOUT)
-        output, error = process.communicate()
+            bashcmd3 = bashCommand3.split()
+            print("Bash command is:\n{}\n".format(bashcmd3))
+            randomise_log.write(bashCommand3 + "\n")
+            randomise_log.flush()
+            process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=randomise_log,
+                                       stderr=subprocess.STDOUT)
+            output, error = process.communicate()
 
-        randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": End of autoaq\n")
-        randomise_log.flush()
+            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of autoaq\n")
+            randomise_log.flush()
 
-        randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Starting region based analysis\n")
-        randomise_log.flush()
+        if regionWiseMean:
+            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Starting region based analysis\n")
+            randomise_log.flush()
 
-        import pandas as pd
-        import lxml.etree as etree
-        from dipy.io.image import load_nifti
+            import pandas as pd
+            import lxml.etree as etree
+            from dipy.io.image import load_nifti
 
-        # path to the atlas directory of FSL
-        fsldir = os.getenv('FSLDIR')
-        atlas_path = fsldir + "/data/atlases"
+            # path to the atlas directory of FSL
+            fsldir = os.getenv('FSLDIR')
+            atlas_path = fsldir + "/data/atlases"
 
-        # list of directory and their labels
-        xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml", atlas_path + "/HarvardOxford-Subcortical.xml"]
-        atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz"]
-        name = ["MNI", "HarvardCortical", "HarvardSubcortical"]
+            # list of directory and their labels
+            xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml", atlas_path + "/HarvardOxford-Subcortical.xml"]
+            atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz"]
+            name = ["MNI", "HarvardCortical", "HarvardSubcortical"]
 
-        # open the data
-        data, data_affine = load_nifti(outputdir + '/stats/all_' + key + '.nii.gz')
+            # open the data
+            data, data_affine = load_nifti(outputdir + '/stats/all_' + key + '.nii.gz')
 
-        for iteration in range(len(atlases)):
+            for iteration in range(len(atlases)):
 
-            # read the labels in xml file
-            x = etree.parse(xmlName[iteration])
-            labels = []
-            for elem in x.iter():
-                if elem.tag == 'label':
-                    labels.append([elem.attrib['index'], elem.text])
-            labels = np.array(labels)[:, 1]
+                # read the labels in xml file
+                x = etree.parse(xmlName[iteration])
+                labels = []
+                for elem in x.iter():
+                    if elem.tag == 'label':
+                        labels.append([elem.attrib['index'], elem.text])
+                labels = np.array(labels)[:, 1]
 
-            # open the atlas
-            atlas, atlas_affine = load_nifti(atlases[iteration])
+                # open the atlas
+                atlas, atlas_affine = load_nifti(atlases[iteration])
 
-            matrix = np.zeros((np.shape(data)[-1], np.shape(atlas)[-1]))
-            for i in range(np.shape(atlas)[-1]):
-                for j in range(np.shape(data)[-1]):
-                    patient = data[..., j]
-                    region = atlas[..., i]
-                    mean_fa = np.sum(patient * region) / np.sum(region)
-                    matrix[j, i] = mean_fa
-            df = pd.DataFrame(matrix, columns=labels)
-            df.to_csv(outputdir + '/stats/regionWise_' + name[iteration] + key + '.csv')
+                matrix = np.zeros((np.shape(data)[-1], np.shape(atlas)[-1]))
+                for i in range(np.shape(atlas)[-1]):
+                    for j in range(np.shape(data)[-1]):
+                        patient = data[..., j]
+                        region = atlas[..., i]
+                        mean_fa = np.sum(patient * region) / np.sum(region)
+                        matrix[j, i] = mean_fa
+                df = pd.DataFrame(matrix, columns=labels)
+                df.to_csv(outputdir + '/stats/regionWise_' + name[iteration] + key + '.csv')
 
 
     randomise_log.close()

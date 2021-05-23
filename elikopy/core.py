@@ -1335,7 +1335,7 @@ class Elikopy:
 
 
 
-    def randomise_all(self, folder_path=None,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
+    def randomise_all(self, folder_path=None,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}, regionWiseMean=True,
                slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Wrapper function for randomise_all. Perform tract base spatial statistics between the control data and case data.
         DTI needs to have been performed on the data first !!
@@ -1370,7 +1370,7 @@ class Elikopy:
         if slurm:
             job = {
                 "wrap": "python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
-                    folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",core_count=" + str(core_count) + ",metrics_dic=" + str(
+                    folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",core_count=" + str(core_count) + ",regionWiseMean="  + str(regionWiseMean) + ",metrics_dic=" + str(
                     json.dumps(metrics_dic)) + ")'",
                 "job_name": "randomise_all",
                 "ntasks": 1,
@@ -1391,7 +1391,7 @@ class Elikopy:
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            randomise_all(folder_path=folder_path, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic,core_count=cpus)
+            randomise_all(folder_path=folder_path, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic,core_count=cpus, regionWiseMean=regionWiseMean)
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied randomise_all \n")
             f.flush()
