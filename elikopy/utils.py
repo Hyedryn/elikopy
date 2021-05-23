@@ -806,7 +806,7 @@ def inference(T1_path, b0_d_path, model, device):
     return img_model
 
 
-def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2):
+def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, core_count=1):
     """
     register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
     statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
@@ -906,7 +906,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
         registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of reg\n")
 
-        bashCommand = 'cd ' + outputdir + ' && tbss_2_reg '+ registration_type
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + ' && tbss_2_reg '+ registration_type
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
         registration_log.write(bashCommand+"\n")
@@ -923,7 +923,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
             "%d.%b %Y %H:%M:%S") + ": Beginning of postreg\n")
         registration_log.flush()
 
-        bashCommand = 'cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + ' && tbss_3_postreg ' + postreg_type
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
         registration_log.write(bashCommand+"\n")
@@ -940,7 +940,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
             "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
         registration_log.flush()
 
-        bashCommand = 'cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold) + '&& cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numpatient) + ' ' + str(numcontrol)
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold) + '&& cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numpatient) + ' ' + str(numcontrol)
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
         registration_log.write(bashCommand+"\n")
@@ -958,7 +958,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
     registration_log.flush()
 
 
-def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
+def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
     """
     register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
     statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
@@ -1034,7 +1034,7 @@ def regall(folder_path, grp1, grp2,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_to
             shutil.rmtree(outputdir + "/" + key + "/",ignore_errors=True)
 
         if metric_bool:
-            bashCommand = 'cd ' + outputdir + ' && tbss_non_FA ' + key
+            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + ' && tbss_non_FA ' + key
             bashcmd = bashCommand.split()
             print("Bash command is:\n{}\n".format(bashcmd))
             registration_log.write(bashCommand + "\n")
@@ -1068,8 +1068,8 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
             outkey = key
             bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && ' + randomise_type + ' -i all_' + key + ' -o ' + key + ' -m mean_FA_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
 
-        bashCommand2 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_cortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_cortical.txt'
-        bashCommand3 = 'cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_cortical.txt'
+        bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_cortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_cortical.txt'
+        bashCommand3 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_cortical.txt'
 
 
         if randomise_numberofpermutation > 0:

@@ -10,6 +10,8 @@ import shutil
 import time
 import subprocess
 
+import matplotlib
+
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
     mf_solo, noddi_amico_solo
@@ -443,6 +445,7 @@ class Elikopy:
                     preproc_solo(folder_path + "/subjects",p,reslice=reslice,denoising=denoising,gibbs=gibbs,topup=topup,eddy=eddy,biasfield=biasfield,starting_state=starting_state,
                                  bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda, qc_reg=qc_reg, core_count=core_count,
                                  cuda_name=cuda_name, s2v=s2v, olrep=olrep, niter=niter, slspec_gc_path=slspec_gc_path, report=report)
+                    matplotlib.pyplot.close(fig='all')
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preprocessed patient %s\n" % p)
                     f.flush()
             f.close()
@@ -557,6 +560,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
                 dti_solo(folder_path + "/subjects",p)
+                matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied DTI on patient %s\n" % p)
                 f.flush()
         f.close()
@@ -623,7 +627,6 @@ class Elikopy:
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 p_job_id = {}
                 p_job_id["id"] = submit_job(p_job)
@@ -633,6 +636,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
                 mf_solo(folder_path + "/subjects", p, dictionary_path, CSD_bvalue = CSD_bvalue, core_count=core_count)
+                matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
                 f.flush()
         f.close()
@@ -675,6 +679,8 @@ class Elikopy:
         if patient_list_m:
             patient_list = patient_list_m
 
+        core_count = 1 if cpus is None else cpus
+
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
@@ -682,10 +688,10 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
-                        "cpus_per_task": 1,
+                        "cpus_per_task": core_count,
                         "mem_per_cpu": 8096,
                         "time": "3:00:00",
                         "mail_user": slurm_email,
@@ -694,7 +700,6 @@ class Elikopy:
                         "error": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.err",
                     }
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
 
@@ -705,8 +710,8 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                core_count = 1 if cpus is None else cpus
                 white_mask_solo(folder_path + "/subjects", p, corr_gibbs=corr_gibbs, core_count=core_count, debug=debug)
+                matplotlib.pyplot.close(fig='all')
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
         f.close()
@@ -747,6 +752,8 @@ class Elikopy:
         if patient_list_m:
             patient_list = patient_list_m
 
+        core_count = 1 if cpus is None else cpus
+
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
@@ -759,10 +766,10 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\"," + str(force_brain_mask) + ",core_count="+str(core_count)+ ")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\"," + str(force_brain_mask) + ",core_count="+str(core_count)+ ")'",
                         "job_name": "noddi_" + p,
                         "ntasks": 1,
-                        "cpus_per_task": 1,
+                        "cpus_per_task": core_count,
                         "mem_per_cpu": 8096,
                         "time": "10:00:00",
                         "mail_user": slurm_email,
@@ -772,7 +779,6 @@ class Elikopy:
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
 
                 p_job_id = {}
@@ -782,8 +788,8 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                core_count = 1 if cpus is None else cpus
                 noddi_solo(folder_path + "/subjects",p,force_brain_mask,core_count=cpus)
+                matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
                 f.flush()
         f.close()
@@ -861,6 +867,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
                 noddi_amico_solo(folder_path + "/subjects",p)
+                matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI AMICO on patient %s\n" % p)
                 f.flush()
         f.close()
@@ -914,10 +921,10 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/subjects\",\"" + p + "\", core_count="+str(core_count)+")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/subjects\",\"" + p + "\", core_count="+str(core_count)+")'",
                         "job_name": "diamond_" + p,
                         "ntasks": 1,
-                        "cpus_per_task": 4,
+                        "cpus_per_task": core_count,
                         "mem_per_cpu": 6096,
                         "time": "30:00:00",
                         "mail_user": slurm_email,
@@ -926,7 +933,6 @@ class Elikopy:
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + "slurm-%j.err",
                     }
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["cpus_per_task"] = p_job["cpus_per_task"] if cpus is None else cpus
                 p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
 
@@ -938,6 +944,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
                 diamond_solo(folder_path + "/subjects",p,core_count=core_count)
+                matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied diamond on patient %s\n" % p)
                 f.flush()
         f.close()
@@ -1015,6 +1022,7 @@ class Elikopy:
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
             tbss_utils(folder_path=folder_path, grp1=grp1, grp2=grp2, starting_state=starting_state, last_state=last_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold,randomise_numberofpermutation=randomise_numberofpermutation)
+            matplotlib.pyplot.close(fig='all')
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied TBSS \n")
             f.flush()
         f.close()
@@ -1181,7 +1189,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of Export\n")
         f.close()
 
-    def regall_FA(self, folder_path=None, grp1=None, grp2=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
+    def regall_FA(self, folder_path=None, grp1=None, grp2=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Wrapper function for TBSS. Perform tract base spatial statistics between the control data and case data.
         DTI needs to have been performed on the data first !!
 
@@ -1221,14 +1229,16 @@ class Elikopy:
         reg_path = folder_path + "/registration"
         makedir(reg_path,folder_path + "/logs.txt",log_prefix)
 
+        core_count = 1 if cpus is None else cpus
+
         job_list = []
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "python -c 'from elikopy.utils import regall_FA; regall_FA(\"" + str(folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",registration_type=\"" + str(registration_type) + "\",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + ")'",
+                "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import regall_FA; regall_FA(\"" + str(folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",registration_type=\"" + str(registration_type) + "\",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + ")'",
                 "job_name": "regall_FA",
                 "ntasks": 1,
-                "cpus_per_task": 1,
+                "cpus_per_task": core_count,
                 "mem_per_cpu": 8096,
                 "time": "20:00:00",
                 "mail_user": slurm_email,
@@ -1237,7 +1247,6 @@ class Elikopy:
                 "error": reg_path + '/' + "slurm-%j.err",
             }
             job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
-            job["cpus_per_task"] = job["cpus_per_task"] if slurm_tasks is None else slurm_tasks
             job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
             p_job_id = {}
             p_job_id["id"] = submit_job(job)
@@ -1245,7 +1254,7 @@ class Elikopy:
             job_list.append(p_job_id)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            regall_FA(folder_path=folder_path, grp1=grp1, grp2=grp2, starting_state=starting_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold)
+            regall_FA(folder_path=folder_path, grp1=grp1, grp2=grp2, starting_state=starting_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold, core_count=core_count)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied REGALL_FA \n")
             f.flush()
         f.close()
@@ -1258,7 +1267,7 @@ class Elikopy:
         f.close()
 
     def regall(self, folder_path=None, grp1=None, grp2=None, metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
-               slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
+               slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Wrapper function for TBSS. Perform tract base spatial statistics between the control data and case data.
         DTI needs to have been performed on the data first !!
 
@@ -1291,16 +1300,18 @@ class Elikopy:
         reg_path = folder_path + "/registration"
         makedir(reg_path, folder_path + "/logs.txt", log_prefix)
 
+        core_count = 1 if cpus is None else cpus
+
         job_list = []
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "python -c 'from elikopy.utils import regall; regall(\"" + str(
+                "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import regall; regall(\"" + str(
                     folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",metrics_dic=" + str(
                     json.dumps(metrics_dic)) + ")'",
                 "job_name": "regall",
                 "ntasks": 1,
-                "cpus_per_task": 1,
+                "cpus_per_task": core_count,
                 "mem_per_cpu": 8096,
                 "time": "20:00:00",
                 "mail_user": slurm_email,
@@ -1309,7 +1320,6 @@ class Elikopy:
                 "error": reg_path + '/' + "slurm-%j.err",
             }
             job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
-            job["cpus_per_task"] = job["cpus_per_task"] if slurm_tasks is None else slurm_tasks
             job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
             p_job_id = {}
             p_job_id["id"] = submit_job(job)
@@ -1318,7 +1328,7 @@ class Elikopy:
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            regall(folder_path=folder_path, grp1=grp1, grp2=grp2, metrics_dic=metrics_dic)
+            regall(folder_path=folder_path, grp1=grp1, grp2=grp2, core_count=core_count, metrics_dic=metrics_dic)
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied REGALL \n")
             f.flush()
@@ -1369,7 +1379,7 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
+                "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
                     folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",core_count=" + str(core_count) + ",regionWiseMean="  + str(regionWiseMean) + ",metrics_dic=" + str(
                     json.dumps(metrics_dic)) + ")'",
                 "job_name": "randomise_all",
@@ -1478,7 +1488,7 @@ class Elikopy:
             patient_path = os.path.splitext(p)[0]
 
             function(folder_path, patient_path, *func_args)
-            
+
             print("[PatientList Wrapper] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied wrap function on patient list on patient %s\n" % p)
 
