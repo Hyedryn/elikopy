@@ -2638,7 +2638,7 @@ def report_solo(folder_path,patient_path, slices=1):
         slices_merge_info_2 = ""+report_path+pre+"d.png + "+report_path+pre+"e.png + "+report_path+pre+"f.png "
         slices_merge_info_3 = ""+report_path+pre+"g.png + "+report_path+pre+"h.png + "+report_path+pre+"i.png "
 
-        cmd1 = "slicer " + nifti + "  -s " + slices + " " + slices_info
+        cmd1 = "slicer " + nifti + "  -s " + str(slices) + " " + slices_info
         cmd2 = "pngappend " + slices_merge_info_1 + " " + report_path + pre + "_x.png"
         cmd3 = "pngappend " + slices_merge_info_2 + " " + report_path + pre + "_y.png"
         cmd4 = "pngappend " + slices_merge_info_3 + " " + report_path + pre + "_z.png"
