@@ -1134,9 +1134,9 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
             atlas_path = fsldir + "/data/atlases"
 
             # list of directory and their labels
-            xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml", atlas_path + "/HarvardOxford-Subcortical.xml", atlas_path + "/JHU-tracts.xml", atlas_path + "/JHU-labels.xml"]
-            atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz", atlas_path + "/JHU/JHU-ICBM-tracts-prob-1mm.nii.gz",atlas_path + "/JHU/JHU-ICBM-labels-1mm.nii.gz"]
-            name = ["MNI", "HarvardCortical", "HarvardSubcortical", "JHU_White-matter_Tractography", "JHU_White-matter_Label"]
+            xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml", atlas_path + "/HarvardOxford-Subcortical.xml", atlas_path + "/JHU-tracts.xml"]
+            atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz", atlas_path + "/JHU/JHU-ICBM-tracts-prob-1mm.nii.gz"]
+            name = ["MNI", "HarvardCortical", "HarvardSubcortical", "JHUWhiteMatterTractography"]
 
             # open the data
             data, data_affine = load_nifti(outputdir + '/stats/all_' + key + '.nii.gz')
