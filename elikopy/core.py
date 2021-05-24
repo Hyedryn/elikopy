@@ -10,6 +10,7 @@ import shutil
 import time
 import subprocess
 
+import matplotlib.pyplot
 import matplotlib
 
 import elikopy.utils

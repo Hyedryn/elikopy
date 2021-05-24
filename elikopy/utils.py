@@ -3,6 +3,7 @@ import time
 import os
 import json
 import shutil
+import matplotlib.pyplot
 
 from future.utils import iteritems
 import subprocess
