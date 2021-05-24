@@ -1229,7 +1229,7 @@ def merge_all_reports(folder_path):
                                stderr=subprocess.STDOUT)
     output, error = process.communicate()
 
-def merge_all_specific_reports(folder_path, merge_wm_report=False):
+def merge_all_specific_reports(folder_path, merge_wm_report=False, merge_legacy_report=False):
     from PyPDF2 import PdfFileWriter, PdfFileReader
     import json, os
 
@@ -1239,6 +1239,9 @@ def merge_all_specific_reports(folder_path, merge_wm_report=False):
 
     if merge_wm_report:
         wm_writer = PdfFileWriter()
+
+    if merge_legacy_report:
+        legacy_writer = PdfFileWriter()
 
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
@@ -1252,6 +1255,19 @@ def merge_all_specific_reports(folder_path, merge_wm_report=False):
                     page.compressContentStreams()
                     wm_writer.addPage(page)
 
+        if merge_legacy_report:
+            pdf_path = folder_path + '/subjects/' + patient_path + '/report/report_' + patient_path + '.pdf'
+            if (os.path.exists(pdf_path)):
+                reader = PdfFileReader(pdf_path)
+                for i in range(reader.numPages):
+                    page = reader.getPage(i)
+                    page.compressContentStreams()
+                    legacy_writer.addPage(page)
+
     if merge_wm_report:
         with open(folder_path + '/wm_mask_qc_report_all.pdf', 'wb') as f:
             wm_writer.write(f)
+
+    if merge_legacy_report:
+        with open(folder_path + '/legacy_report_all.pdf', 'wb') as f:
+            legacy_writer.write(f)
