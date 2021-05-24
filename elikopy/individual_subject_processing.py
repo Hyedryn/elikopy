@@ -2601,7 +2601,8 @@ def report_solo(folder_path,patient_path):
 
 
     image=[]
-    image.append((folder_path + '/' + patient_path + "/dMRI/raw/"+patient_path+"_raw_dmri","raw_drmi","Raw dMRI ("+patient_path+"_raw_drmi.nii.gz)"))
+    if os.path.exists(folder_path + '/' + patient_path + "/dMRI/raw/"+patient_path+"_raw_dmri" + ".nii.gz"):
+        image.append((folder_path + '/' + patient_path + "/dMRI/raw/"+patient_path+"_raw_dmri","raw_drmi","Raw dMRI ("+patient_path+"_raw_drmi.nii.gz)"))
     if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/"+patient_path+"_dmri_preproc" + ".nii.gz"):
         image.append((folder_path + '/' + patient_path + "/dMRI/preproc/"+patient_path+"_dmri_preproc","drmi_preproc","dMRI preprocessed ("+patient_path+"_drmi_preproc.nii.gz)"))
     if os.path.exists(folder_path + '/' + patient_path + "/dMRI/preproc/bet/"+patient_path+"_mask" + ".nii.gz"):
