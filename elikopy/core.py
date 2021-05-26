@@ -1035,7 +1035,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of TBSS\n")
         f.close()
 
-    def export(self, folder_path=None, raw=False, preprocessing=False, dti=False, noddi=False, diamond=False, mf=False, wm_mask=False, report=False, preprocessed_first_b0=False, patient_list_m=None):
+    def export(self, folder_path=None, raw=False, preprocessing=False, dti=False, noddi=False, diamond=False, mf=False, wm_mask=False, report=False, preprocessed_first_b0=False, patient_list_m=None, tractography=False):
         """Wrapper function for tensor reconstruction and computation of DTI metrics using Weighted Least-Squares.
         Performs a tensor reconstruction and saves the DTI metrics.
 
@@ -1086,6 +1086,8 @@ class Elikopy:
         mf_path = "/dMRI/microstructure/mf/"
         wm_mask_path = "/masks/"
 
+        tractography_path = "/dMRI/tracking/"
+
         makedir(folder_path + '/export/', folder_path + '/logs.txt', log_prefix)
         makedir(folder_path + '/export/' + raw_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
         makedir(folder_path + '/export/' + preprocessing_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
@@ -1094,6 +1096,7 @@ class Elikopy:
         makedir(folder_path + '/export/' + diamond_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
         makedir(folder_path + '/export/' + mf_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
         makedir(folder_path + '/export/' + wm_mask_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
+        makedir(folder_path + '/export/' + tractography_path, folder_path + '/export/' + '/export_logs.txt', log_prefix)
         makedir(folder_path + '/export/qc/', folder_path + '/export/' + '/export_logs.txt', log_prefix)
 
         f=open(folder_path + "/logs.txt", "a+")
@@ -1177,6 +1180,12 @@ class Elikopy:
                           folder_path + '/export/' + wm_mask_path + patient_name + '_brain_mask.nii.gz')
                 safe_copy(patient_path + wm_mask_path + 'quality_control/qc_report.pdf',
                                 folder_path + '/export/' + wm_mask_path + patient_name + '_qc_report.pdf')
+
+            if tractography:
+                safe_copy(patient_path + tractography_path + patient_name + '_whole_brain.trk',
+                          folder_path + '/export/' + tractography_path + patient_name + '_whole_brain.trk')
+                safe_copy(patient_path + tractography_path + patient_name + '.trk',
+                          folder_path + '/export/' + tractography_path + patient_name + '.trk')
 
             if report:
                 safe_copy(patient_path + '/quality_control.pdf',
