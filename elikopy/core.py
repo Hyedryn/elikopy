@@ -1479,13 +1479,19 @@ class Elikopy:
         f.close()
 
 
-    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None):
+    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=False, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        log_prefix = "wrapper_elikopy"
+
 
         f = open(folder_path + "/logs.txt", "a+")
         f.write("[PatientList Wrapper] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of wrap function on patient list \n")
         print("[PatientList Wrapper] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of wrap function on patient list \n")
 
+        core_count = 1 if cpus is None else cpus
 
         dest_success = folder_path + "/subjects/subj_list.json"
         with open(dest_success, 'r') as f2:
@@ -1494,10 +1500,37 @@ class Elikopy:
         if patient_list_m:
             patient_list = patient_list_m
 
+        job_list = []
+
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
 
-            function(folder_path, patient_path, *func_args)
+            if slurm:
+                job = {
+                    "wrap": "export OMP_NUM_THREADS=" + str(core_count) + " ; export FSLPARALLEL=" + str(
+                        core_count) + " ; python -c 'from " + filename + " import "+function_name+"; "+function_name+"(\"" + str(
+                        folder_path) + "\",\"" + str(
+                        patient_path) + "\")'",
+                    "job_name": "wrapper_elikopy",
+                    "ntasks": 1,
+                    "cpus_per_task": core_count,
+                    "mem_per_cpu": 8096,
+                    "time": "20:00:00",
+                    "mail_user": slurm_email,
+                    "mail_type": "FAIL",
+                    "output": folder_path + '/' + "slurm-%j.out",
+                    "error": folder_path + '/' + "slurm-%j.err",
+                }
+                job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
+                job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+                p_job_id = {}
+                p_job_id["id"] = submit_job(job)
+                p_job_id["name"] = "wrapper_elikopy"
+                job_list.append(p_job_id)
+                f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+            else:
+                function(folder_path, patient_path, *func_args)
 
             print("[PatientList Wrapper] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied wrap function on patient list on patient %s\n" % p)
@@ -1506,6 +1539,12 @@ class Elikopy:
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied wrap function on patient list on patient %s\n" % p)
             f.flush()
 
+        f.close()
+
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, "randomise_all")
+
+        f = open(folder_path + "/logs.txt", "a+")
         print("[PatientList Wrapper] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of wrap function on patient list\n")
         f.write("[PatientList Wrapper] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of wrap function on patient list\n")
         f.close()
