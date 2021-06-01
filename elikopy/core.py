@@ -1136,6 +1136,10 @@ class Elikopy:
                                 folder_path + '/export/' + dti_path + patient_name + "_FA.nii.gz")
                 safe_copy(patient_path + dti_path + patient_name + "_MD.nii.gz",
                                 folder_path + '/export/' + dti_path + patient_name + "_MD.nii.gz")
+                safe_copy(patient_path + dti_path + patient_name + "_R2.nii.gz",
+                          folder_path + '/export/' + dti_path + patient_name + "_R2.nii.gz")
+                safe_copy(patient_path + dti_path + patient_name + "_MSE.nii.gz",
+                          folder_path + '/export/' + dti_path + patient_name + "_MSE.nii.gz")
                 safe_copy(patient_path + dti_path + patient_name + "_residual.nii.gz",
                                 folder_path + '/export/' + dti_path + patient_name + "_residual.nii.gz")
                 safe_copy(patient_path + dti_path + 'quality_control/qc_report.pdf',
