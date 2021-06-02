@@ -565,6 +565,10 @@ def synb0DisCo(topuppath,patient_path,starting_step=None,topup=True,gpu=True):
     :rtype: object
     :param synb0path:
     """
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    import torch.optim as optim
 
     assert starting_step in (None, "Registration", "Inference", "Apply", "topup")
 
@@ -749,16 +753,11 @@ from random import shuffle
 
 import numpy as np
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
+
 #from torchvision import datasets, transforms
 
 import nibabel as nib
 
-import torch
-import torch.nn as nn
 
 import elikopy.utilsSynb0Disco as util
 
@@ -766,6 +765,10 @@ from elikopy.modelSynb0Disco import UNet3D
 
 
 def inference(T1_path, b0_d_path, model, device):
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    import torch.optim as optim
     # Eval mode
     model.eval()
 
