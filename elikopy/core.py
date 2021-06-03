@@ -203,6 +203,7 @@ class Elikopy:
                 for file in os.listdir(folder_path + typeFolderName):
 
                     DWI_present = False
+                    name=""
 
                     if file.endswith(".nii"):
                         DWI_present = True
