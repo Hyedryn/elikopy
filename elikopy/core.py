@@ -203,7 +203,6 @@ class Elikopy:
                 for file in os.listdir(folder_path + typeFolderName):
 
                     DWI_present = False
-                    name=""
 
                     if file.endswith(".nii"):
                         DWI_present = True
@@ -220,7 +219,7 @@ class Elikopy:
                         bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
 
                     if DWI_present and (bvec not in os.listdir(folder_path + typeFolderName) or bval not in os.listdir(folder_path + typeFolderName)):
-                        error.append(name)
+                        error.append(file)
                     else:
                         success.append(name)
                         type[name]=subjectType
