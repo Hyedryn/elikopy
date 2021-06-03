@@ -141,7 +141,7 @@ class Elikopy:
                                 shutil.copyfile(anat_path_json,
                                                 folder_path + "/subjects/" + entities_0 + "/T1/" + entities_0 + "_T1.json")
 
-                        if DWI_present and (bvec not in os.listdir(dwi_path) or bval not in os.listdir(dwi_path)):
+                        if DWI_present==False and (bvec not in os.listdir(dwi_path) or bval not in os.listdir(dwi_path)):
                             error.append(entities_0)
                         else:
                             success.append(entities_0)
@@ -218,7 +218,7 @@ class Elikopy:
                         bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
                         bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
 
-                    if DWI_present and (bvec not in os.listdir(folder_path + typeFolderName) or bval not in os.listdir(folder_path + typeFolderName)):
+                    if DWI_present==False and (bvec not in os.listdir(folder_path + typeFolderName) or bval not in os.listdir(folder_path + typeFolderName)):
                         error.append(file)
                     else:
                         success.append(name)
