@@ -100,7 +100,7 @@ class Elikopy:
         pattern = re.compile("data_\\d")
 
 
-        if bids_path:
+        if bids_path is not None:
             for subj in os.listdir(bids_path):
                 subjectType = 99
                 dwi_path = bids_path + "/" + subj + "/dwi/"
@@ -123,7 +123,7 @@ class Elikopy:
                             name = os.path.splitext(os.path.splitext(file)[0])[0]
                             bvec = os.path.splitext(os.path.splitext(file)[0])[0] + ".bvec"
                             bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
-                            json = os.path.splitext(os.path.splitext(file)[0])[0] + ".json"
+                            jsonpath = os.path.splitext(os.path.splitext(file)[0])[0] + ".json"
 
                         anat_path = bids_path + "/" + subj + "/anat/" + name + "_T1w.nii.gz"
 
