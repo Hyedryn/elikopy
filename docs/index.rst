@@ -22,7 +22,7 @@ Indices and tables
 ------------------
 
 * :ref:`genindex`
-- API: https://elikopy.readthedocs.io/en/latest/elikopy.html
+* :ref:`elikopy`
 
 
 Features
