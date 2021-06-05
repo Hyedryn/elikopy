@@ -11,7 +11,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False,  eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
+def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """
     Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final.
@@ -49,6 +49,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         assert biasfield == True, 'if starting_state is biasfield, biasfield must be True!'
     if starting_state == "None":
         starting_state = None
+
+    if topupConfig == "None":
+        topupConfig = None
 
     log_prefix = "PREPROC SOLO"
     patient_path = os.path.splitext(p)[0]
@@ -275,12 +278,13 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             curr_y=acq[2]
             curr_z=acq[3]
 
-        if multiple_encoding:
+        if multiple_encoding and not forceSynb0DisCo:
             makedir(topup_path, folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
             f = open(folder_path + '/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Patient %s \n" % p + " has multiple direction of gradient encoding, launching topup directly ")
-            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; topup --imain="' + topup_path + '/b0.nii.gz" --config="b02b0.cnf" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --fout="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_fout_estimate" --iout="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_iout_estimate" --verbose'
+            topupConfig = 'b02b0.cnf' if topupConfig is None else topupConfig
+            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; topup --imain="' + topup_path + '/b0.nii.gz" --config="' + topupConfig + '" --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --fout="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_fout_estimate" --iout="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_iout_estimate" --verbose'
             bashcmd = bashCommand.split()
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
