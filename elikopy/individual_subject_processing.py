@@ -1177,6 +1177,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             else:
                 bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval"'
 
+        import subprocess
         bashcmd = bashCommand.split()
         qc_log = open(qc_path + "/qc_logs.txt", "a+")
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=qc_log,
