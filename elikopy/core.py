@@ -61,16 +61,7 @@ def dicom_to_nifti(folder_path):
 
 class Elikopy:
     r'''
-    The MultiCompartmentModel class allows to combine any number of
-    CompartmentModels and DistributedModels into one combined model that can
-    be used to fit and simulate dMRI data.
-    Parameters
-    ----------
-    models : list of N CompartmentModel instances,
-        the models to combine into the MultiCompartmentModel.
-    parameter_links : list of iterables (model, parameter name, link function,
-        argument list),
-        deprecated, for testing only.
+    Main class containing all the necessary function to process and preprocess a specific study.
     '''
 
     def __init__(self, folder_path, cuda=False, slurm=False, slurm_email='example@example.com'):
@@ -80,11 +71,12 @@ class Elikopy:
         self._cuda = cuda
 
     def patient_list(self, folder_path=None, bids_path=None):
-        """ Verify the validity of all the nifti present in the root folder. If some nifti does not posses an associated
-        bval and bvec file, they are discarded and the user is notified by the mean of a summary file named
-        patient_error.json generated in the out sub-directory. All the valid patient are stored in a file named patient_list.json
+        """ Verify the validity of all the nifti present in the root folder. If some nifti does not possess an associated
+        bval and bvec file, they are discarded and the user is notified by a summary file named
+        patient_error.json generated in the out sub-directory. All valid patients are stored in a file named patient_list.json
 
         :param folder_path: Path to root folder of the study.
+        :param bids_path: Path to the optional folder containing subjects' data in the BIDS format.
         """
         log_prefix = "PATIENT LIST"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -323,20 +315,25 @@ class Elikopy:
         f.close()
 
     def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
-        """Wrapper function for the preprocessing. Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
-        located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final
+        """Wrapper function for the preprocessing. Perform brain extraction and optionally reslicing, denoising, gibbs correction, susceptibility field estimation using topup, movement correction using eddy and biasfield correction. Generated data are stored in bet, reslice, mppca, gibbs, topup, eddy, biasfield and final directory
+        located in the folder <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
 
         :param folder_path: the path to the root directory.
         :param reslice: If true, data will be resliced with a new voxel resolution of 2*2*2.
+        :param reslice_addSlice: If true, an additional slice will be added to each volume to allow gradient cycling eddy motion correction.
         :param denoising: If true, PCA-based denoising using the Marcenko-Pastur distribution will be performed.
-        :param gibbs: If true, Gibbs ringing artefacts of images volumes will be suppressed.
+        :param gibbs: If true, Gibbs ringing artifacts of images volumes will be suppressed.
         :param topup: If true, topup will estimate and correct susceptibility induced distortions.
+        :param topupConfig: If not None, topup will use these additionnal parameters based on the supplied config file.
+        :param forceSynb0DisCo: If true, topup will always estimate the susceptibility field using the T1 structural image.
         :param eddy: If true, eddy will correct eddy currents and movements in diffusion data.
-        :param biasfield: If true, correct low frequency intensity non-uniformity present in MRI image data known as a bias or gain field.
+        :param biasfield: If true, low frequency intensity non-uniformity present in MRI image data known as a bias or gain field will be corrected.
+        :param biasfield_bsplineFitting: Define the initial mesh resolution in mm and the bspline order of the biasfield correction tool.
+        :param biasfield_convergence: Define the maximum number of iteration and the convergences threshold of the biasfield correction tool.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
-        :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup or eddy.
+        :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup, eddy, biasfield, report or post_report.
         :param bet_median_radius: Radius (in voxels) of the applied median filter during bet.
-        :param bet_num_pass: Number of pass of the median filter during bet.
+        :param bet_numpass: Number of pass of the median filter during bet.
         :param bet_dilate: Number of iterations for binary dilation during bet.
         :param cuda: If true, eddy will run on cuda with the command name specified in cuda_name.
         :param cuda_name: name of the eddy command to run when cuda==True.
@@ -347,8 +344,10 @@ class Elikopy:
         :param slurm_timeout: Replace the default slurm timeout by a custom timeout.
         :param cpus: Replace the default number of slurm cpus by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
-        :param qc_reg: tell if do the motion registration step for the quality control.
-        :param niter: number of iterations for eddy volume-to-volume
+        :param qc_reg: If true, the motion registration step of the quality control will be performed.
+        :param niter: Define the number of iterations for eddy volume-to-volume
+        :param slspec_gc_path: Path to the folder containing volume specific slice-specification for eddy. If not None, eddy motion correction with gradient cycling will be performed.
+        :param report: If False, no quality report will be generated.
         """
 
         assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "post_report"), 'invalid starting state!'
@@ -579,16 +578,16 @@ class Elikopy:
         f.close()
 
     def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
-        """Wrapper function for microstructure estimation. Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
+        """Wrapper function for microstructure estimation. Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
         :param folder_path: the path to the root directory.
         :param dictionary_path: Path to the dictionary to use
-        :param CSD_bvalue:
+        :param CSD_bvalue: Define a csd value.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
-        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
+        :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
         log_prefix="MF"
@@ -654,14 +653,15 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def white_mask(self, folder_path=None, patient_list_m=None, corr_gibbs=True, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def white_mask(self, folder_path=None, patient_list_m=None, corr_gibbs=True, forceUsePowerMap=False, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Wrapper function for whitematter mask computation. Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
-        T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
-        a folder named anat in the root folder.
+        T1 is not available. Otherwise, compute the whitematter mask based on an anisotropic power map.
 
         :param folder_path: path to the root directory.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
         :param corr_gibbs: Correct for gibbs oscillation.
+        :param forceUsePowerMap: Force the use of an AnisotropicPower map for the white matter mask generation.
+        :param debug: If true, additional intermediate output will be saved.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 3h by a custom timeout.
@@ -693,7 +693,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -715,7 +715,7 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                white_mask_solo(folder_path + "/subjects", p, corr_gibbs=corr_gibbs, core_count=core_count, debug=debug)
+                white_mask_solo(folder_path + "/subjects", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug)
                 matplotlib.pyplot.close(fig='all')
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
@@ -730,15 +730,15 @@ class Elikopy:
         f.close()
 
     def noddi(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
-        """Wrapper function for noddi. Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
+        """Wrapper function for noddi. Perform noddi and store the data in <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
         :param folder_path: path to the root directory.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
-        :param force_brain_mask:
+        :param force_brain_mask: Force the use of a brain mask even if a whitematter mask exist.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
-        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
+        :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
         log_prefix="NODDI"
@@ -808,7 +808,7 @@ class Elikopy:
         f.close()
 
     def noddi_amico(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
-        """Wrapper function for noddi amico. Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
+        """Wrapper function for noddi amico. Perform noddi and store the data in <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi_amico/.
 
         :param folder_path: path to the root directory.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
@@ -886,14 +886,14 @@ class Elikopy:
         f.close()
 
     def diamond(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
-        """Wrapper function for DIAMOND. Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
+        """Wrapper function for DIAMOND. Perform diamond and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
         :param folder_path: path to the root directory.
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 14h by a custom timeout.
-        :param slurm_cpus: Replace the default number of slurm cpus of 4 by a custom number of cpus.
+        :param cpus: Replace the default number of slurm cpus of 4 by a custom number of cpus.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (6096MO by cpu) by a custom amount of ram.
         """
         log_prefix = "DIAMOND"
@@ -974,6 +974,7 @@ class Elikopy:
         :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
         :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
         :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
+        :param randomise_numberofpermutation: Define the number of permutations.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
@@ -1047,14 +1048,16 @@ class Elikopy:
         :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
-        :param raw:
-        :param preprocessing:
-        :param dti:
-        :param noddi:
-        :param diamond:
-        :param mf:
-        :param wm_mask:
-        :param report:
+        :param raw: If true, export files corresponding to the parameter's name.
+        :param preprocessing: If true, export files corresponding to the parameter's name.
+        :param dti: If true, export files corresponding to the parameter's name.
+        :param noddi: If true, export files corresponding to the parameter's name.
+        :param diamond: If true, export files corresponding to the parameter's name.
+        :param mf: If true, export files corresponding to the parameter's name.
+        :param wm_mask: If true, export files corresponding to the parameter's name.
+        :param report: If true, export files corresponding to the parameter's name.
+        :param preprocessed_first_b0: If true, export files corresponding to the parameter's name.
+        :param tractography: If true, export files corresponding to the parameter's name.
         """
 
 
@@ -1208,21 +1211,19 @@ class Elikopy:
         f.close()
 
     def regall_FA(self, folder_path=None, grp1=None, grp2=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
-        """ Wrapper function for TBSS. Perform tract base spatial statistics between the control data and case data.
-        DTI needs to have been performed on the data first !!
+        """ Register all the subjects' FA computed using the DTI model into a common space.
 
         :param folder_path: path to the root directory.
         :param grp1: List of number corresponding to the type of the patients to put in the first group.
         :param grp2: List of number corresponding to the type of the patients to put in the second group.
         :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise.
-        :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats, design or randomise.
         :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
         :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
         :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
-        :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
+        :param cpus: Replace the default number of used cpus of  by a custom number of cpus.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
 
@@ -1286,16 +1287,16 @@ class Elikopy:
 
     def regall(self, folder_path=None, grp1=None, grp2=None, metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
                slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
-        """ Wrapper function for TBSS. Perform tract base spatial statistics between the control data and case data.
-        DTI needs to have been performed on the data first !!
+        """ Register all the subjects' metric passed in parameters into a common space using the transformation computed when registering the FA. The function regall_FA needs to be applied first!
 
         :param folder_path: path to the root directory.
         :param grp1: List of number corresponding to the type of the patients to put in the first group.
         :param grp2: List of number corresponding to the type of the patients to put in the second group.
+        :param metrics_dic: Dictionnary containing multiple metrics. For each metrics, the metric name is the key and the folder metric's is the value.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
-        :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
+        :param cpus: Replace the default number of used cpus (1) by a custom number of cpus.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
 
@@ -1365,16 +1366,18 @@ class Elikopy:
 
     def randomise_all(self, folder_path=None,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}, regionWiseMean=True,
                slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
-        """ Wrapper function for randomise_all. Perform tract base spatial statistics between the control data and case data.
+        """ Wrapper function for randomise_all. Perform tract base spatial statistics between the control data and case data and region wise stats.
         DTI needs to have been performed on the data first !!
 
         :param folder_path: path to the root directory.
-        :param grp1: List of number corresponding to the type of the patients to put in the first group.
-        :param grp2: List of number corresponding to the type of the patients to put in the second group.
+        :param randomise_numberofpermutation: Define the number of permutation used bu randomize.
+        :param skeletonised: If True, randomize will be using the only skeleton instead of the whole brain.
+        :param metrics_dic: Dictionnary containing multiple metrics. For each metrics, the metric name is the key and the folder metric's is the value.
+        :param regionWiseMean: If true, csv containing atlas-based region wise mean will be generated.
         :param slurm: Whether to use the Slurm Workload Manager or not.
         :param slurm_email: Email adress to send notification if a task fails.
         :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
-        :param slurm_tasks: Replace the default number of slurm task of 8 by a custom number of tasks.
+        :param cpus: Replace the default number of used cpus by a custom number of cpus.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
 
@@ -1435,6 +1438,15 @@ class Elikopy:
 
     def noddi_fix_icvf_thresholding(self, folder_path=None, patient_list_m=None, fintra_threshold=0.99, fbundle_threshold=0.05,
                  use_brain_mask=False, use_wm_mask=False):
+        """ A function to quickly change the treshold value applied on the icvf metric of noddi without the needs of executing again the full noddi core function.
+
+        :param folder_path: path to the root directory.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param fintra_threshold: Threshold applied on the fintra.
+        :param fbundle_threshold: Threshold applied on the fbundle.
+        :param use_brain_mask: Set to 0 values outside the brain mask.
+        :param use_wm_mask: Set to 0 values outside the white matter mask.
+        """
         import numpy as np
         from dipy.io.image import load_nifti, save_nifti
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -1488,6 +1500,21 @@ class Elikopy:
 
 
     def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=False, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+        """ A wrapper function that apply a function given as an argument to every patients of the study. The wrapped function must takes two arguments as input, the patient\_name and the path to the root of the study.
+
+
+        :param folder_path: path to the root directory.
+        :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+        :param function: The pointer to the function (only used without slurm)
+        :param func_args: Additional arguments to pass to the wrapped function (only used without slurm)
+        :param filename: The name of the file containing the wrapped function (only used with slurm)
+        :param function_name: The name of the wrapped function (only used with slurm)
+        :param slurm: Whether to use the Slurm Workload Manager or not.
+        :param slurm_email: Email adress to send notification if a task fails.
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param cpus: Replace the default number of used cpus by a custom number of cpus.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email

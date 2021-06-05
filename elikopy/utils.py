@@ -562,8 +562,12 @@ def synb0DisCo(topuppath,patient_path,starting_step=None,topup=True,gpu=True):
     """
     synb0DISCO adapted from https://github.com/MASILab/Synb0-DISCO
 
+    :param topuppath: Path to the subject's topup folder.
+    :param patient_path: Name of the subject.
+    :param starting_step: Define the starting step, usefull if previous step had already been run.
+    :param topup: If true, topup will be perfomed after synb0Disco.
+    :param gpu: If true, torch will use the gpu.
     :rtype: object
-    :param synb0path:
     """
     import torch
     import torch.nn as nn
@@ -765,6 +769,14 @@ from elikopy.modelSynb0Disco import UNet3D
 
 
 def inference(T1_path, b0_d_path, model, device):
+    """
+
+    :param T1_path: Path to the normalized projected T1.
+    :param b0_d_path: Path to the b0 atlases.
+    :param model: DL Model
+    :param device: Define if cuda or cpu is used.
+    :return:
+    """
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
@@ -1053,8 +1065,17 @@ def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'nod
     registration_log.close()
 
 
-def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1,regionWiseMean=True):
+def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, regionWiseMean=True):
+    """ Perform tract base spatial statistics between the control data and case data and region wise stats.
+    DTI needs to have been performed on the data first !!
 
+    :param folder_path: path to the root directory.
+    :param randomise_numberofpermutation: Define the number of permutation used bu randomize.
+    :param skeletonised: If True, randomize will be using the only skeleton instead of the whole brain.
+    :param metrics_dic: Dictionnary containing multiple metrics. For each metrics, the metric name is the key and the folder metric's is the value.
+    :param core_count: Number of allocated cpu core.
+    :param regionWiseMean: If true, csv containing atlas-based region wise mean will be generated.
+    """
     outputdir = folder_path + "/registration"
     log_prefix = "randomise"
 
@@ -1172,6 +1193,11 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
 
 
 def get_patient_list_by_types(folder_path,type=None):
+    """Print the list of patient corresponding to a specfic type of patient.
+
+    :param folder_path: Path to the root folder of the study.
+    :param type: The selected type
+    """
 
     import json, os
 
@@ -1202,6 +1228,10 @@ def get_patient_list_by_types(folder_path,type=None):
 
 
 def merge_all_reports(folder_path):
+    """ Merge all subject's report into a single big report.
+
+    :param folder_path: Path to the root folder of the study.
+    """
     from PyPDF2 import PdfFileWriter, PdfFileReader
     import json, os
 
@@ -1233,6 +1263,12 @@ def merge_all_reports(folder_path):
     output, error = process.communicate()
 
 def merge_all_specific_reports(folder_path, merge_wm_report=False, merge_legacy_report=False):
+    """ Merge all selected specific subject's report into a single big report.
+
+    :param folder_path: Path to the root folder of the study.
+    :param merge_wm_report: Select wm report.
+    :param merge_legacy_report: Select legacy report.
+    """
     from PyPDF2 import PdfFileWriter, PdfFileReader
     import json, os
 

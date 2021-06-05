@@ -13,18 +13,24 @@ from dipy.denoise.gibbs import gibbs_removal
 
 def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """
-    Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
-    located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final.
+    Perform brain extraction and optionally reslicing, denoising, gibbs correction, susceptibility field estimation using topup, movement correction using eddy and biasfield correction. Generated data are stored in bet, reslice, mppca, gibbs, topup, eddy, biasfield and final directory
+    located in the folder folder_path/subjects/<subjects_ID>/dMRI/preproc.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
     :param reslice: If true, data will be resliced with a new voxel resolution of 2*2*2.
+    :param reslice_addSlice: If true, an additional slice will be added to each volume to allow gradient cycling eddy motion correction.
     :param denoising: If true, PCA-based denoising using the Marcenko-Pastur distribution will be performed.
-    :param gibbs: If true, Gibbs ringing artefacts of images volumes will be suppressed.
+    :param gibbs: If true, Gibbs ringing artifacts of images volumes will be suppressed.
     :param topup: If true, topup will estimate and correct susceptibility induced distortions.
+    :param topupConfig: If not None, topup will use these additionnal parameters based on the supplied config file.
+    :param forceSynb0DisCo: If true, topup will always estimate the susceptibility field using the T1 structural image.
     :param eddy: If true, eddy will correct eddy currents and movements in diffusion data.
-    :param biasfield: If true, correct low frequency intensity non-uniformity present in MRI image data known as a bias or gain field.
-    :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup or eddy.
+    :param biasfield: If true, low frequency intensity non-uniformity present in MRI image data known as a bias or gain field will be corrected.
+    :param biasfield_bsplineFitting: Define the initial mesh resolution in mm and the bspline order of the biasfield correction tool.
+    :param biasfield_convergence: Define the maximum number of iteration and the convergences threshold of the biasfield correction tool.
+    :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
+    :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup, eddy, biasfield, report or post_report.
     :param bet_median_radius: Radius (in voxels) of the applied median filter during bet.
     :param bet_numpass: Number of pass of the median filter during bet.
     :param bet_dilate: Number of iterations for binary dilation during bet.
@@ -32,8 +38,17 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     :param cuda_name: name of the eddy command to run when cuda==True.
     :param s2v: list of parameters eddy for slice-to-volume correction (see Eddy FSL documentation): [mporder,s2v_niter,s2v_lambda,s2v_interp].
     :param olrep: list of parameters eddy outlier replacement (see Eddy FSL documentation): [repol,ol_nstd,ol_nvox,ol_type].
-    :param niter: number of iterations for eddy volume-to-volume
+    :param slurm: Whether to use the Slurm Workload Manager or not.
+    :param slurm_email: Email adress to send notification if a task fails.
+    :param slurm_timeout: Replace the default slurm timeout by a custom timeout.
+    :param cpus: Replace the default number of slurm cpus by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing
+    :param slurm_mem: Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
+    :param qc_reg: If true, the motion registration step of the quality control will be performed.
+    :param niter: Define the number of iterations for eddy volume-to-volume
+    :param slspec_gc_path: Path to the folder containing volume specific slice-specification for eddy. If not None, eddy motion correction with gradient cycling will be performed.
+    :param report: If False, no quality report will be generated.
     """
+
 
     in_reslice = reslice
     assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield", "report"), 'invalid starting state!'
@@ -1417,12 +1432,14 @@ def dti_solo(folder_path, p):
 
 def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePowerMap=False, debug=False):
     """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
-    T1 is not available. The T1 images must have the same name as the patient it corresponds to with _T1 at the end and must be in
-    a folder named anat in the root folder.
+    T1 is not available. Otherwise, compute the whitematter mask based on an anisotropic power map.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
     :param corr_gibbs: Correct for gibbs oscillation.
+    :param core_count: Number of allocated cpu cores.
+    :param forceUsePowerMap: Force the use of an AnisotropicPower map for the white matter mask generation.
+    :param debug: If true, additional intermediate output will be saved.
     """
 
     log_prefix = "White mask solo"
@@ -1797,14 +1814,14 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
 
 
 def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
-    """ Perform noddi and store the data in the subjID/dMRI/microstructure/noddi folder.
+    """ Perform noddi and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param force_brain_mask:
-    :param lambda_iso_diff:
-    :param lambda_par_diff:
-    :param use_amico:
+    :param force_brain_mask: Force the use of a brain mask even if a whitematter mask exist.
+    :param lambda_iso_diff: Define the noddi lambda_iso_diff parameters.
+    :param lambda_par_diff: Define the noddi lambda_par_diff parameters.
+    :param use_amico: If true, use the amico optimizer.
     """
     print("[NODDI SOLO] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
@@ -2032,7 +2049,7 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
 
 
 def noddi_amico_solo(folder_path, p):
-    """ Perform noddi and store the data in the subjID/dMRI/microstructure/noddi_amico folder.
+    """ Perform noddi and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi_amico/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
@@ -2084,12 +2101,12 @@ def noddi_amico_solo(folder_path, p):
     f.close()
 
 
-def diamond_solo(folder_path, p, core_count=4, box=None):
-    """Perform diamond and store the data in the subjID/dMRI/microstructure/diamond folder.
+def diamond_solo(folder_path, p, core_count=4):
+    """Perform diamond and store the data in <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param box:
+    :param core_count: Number of allocated cpu core.
     """
     log_prefix = "DIAMOND SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2312,12 +2329,13 @@ def diamond_solo(folder_path, p, core_count=4, box=None):
 
 
 def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1):
-    """Perform microstructure fingerprinting and store the data in the subjID/dMRI/microstructure/mf folder.
+    """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param dictionary_path:
-    :param CSD_bvalue:
+    :param dictionary_path: Path to the dictionary to use
+    :param CSD_bvalue: Define a csd value.
+    :param core_count: Define the number of available core.
     """
     log_prefix = "MF SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2597,13 +2615,12 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1):
 
 
 def report_solo(folder_path,patient_path, slices=None, short=False):
-    """
+    """ Legacy report function.
 
-    -x 0.4 slicesdir/grota.png -x 0.5 slicesdir/grotb.png -x 0.6 slicesdir/grotc.png -y 0.4 slicesdir/grotd.png -y 0.5
-    slicesdir/grote.png -y 0.6 slicesdir/grotf.png -z 0.4 slicesdir/grotg.png -z 0.5 slicesdir/groth.png -z 0.6 slicesdir/groti.png
-
-
-
+    :param folder_path: path to the root directory.
+    :param patient_path: Name of the subject.
+    :param slices: Add additional slices cut to specific volumes
+    :param short: Only output raw data, preprocessed data and FA data.
     """
 
     report_path = folder_path + '/' + patient_path + "/report/raw/"
