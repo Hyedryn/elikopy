@@ -11,7 +11,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, eddy=False, biasfield=False, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
+def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """
     Perform bet and optionnaly denoising, gibbs, topup and eddy. Generated data are stored in bet, eddy, denoising and final directory
     located in the folder out/preproc. All the function executed after this function MUST take input data from folder_path/out/preproc/final.
@@ -471,6 +471,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         #bashCommand= "N4BiasFieldCorrection -i " + inputImage + " -o [" + folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz, " + folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz] -d 4"
 
+
         bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; dwibiascorrect ants {} {} -fslgrad {} {} -mask {} -bias {} -scratch {} -force -info -nthreads {}'.format(
             inputImage, folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz",
             folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec",
@@ -479,6 +480,20 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz",
             folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/tmp',
             core_count)
+
+        '''bashCommand = 'export OMP_NUM_THREADS=' + str(
+            core_count) + ' ; dwibiascorrect ants {} {} -fslgrad {} {} -mask {} -bias {} -scratch {} -force -info -nthreads {} -ants.b {} -ants.c {} '.format(
+            inputImage,
+            folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz",
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec",
+            folder_path + '/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+            folder_path + '/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+            folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz",
+            folder_path + '/' + patient_path + '/dMRI/preproc/biasfield/tmp',
+            core_count,
+            biasfield_bsplineFitting,
+            biasfield_convergence)'''
+
         import subprocess
         bashcmd = bashCommand.split()
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
