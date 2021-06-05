@@ -730,7 +730,7 @@ def synb0DisCo(topuppath,patient_path,starting_step=None,topup=True,gpu=True):
         step4_log.close()
 
     if starting_step in (None, "Registration", "Inference", "Apply", "topup") and topup:
-        run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams_topup.txt --config=b02b0.cnf --iout=" + topuppath + "/b0_all_topup.nii.gz --out=" + topuppath + "/" + patient_path + "_topup_estimate --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0"
+        run_topup = "topup -v --imain=" + synb0path + "/b0_all.nii.gz --datain=" + synb0path + "/acqparams_topup.txt --config=b02b0.cnf --iout=" + topuppath + "/" + patient_path + "_topup_iout_estimate --out=" + topuppath + "/" + patient_path + "_topup_estimate --subsamp=1,1,1,1,1,1,1,1,1 --miter=10,10,10,10,10,20,20,30,30 --lambda=0.00033,0.000067,0.0000067,0.000001,0.00000033,0.000000033,0.0000000033,0.000000000033,0.00000000000067 --scale=0 "+ '--fout="' + topuppath + '/' + patient_path + '_topup_fout_estimate" '
         bashCommand_topup = run_topup
         topup_log = open(topuppath + "/topup_logs.txt", "a+")
         topup_log.write(
