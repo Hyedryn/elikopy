@@ -18,11 +18,12 @@ ElikoPy is Python library aiming at easing the processing of diffusion imaging f
    :maxdepth: 2
    :caption: Contents:
 
+   elikopy
+
 Indices and tables
 ------------------
 
 * :ref:`genindex`
-* :ref:`elikopy`
 
 
 Features
