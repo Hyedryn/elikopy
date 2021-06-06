@@ -666,6 +666,8 @@ def synb0DisCo(topuppath,patient_path,starting_step=None,topup=True,gpu=True):
         T1_input_path = synb0path + "/T1_norm_lin_atlas_2_5.nii.gz"
         b0_input_path = synb0path + "/b0_d_lin_atlas_2_5.nii.gz"
 
+        from elikopy.modelSynb0Disco import UNet3D
+
         import glob
 
         for i in range(1,numfold+1):
@@ -765,7 +767,7 @@ import nibabel as nib
 
 import elikopy.utilsSynb0Disco as util
 
-from elikopy.modelSynb0Disco import UNet3D
+
 
 
 def inference(T1_path, b0_d_path, model, device):

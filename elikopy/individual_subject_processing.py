@@ -2199,7 +2199,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False):
     qc_path = folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/quality_control"
     makedir(qc_path, folder_path + '/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", log_prefix)
 
-    mse = np.mean(residual ** 2, axis=-1)
+    mse = np.mean(residual ** 2, axis=3)
     R2 = np.zeros_like(mse)
     (itot, jtot, ktot) = np.shape(R2)
     for i in range(itot):
@@ -2221,7 +2221,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False):
     plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
     plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
     plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
-    im0 = axs[0].imshow(plot_mse, cmap='gray')
+    im0 = axs[0].imshow(plot_mse, cmap='gray')#, vmin=0, vmax=np.min([np.max(residual),np.max(mse)]))
     axs[0].set_title('MSE')
     axs[0].set_axis_off()
     fig.colorbar(im0, ax=axs[0], orientation='horizontal')
@@ -2252,11 +2252,11 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False):
     axs[0].set_axis_off()
     sl = np.shape(metric2)[2] // 2
     plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
-    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
-    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
-    plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
-    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
-    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
+    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10, 0]
+    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5, 0]
+    plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl, 0]
+    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5, 0]
+    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10, 0]
     axs[1].imshow(plot_metric2, cmap='gray')
     axs[1].set_title('Fraction of the first compartment')
     axs[1].set_axis_off()
