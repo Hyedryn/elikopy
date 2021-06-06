@@ -885,7 +885,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
         f.close()
 
-    def diamond(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def diamond(self, folder_path=None, patient_list_m=None, reportOnly=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Wrapper function for DIAMOND. Perform diamond and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
         :param folder_path: path to the root directory.
@@ -926,7 +926,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/subjects\",\"" + p + "\", core_count="+str(core_count)+")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/subjects\",\"" + p + "\", reportOnly="+str(reportOnly)+", core_count="+str(core_count)+")'",
                         "job_name": "diamond_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -948,7 +948,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                diamond_solo(folder_path + "/subjects",p,core_count=core_count)
+                diamond_solo(folder_path + "/subjects",p,core_count=core_count,reportOnly=reportOnly)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied diamond on patient %s\n" % p)
                 f.flush()
