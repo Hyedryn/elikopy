@@ -11,7 +11,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
+def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """
     Perform brain extraction and optionally reslicing, denoising, gibbs correction, susceptibility field estimation using topup, movement correction using eddy and biasfield correction. Generated data are stored in bet, reslice, mppca, gibbs, topup, eddy, biasfield and final directory
     located in the folder folder_path/subjects/<subjects_ID>/dMRI/preproc.
@@ -345,7 +345,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
             process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=topup_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
-            synb0DisCo(topup_path,patient_path,starting_step=None,topup=True,gpu=False)
+            synb0DisCo(topup_path,patient_path,starting_step=None,topup=True,gpu=useGPUsynb0DisCo)
 
             if not eddy:
                 bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
@@ -1576,8 +1576,20 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         initial_segmentation, final_segmentation, PVE = hmrf.classify(anat, nclass, beta)
         # save the white matter mask ============================================
         white_mask = PVE[..., 2]
+
+        # Save whitemask in T1 space
+        out_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_whitemask.nii.gz'
+        save_nifti(out_path, white_mask.astype(np.float32), moving_affine)
+
+        # Save segmentation in T1 space
+        out_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_segmentation.nii.gz'
+        save_nifti(out_path, final_segmentation.astype(np.float32), moving_affine)
+
         white_mask[white_mask >= 0.01] = 1
         white_mask[white_mask < 0.01] = 0
+
+
+
         # transform the white matter mask ======================================
         white_mask = affine.transform(white_mask)
         white_mask[white_mask != 0] = 1
@@ -1587,6 +1599,8 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         # Save corrected projected T1
         out_path = folder_path + '/' + patient_path + "/T1/" + patient_path + '_T1_corr_projected.nii.gz'
         save_nifti(out_path, affine.transform(moving_data).astype(np.float32), anat_affine)
+
+
     else:
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
