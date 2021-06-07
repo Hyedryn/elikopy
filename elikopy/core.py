@@ -135,7 +135,8 @@ class Elikopy:
                                                 folder_path + "/subjects/" + entities_0 + "/T1/" + entities_0 + "_T1.json")
 
                         if DWI_present==False or (bvec not in os.listdir(dwi_path) or bval not in os.listdir(dwi_path)):
-                            error.append(entities_0)
+                            if file.endswith(".nii.gz") or file.endswith(".nii"):
+                                error.append(entities_0)
                         else:
                             success.append(entities_0)
                             type[entities_0] = subjectType
@@ -215,8 +216,8 @@ class Elikopy:
                         bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
 
                     if DWI_present==False or (bvec not in os.listdir(folder_path + typeFolderName) or bval not in os.listdir(folder_path + typeFolderName)):
-                        print(file)
-                        error.append(file)
+                        if file.endswith(".nii.gz") or file.endswith(".nii"):
+                            error.append(file)
                     else:
                         success.append(name)
                         type[name]=subjectType
