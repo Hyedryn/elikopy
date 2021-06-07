@@ -321,7 +321,7 @@ class Elikopy:
                                 reverse_log.write("Error when calling fslroi, no reverse direction will be available\n")
                                 print(e.returncode)
                                 print(e.cmd)
-                                print(e.output
+                                print(e.output)
                                 reverse_log.write(e.output + "\n")
                             finally:
                                 print(output)
