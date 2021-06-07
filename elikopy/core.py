@@ -305,7 +305,7 @@ class Elikopy:
                         reverse_path_bvec = folder_path + typeFolderName + '/reverse_encoding/' + name + '.bvec'
                         reverse_path_bval = folder_path + typeFolderName + '/reverse_encoding/' + name + '.bval'
                         reverse_path_acqparameters = folder_path + typeFolderName + '/reverse_encoding/' + "acqparams.txt"
-                        if os.path.isfile(reverse_path) and os.path.isfile(reverse_path_bvec) and os.path.isfile(reverse_path_bval) and os.path.isfile(reverse_path_acqparameters):
+                        if reverseEncoding and os.path.isfile(reverse_path) and os.path.isfile(reverse_path_bvec) and os.path.isfile(reverse_path_bval) and os.path.isfile(reverse_path_acqparameters):
                             print('Topup will use a reverse encoding direction for patient ', name)
                             dw_mri_path = folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz"
                             b0_path = folder_path + "/subjects/" + name + "/dMRI/raw/" + name +"_b0_reverse.nii.gz"
@@ -313,19 +313,29 @@ class Elikopy:
                             #Copy b0 to patient path:
                             fslroi = "fslroi " + reverse_path + " " + b0_path + " 0 1"
                             reverse_log = open(folder_path + "/logs.txt","a+")
-                            process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=reverse_log, stderr=subprocess.STDOUT)
-                            output, error_log = process.communicate()
-                            print(output)
-                            print(error_log)
+                            try:
+                                output = ""
+                                output = subprocess.check_output(fslroi, universal_newlines=True, shell=True, stderr=subprocess.STDOUT)
+                            except subprocess.CalledProcessError:
+                                print("Error when calling fslroi, no reverse direction will be available")
+                                reverse_log.write("Error when calling fslroi, no reverse direction will be available\n")
+                            finally:
+                                print(output)
+                                reverse_log.write(output)
+                            #print(error_log)
 
 
                             #Merge b0 with original DW-MRI:
                             merge_b0 = "fslmerge -t " + dw_mri_path + " " + dw_mri_path + " " + b0_path + " "
-                            process = subprocess.Popen(merge_b0, universal_newlines=True, shell=True, stdout=reverse_log,
-                                                       stderr=subprocess.STDOUT)
-                            output, error_log = process.communicate()
-                            print(output)
-                            print(error_log)
+                            try:
+                                output = ""
+                                output = subprocess.check_output(merge_b0, universal_newlines=True, shell=True, stderr=subprocess.STDOUT)
+                            except subprocess.CalledProcessError:
+                                print("Error when calling fslmerge, no reverse direction will be available")
+                                reverse_log.write("Error when calling fslmerge, no reverse direction will be available\n")
+                            finally:
+                                print(output)
+                                reverse_log.write(output)
 
                             #Edit bvec:
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object:
