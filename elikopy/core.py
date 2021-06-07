@@ -314,12 +314,17 @@ class Elikopy:
                             reverse_log = open(folder_path + "/logs.txt","a+")
                             process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=reverse_log, stderr=subprocess.STDOUT)
                             output, error_log = process.communicate()
+                            print(output)
+                            print(error_log)
+
 
                             #Merge b0 with original DW-MRI:
                             merge_b0 = "fslmerge -t " + dw_mri_path + " " + dw_mri_path + " " + b0_path + " "
                             process = subprocess.Popen(merge_b0, universal_newlines=True, shell=True, stdout=reverse_log,
                                                        stderr=subprocess.STDOUT)
                             output, error_log = process.communicate()
+                            print(output)
+                            print(error_log)
 
                             #Edit bvec:
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object:
