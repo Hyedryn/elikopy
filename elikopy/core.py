@@ -316,9 +316,13 @@ class Elikopy:
                             try:
                                 output = ""
                                 output = subprocess.check_output(fslroi, universal_newlines=True, shell=True, stderr=subprocess.STDOUT)
-                            except subprocess.CalledProcessError:
+                            except subprocess.CalledProcessError as e:
                                 print("Error when calling fslroi, no reverse direction will be available")
                                 reverse_log.write("Error when calling fslroi, no reverse direction will be available\n")
+                                print(e.returncode)
+                                print(e.cmd)
+                                print(e.output
+                                reverse_log.write(e.output + "\n")
                             finally:
                                 print(output)
                                 reverse_log.write(output)
@@ -330,9 +334,13 @@ class Elikopy:
                             try:
                                 output = ""
                                 output = subprocess.check_output(merge_b0, universal_newlines=True, shell=True, stderr=subprocess.STDOUT)
-                            except subprocess.CalledProcessError:
+                            except subprocess.CalledProcessError as e:
                                 print("Error when calling fslmerge, no reverse direction will be available")
                                 reverse_log.write("Error when calling fslmerge, no reverse direction will be available\n")
+                                print(e.returncode)
+                                print(e.cmd)
+                                print(e.output)
+                                reverse_log.write(e.output + "\n")
                             finally:
                                 print(output)
                                 reverse_log.write(output)
