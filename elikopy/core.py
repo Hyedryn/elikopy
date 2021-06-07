@@ -70,13 +70,14 @@ class Elikopy:
         self._slurm_email = slurm_email
         self._cuda = cuda
 
-    def patient_list(self, folder_path=None, bids_path=None):
+    def patient_list(self, folder_path=None, bids_path=None, reverseEncoding=True):
         """ Verify the validity of all the nifti present in the root folder. If some nifti does not possess an associated
         bval and bvec file, they are discarded and the user is notified by a summary file named
         patient_error.json generated in the out sub-directory. All valid patients are stored in a file named patient_list.json
 
         :param folder_path: Path to root folder of the study.
         :param bids_path: Path to the optional folder containing subjects' data in the BIDS format.
+        :param reverseEncoding: Append reverse encoding direction to the DW-MRI data if available
         """
         log_prefix = "PATIENT LIST"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -194,6 +195,9 @@ class Elikopy:
 
                 for file in os.listdir(folder_path + typeFolderName):
 
+                    if os.path.isdir(file):
+                        continue
+
                     DWI_present = False
 
                     if file.endswith(".nii"):
@@ -211,6 +215,7 @@ class Elikopy:
                         bval = os.path.splitext(os.path.splitext(file)[0])[0] + ".bval"
 
                     if DWI_present==False or (bvec not in os.listdir(folder_path + typeFolderName) or bval not in os.listdir(folder_path + typeFolderName)):
+                        print(file)
                         error.append(file)
                     else:
                         success.append(name)
@@ -294,6 +299,72 @@ class Elikopy:
                             if os.path.isfile(anat_path_json):
                                 shutil.copyfile(anat_path_json,
                                                 folder_path + "/subjects/" + name + "/T1/" + name + "_T1.json")
+
+                        reverse_path = folder_path + typeFolderName + 'reverse_encoding/' + name + '.nii.gz'
+                        reverse_path_bvec = folder_path + typeFolderName + '/reverse_encoding/' + name + '.bvec'
+                        reverse_path_bval = folder_path + typeFolderName + '/reverse_encoding/' + name + '.bval'
+                        reverse_path_acqparameters = folder_path + typeFolderName + '/reverse_encoding/' + "acqparams.txt"
+                        if os.path.isfile(reverse_path) and os.path.isfile(reverse_path_bvec) and os.path.isfile(reverse_path_bval) and os.path.isfile(reverse_path_acqparameters):
+                            print('Topup will use a reverse encoding direction for patient ', name)
+                            dw_mri_path = folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz"
+                            b0_path = folder_path + "/subjects/" + name + "/dMRI/raw/" + name +"_b0_reverse.nii.gz"
+
+                            #Copy b0 to patient path:
+                            fslroi = "fslroi " + reverse_path + " " + b0_path + " 0 1"
+                            reverse_log = open(folder_path + "/logs.txt","a+")
+                            process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=reverse_log, stderr=subprocess.STDOUT)
+                            output, error_log = process.communicate()
+
+                            #Merge b0 with original DW-MRI:
+                            merge_b0 = "fslmerge -t " + dw_mri_path + " " + dw_mri_path + " " + b0_path + " "
+                            process = subprocess.Popen(merge_b0, universal_newlines=True, shell=True, stdout=reverse_log,
+                                                       stderr=subprocess.STDOUT)
+                            output, error_log = process.communicate()
+
+                            #Edit bvec:
+                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object:
+                                lines = file_object.readlines()
+                                for index, line in enumerate(lines):
+                                    if index < 3:
+                                        lines[index] = line.strip() + " 0" + "\n"
+
+                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "w") as f:
+                                for line in lines:
+                                    f.write(line)
+
+                            #Edit bval
+                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "r") as file_object:
+                                file_object=file_object.read().rstrip()
+
+                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
+                                myfile.write(file_object + " 0"+ "\n")
+
+                            #Edit index:
+                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', "r") as f0:
+                                line = f0.read()
+                                line = " ".join(line.split())
+                                original_index = [int(s) for s in line.split(' ')]
+                            original_index.append(original_index[-1]+1)
+
+                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', "w") as myfile:
+                                new_index = ''.join(str(j) + " " for j in original_index).rstrip() + "\n"
+                                myfile.write(new_index)
+
+                            #Edit acqparameters:
+                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt') as f:
+                                original_acq = [[float(x) for x in line2.split()] for line2 in f]
+
+                            with open(reverse_path_acqparameters) as f2:
+                                reverse_acq = [[float(x) for x in line2.split()] for line2 in f2]
+
+                            original_acq.append([reverse_acq[0][0], reverse_acq[0][1], reverse_acq[0][2], reverse_acq[0][3]])
+
+                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt', 'w') as file:
+                                file.writelines(' '.join(str(j) for j in i) + '\n' for i in original_acq)
+                            print(original_acq)
+
+
+                            reverse_log.close()
 
         error = list(dict.fromkeys(error))
         success = list(dict.fromkeys(success))
