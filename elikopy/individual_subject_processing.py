@@ -318,9 +318,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 first=True
                 for r in roi:
                     if first:
-                        inindex = str(topup_index[r])
+                        inindex = str(topup_index[r-1])
                     else:
-                        inindex = inindex + "," + str(topup_index[r])
+                        inindex = inindex + "," + str(topup_index[r-1])
 
                 bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex='+inindex+' --datain="' + folder_path + '/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
