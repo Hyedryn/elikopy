@@ -78,13 +78,13 @@ ElikoPy requires Python v3.7+ to run.To install it, first download a copy or clo
 	git clone git@github.com:Hyedryn/elikopy.git
 
 
-After cloning the repo, you can either firstly install all the python dependencies including optionnal dependency used to speed up the code::
+After cloning the repo, you can either firstly install all the python dependencies including optionnal dependency used to speed up the code.
 
 .. code-block:: none
 
 	pip install -r requirements.txt --user
 
-Or you can install directly the library with only the mandatory dependencies (if you performed the previous step, you still need to perform this step)::
+Or you can install directly the library with only the mandatory dependencies (if you performed the previous step, you still need to perform this step).
 
 .. code-block:: none
 
@@ -92,3 +92,36 @@ Or you can install directly the library with only the mandatory dependencies (if
 
 .. note::
 	When using ElikoPy, do not forget to reference it among all of the used dependencies.
+
+
+----------------------------
+Container Installation Steps
+----------------------------
+
+To ease the installation of ElikoPy, a Singularity container is provided in the `ElikoPy repository <https://github.com/Hyedryn/elikopy>`_.
+To learn more about Singularity, you can visit their `official website <https://sylabs.io/singularity/>`_.
+
+.. code-block:: none
+
+	git clone https://github.com/Hyedryn/elikopy.git
+	cd /path/to/repo
+	sudo singularity build /path/to/elikopy.sif Singularity_elikopy
+	
+After building the container, ElikoPy can be run using the following command: 
+
+.. code-block:: none
+
+	singularity run -e --contain
+	-B /path/to/study/directory/:/PROJECTS
+	-B /tmp:/tmp
+	-B /path/to/freesurfer/license.txt:/Software/freesurfer/license.txt
+	-B /path/to/cuda:/usr/local/cuda
+	--nv
+	/path/to/elikopy.sif
+	/path/to/script.py
+	
+.. note::
+	Binding the freesurfer license is optional and is only needed for Synb0-DisCo.
+	
+.. note::
+	Binding the cuda path is optional and is only needed to speed-up Synb0-DisCo or perform inter slice motion correction with Eddy FSL.
