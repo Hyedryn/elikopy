@@ -29,7 +29,7 @@ You can contribute to the documentation by `raising an issue to suggest an
 improvement <https://github.com/Hyedryn/elikopy/issues/new>`_ or by 
 sending a `pull request 
 <https://github.com/Hyedryn/elikopy/compare>`_ on `our repository 
-<https://github.com/sylabs/elikopy>`_.
+<https://github.com/Hyedryn/elikopy>`_.
 
 .. _contribute-to-the-code:
 
@@ -53,7 +53,7 @@ clone your fork of the repo to your computer. (Obviously, you should replace
 .. code-block:: none
 
     $ git clone https://github.com/your-username/elikopy.git && \
-        cd singularity/
+        cd elikopy/
 
 Step 2. Checkout a new branch
 =============================
@@ -125,7 +125,7 @@ Step 5. Submit a Pull Request
 Once you have pushed your branch, then you can go to your fork (in the web GUI 
 on GitHub) and `submit a Pull Request
 <https://help.github.com/articles/creating-a-pull-request/>`_. Regardless of the 
-name of your branch, your PR should be submitted to the Sylabs ``master`` 
+name of your branch, your PR should be submitted to the ElikoPy ``master`` 
 branch. Submitting your PR will open a conversation thread for the maintainers 
 of ElikoPy to discuss your contribution. At this time, the continuous 
 integration that is linked with the code base will also be executed. If there is 
@@ -135,7 +135,7 @@ commits to your branch and they will update the Pull Request.
 Step 6. Keep your branch in sync
 ================================
 
-Cloning the repo will create an exact copy of the {Singularity} repository at that 
+Cloning the repo will create an exact copy of the ElikoPy repository at that 
 moment. As you work, your branch may become out of date as others merge changes
 into the upstream master. In the event that you need to update a branch, you 
 will need to follow the next steps:

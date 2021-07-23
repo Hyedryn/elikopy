@@ -30,7 +30,6 @@ Preprocessing datasets
 
    Preprocessing of diffusion images <preprocessing_dmri>
    Preprocessing of T1 images <preprocessing_T1>
-   Examples <preprocessing_examples>
 
 Computation of microstructural metrics
 ======================================
@@ -39,7 +38,6 @@ Computation of microstructural metrics
    :maxdepth: 2
 
    Preprocessing of diffusion images <metrics>
-   Examples <metrics_examples>
    
 Statistical Analysis
 ====================
@@ -49,7 +47,6 @@ Statistical Analysis
 
    Group-wise statistics <stats_tbss>
    Other statistics <stats_other>
-   Examples <stats_examples>
    
 Data exportation and other utils
 ================================
@@ -59,7 +56,14 @@ Data exportation and other utils
 
    Export a study <other_data>
    Other statistics <other_utils>
-   Examples <other_examples>
+   
+Examples
+========
+   
+.. toctree::
+   :maxdepth: 2
+
+   Examples <examples>
 
 Get Involved
 ============
