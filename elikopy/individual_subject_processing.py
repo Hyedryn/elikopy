@@ -12,41 +12,37 @@ from dipy.denoise.gibbs import gibbs_removal
 
 
 def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
-    """
-    Perform brain extraction and optionally reslicing, denoising, gibbs correction, susceptibility field estimation using topup, movement correction using eddy and biasfield correction. Generated data are stored in bet, reslice, mppca, gibbs, topup, eddy, biasfield and final directory
-    located in the folder folder_path/subjects/<subjects_ID>/dMRI/preproc.
+    """ Performs data preprocessing on a single subject. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
+    denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
+    The results are stored in the preprocessing subfolder of the study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param reslice: If true, data will be resliced with a new voxel resolution of 2*2*2.
-    :param reslice_addSlice: If true, an additional slice will be added to each volume to allow gradient cycling eddy motion correction.
-    :param denoising: If true, PCA-based denoising using the Marcenko-Pastur distribution will be performed.
-    :param gibbs: If true, Gibbs ringing artifacts of images volumes will be suppressed.
-    :param topup: If true, topup will estimate and correct susceptibility induced distortions.
-    :param topupConfig: If not None, topup will use these additionnal parameters based on the supplied config file.
-    :param forceSynb0DisCo: If true, topup will always estimate the susceptibility field using the T1 structural image.
-    :param eddy: If true, eddy will correct eddy currents and movements in diffusion data.
-    :param biasfield: If true, low frequency intensity non-uniformity present in MRI image data known as a bias or gain field will be corrected.
-    :param biasfield_bsplineFitting: Define the initial mesh resolution in mm and the bspline order of the biasfield correction tool.
-    :param biasfield_convergence: Define the maximum number of iteration and the convergences threshold of the biasfield correction tool.
-    :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
-    :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup, eddy, biasfield, report or post_report.
-    :param bet_median_radius: Radius (in voxels) of the applied median filter during bet.
-    :param bet_numpass: Number of pass of the median filter during bet.
-    :param bet_dilate: Number of iterations for binary dilation during bet.
-    :param cuda: If true, eddy will run on cuda with the command name specified in cuda_name.
-    :param cuda_name: name of the eddy command to run when cuda==True.
-    :param s2v: list of parameters eddy for slice-to-volume correction (see Eddy FSL documentation): [mporder,s2v_niter,s2v_lambda,s2v_interp].
-    :param olrep: list of parameters eddy outlier replacement (see Eddy FSL documentation): [repol,ol_nstd,ol_nvox,ol_type].
-    :param slurm: Whether to use the Slurm Workload Manager or not.
-    :param slurm_email: Email adress to send notification if a task fails.
-    :param slurm_timeout: Replace the default slurm timeout by a custom timeout.
-    :param cpus: Replace the default number of slurm cpus by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing
-    :param slurm_mem: Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
-    :param qc_reg: If true, the motion registration step of the quality control will be performed.
-    :param niter: Define the number of iterations for eddy volume-to-volume
+    :param reslice: If true, data will be resliced with a new voxel resolution of 2*2*2. default=False
+    :param reslice_addSlice: If true, an additional empty slice will be added to each volume (might be useful for motion correction if one slice is dropped during the acquisition and the user still wants to perform easily the slice-to-volume motion correction). default=False
+    :param denoising: If true, MPPCA-denoising is performed on the data. default=False
+    :param gibbs: If true, Gibbs ringing correction is performed. We do not advise to use this correction unless the data suffers from a lot of Gibbs ringing artifacts. default=False
+    :param topup: If true, Topup will estimate the susceptibility induced distortions. These distortions are corrected at the same time as EC-induced distortions if eddy=True. In the absence of images acquired with a reverse phase encoding direction, a T1 structural image is required. default=False
+    :param topupConfig: If not None, Topup will use additionnal parameters based on the supplied config file located at <topupConfig>. default=None
+    :param forceSynb0DisCo: If true, Topup will always estimate the susceptibility field using the T1 structural image. default=False
+    :param useGPUsynb0DisCo: If true, Topup will estimate the susceptibility field with the T1 structural image using cuda. default=FALSE
+    :param eddy: If true, Eddy corrects the EC-induced (+ susceptibility, if estimated) distortions and the motion. If these corrections are performed the acquparam and index files are required (see documentation). To perform the slice-to-volume motion correction the slspec file is also needed. default=False
+    :param biasfield: If true, low frequency intensity non-uniformity present in MRI image data known as a bias or gain field will be corrected. default=False
+    :param biasfield_bsplineFitting: Define the initial mesh resolution in mm and the bspline order of the biasfield correction tool. default=[100,3]
+    :param biasfield_convergence: Define the maximum number of iteration and the convergences threshold of the biasfield correction tool. default=[1000,0.001]
+    :param starting_state: Manually set which step of the preprocessing to execute first. Could either be None, denoising, gibbs, topup, eddy, biasfield, report or post_report. default=None
+    :param bet_median_radius: Radius (in voxels) of the applied median filter during brain extraction. default=2
+    :param bet_numpass: Number of pass of the median filter during brain extraction. default=1
+    :param bet_dilate: Number of iterations for binary dilation during brain extraction. default=2
+    :param cuda: If true, eddy will run on cuda with the command name specified in cuda_name. default=False
+    :param cuda_name: name of the eddy command to run when cuda==True. default="eddy_cuda10.1"
+    :param s2v: list of parameters of Eddy for slice-to-volume motion correction (see Eddy FSL documentation): [mporder,s2v_niter,s2v_lambda,s2v_interp]. The slice-to-volume motion correction is performed if mporder>0, cuda is used and a slspec file is provided during the patient_list command. default=[0,5,1,'trilinear']
+    :param olrep: list of parameters of Eddy for outlier replacement (see Eddy FSL documentation): [repol,ol_nstd,ol_nvox,ol_type]. The outlier replacement is performed if repol==True. default=[False, 4, 250, 'sw']
+    :param qc_reg: If true, the motion registration step of the quality control will be performed. We do not advise to use this argument as it increases the computation time. default=False
+    :param niter: Define the number of iterations for eddy volume-to-volume. default=5
     :param slspec_gc_path: Path to the folder containing volume specific slice-specification for eddy. If not None, eddy motion correction with gradient cycling will be performed.
-    :param report: If False, no quality report will be generated.
+    :param report: If False, no quality report will be generated. default=True
+    :param core_count: Number of allocated cpu cores. default=1
     """
 
 
@@ -1210,8 +1206,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
 def dti_solo(folder_path, p):
     """
-    Tensor reconstruction and computation of DTI metrics using Weighted Least-Squares.
-    Performs a tensor reconstruction and saves the DTI metrics.
+    Computes the DTI metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
@@ -1431,15 +1426,16 @@ def dti_solo(folder_path, p):
 
 
 def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePowerMap=False, debug=False):
-    """ Compute a white matter mask of the diffusion data for each patient based on T1 volumes or on diffusion data if
-    T1 is not available. Otherwise, compute the whitematter mask based on an anisotropic power map.
+    """ Computes a white matter mask for a single subject based on the T1 structural image or on the anisotropic power map
+    (obtained from the diffusion images) if the T1 image is not available. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/masks/.
+    The T1 images can be gibbs ringing corrected.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param corr_gibbs: Correct for gibbs oscillation.
-    :param core_count: Number of allocated cpu cores.
-    :param forceUsePowerMap: Force the use of an AnisotropicPower map for the white matter mask generation.
-    :param debug: If true, additional intermediate output will be saved.
+    :param corr_gibbs: If true, Gibbs ringing correction is performed on the T1 image. default=True
+    :param core_count: Number of allocated cpu cores. default=1
+    :param forceUsePowerMap: Force the use of an AnisotropicPower map for the white matter mask generation. default=False
+    :param debug: If true, additional intermediate output will be saved. default=False
     """
 
     log_prefix = "White mask solo"
@@ -1828,14 +1824,15 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
 
 
 def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
-    """ Perform noddi and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
+    """ Computes the NODDI metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param force_brain_mask: Force the use of a brain mask even if a whitematter mask exist.
-    :param lambda_iso_diff: Define the noddi lambda_iso_diff parameters.
-    :param lambda_par_diff: Define the noddi lambda_par_diff parameters.
-    :param use_amico: If true, use the amico optimizer.
+    :param force_brain_mask: Force the use of a brain mask even if a whitematter mask exist. default=False
+    :param lambda_iso_diff: Define the noddi lambda_iso_diff parameters. default=3.e-9
+    :param lambda_par_diff: Define the noddi lambda_par_diff parameters. default=1.7e-9
+    :param use_amico: If true, use the amico optimizer. default=FALSE
+    :param core_count: Number of allocated cpu cores. default=1
     """
     print("[NODDI SOLO] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
@@ -2063,7 +2060,7 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
 
 
 def noddi_amico_solo(folder_path, p):
-    """ Perform noddi and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi_amico/.
+    """ Perform noddi amico on a single subject and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi_amico/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
@@ -2116,11 +2113,11 @@ def noddi_amico_solo(folder_path, p):
 
 
 def diamond_solo(folder_path, p, core_count=4, reportOnly=False):
-    """Perform diamond and store the data in <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
+    """Computes the DIAMOND metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param core_count: Number of allocated cpu core.
+    :param core_count: Number of allocated cpu cores. default=4
     """
     log_prefix = "DIAMOND SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2349,9 +2346,9 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1):
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param dictionary_path: Path to the dictionary to use
-    :param CSD_bvalue: Define a csd value.
-    :param core_count: Define the number of available core.
+    :param dictionary_path: Path to the dictionary of fingerprints (mandatory).
+    :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
+    :param core_count: Define the number of available core. default=1
     """
     log_prefix = "MF SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
