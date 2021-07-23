@@ -41,7 +41,7 @@ The Elikopy toolbox follows a specific folder structure that prevents ambiguity 
 losses when dealing with a large amount of subjects. The figure below illustrates the folder tree in
 ElikoPy.
 
-.. image:: pictures/folder_structure.png
+.. image:: pictures/folder_structure.jpg
 	:width: 800
 	:alt: Overview of the folder structure used by the ElikoPy toolbox.
   
