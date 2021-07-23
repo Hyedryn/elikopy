@@ -37,7 +37,7 @@ Computation of microstructural metrics
 .. toctree::
    :maxdepth: 2
 
-   Preprocessing of diffusion images <metrics>
+   Microstructural metrics <metrics>
    
 Statistical Analysis
 ====================
@@ -55,10 +55,10 @@ Data exportation and other utils
    :maxdepth: 2
 
    Export a study <other_data>
-   Other statistics <other_utils>
+   Utils function <other_utils>
    
-Examples
-========
+Usage and examples
+==================
    
 .. toctree::
    :maxdepth: 2
