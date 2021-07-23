@@ -125,7 +125,7 @@ def anonymise_nifti(rootdir,anonymize_json,rename):
 
 def getJobsState(folder_path,job_list,step_name):
     """
-    Periodically check the status of all jobs in the job_list. When a job status change to complete or a failing state.
+    Periodically checks the status of all jobs in the job_list. When a job status change to complete or a failing state.
     Write the status in the log and remove the job from the job_list. This function end when all jobs are completed or failed.
 
     :param folder_path: The path to the root dir of the study (used to write the logs.txt file)
@@ -185,13 +185,13 @@ def getJobsState(folder_path,job_list,step_name):
 
 def export_files(folder_path, step, patient_list_m=None):
     """
-    Create an export folder in the root folder containing the results of step for each patient in a single folder
+    Creates an export folder in the root folder containing the results of 'step' for each patient in a single folder
+
+    example : export_files('user/my_rootfolder', 'dMRI/microstructure/dti')
 
     :param folder_path: root folder
     :param step: step to export
     :param patient_list_m: Define a subset a patient to process instead of all the available subjects.
-
-    example : export_files('user/my_rootfolder', 'dMRI/microstructure/dti')
     """
 
     export_path = folder_path + "/export_" + step.rsplit('/',1)[1]
@@ -265,18 +265,18 @@ def makedir(dir_path,log_path,log_prefix):
 
 def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_numberofpermutation=5000):
     """
-    [Legacy] Perform tract base spatial statistics between the control data and case data. DTI needs to have been
-    performed on the data first !!
+    [Legacy] Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2. The data type of each subject is specified by the subj_type.json file generated during the call to the patient_list function. The data type corresponds to the original directory of the subject (e.g. a subject that was originally in the folder data_2 is of type 2).
+    It is mandatory to have performed DTI prior to tbss /!\
 
-    :return:
     :param folder_path: path to the root directory.
-    :param grp1: List of number corresponding to the type of the patients to put in the first group (control group).
-    :param grp2: List of number corresponding to the type of the patients to put in the second group (case group).
-    :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise.
-    :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats, design or randomise.
+    :param grp1: List of number corresponding to the type of the subjects to put in the first group.
+    :param grp2: List of number corresponding to the type of the subjects to put in the second group.
+    :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise. default=None
+    :param last_state: Manually set which step of TBSS to execute last. Could either be None, preproc, reg, post_reg, prestats, design or randomise. default=None
     :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
     :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
-    :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
+    :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats. default=0.2
+    :param randomise_numberofpermutation: Define the number of permutations. default=5000
     """
     starting_state = None if starting_state == "None" else starting_state
     last_state = None if last_state == "None" else last_state
@@ -768,16 +768,13 @@ import nibabel as nib
 import elikopy.utilsSynb0Disco as util
 
 
-
-
 def inference(T1_path, b0_d_path, model, device):
-    """
+    """ synb0DISCO adapted from https://github.com/MASILab/Synb0-DISCO
 
     :param T1_path: Path to the normalized projected T1.
     :param b0_d_path: Path to the b0 atlases.
     :param model: DL Model
     :param device: Define if cuda or cpu is used.
-    :return:
     """
     import torch
     import torch.nn as nn
@@ -825,18 +822,17 @@ def inference(T1_path, b0_d_path, model, device):
 
 
 def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, core_count=1):
-    """
-    register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
-    statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
+    """ Register all the subjects Fractional Anisotropy into a common space, skeletonisedd and non skeletonised. This is performed based on TBSS of FSL.
+    It is mandatory to have performed DTI prior to regall_FA /!\
 
-    :return:
     :param folder_path: path to the root directory.
-    :param grp1: List of number corresponding to the type of the patients to put in the first group (control group). Used so data is in right order for statistics
-    :param grp2: List of number corresponding to the type of the patients to put in the second group (case group). Used so data is in right order for statistics
-    :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats.
+    :param grp1: List of number corresponding to the type of the subjects to put in the first group.
+    :param grp2: List of number corresponding to the type of the subjects to put in the second group.
+    :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise. default=None
     :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
     :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
-    :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats.
+    :param prestats_treshold: Thresholds the mean FA skeleton image at the chosen threshold during prestats. default=0.2
+    :param core_count: Define the number of available core. default=1
     """
     starting_state = None if starting_state == "None" else starting_state
     assert starting_state in (None, "reg", "postreg", "prestats"), 'invalid starting state!'
@@ -981,15 +977,14 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
 
 
 def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
-    """
-    register all diffusion metrics into a common space, skeletonisedd and non skeletonised using tract base spatial
-    statistics (TBSS) between the control data and case data. DTI needs to have been performed on the data first.
+    """ Register all the subjects diffusion metrics specified in the argument metrics_dic into a common space using the transformation computed for the FA with the regall_FA function. This is performed based on TBSS of FSL.
+    It is mandatory to have performed regall_FA prior to regall /!\
 
-    :return:
     :param folder_path: path to the root directory.
-    :param grp1: List of number corresponding to the type of the patients to put in the first group (control group). Used so data is in right order for statistics
-    :param grp2: List of number corresponding to the type of the patients to put in the second group (case group). Used so data is in right order for statistics
-    :param metrics_dic: Dictionnary containing the microstructural metric that will be registered.
+    :param grp1: List of number corresponding to the type of the subjects to put in the first group.
+    :param grp2: List of number corresponding to the type of the subjects to put in the second group.
+    :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
+    :param core_count: Define the number of available core. default=1
     """
 
     assert os.path.isdir(folder_path + "/registration/FA"),"No FA registration found! You first need to run regall_FA() before using this function!"
@@ -1068,15 +1063,16 @@ def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'nod
 
 
 def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, regionWiseMean=True):
-    """ Perform tract base spatial statistics between the control data and case data and region wise stats.
-    DTI needs to have been performed on the data first !!
+    """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
+    The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
+    It is mandatory to have performed regall_FA prior to randomise_all /!\
 
     :param folder_path: path to the root directory.
-    :param randomise_numberofpermutation: Define the number of permutation used bu randomize.
-    :param skeletonised: If True, randomize will be using the only skeleton instead of the whole brain.
-    :param metrics_dic: Dictionnary containing multiple metrics. For each metrics, the metric name is the key and the folder metric's is the value.
-    :param core_count: Number of allocated cpu core.
+    :param randomise_numberofpermutation: Define the number of permutations. default=5000
+    :param skeletonised: If True, randomize will be using only the white matter skeleton instead of the whole brain. default=True
+    :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
     :param regionWiseMean: If true, csv containing atlas-based region wise mean will be generated.
+    :param core_count: Number of allocated cpu core. default=1
     """
     outputdir = folder_path + "/registration"
     log_prefix = "randomise"
@@ -1230,7 +1226,7 @@ def get_patient_list_by_types(folder_path,type=None):
 
 
 def merge_all_reports(folder_path):
-    """ Merge all subject's report into a single big report.
+    """ Merge all subjects quality control reports into a single report.
 
     :param folder_path: Path to the root folder of the study.
     """
@@ -1263,6 +1259,7 @@ def merge_all_reports(folder_path):
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True,
                                stderr=subprocess.STDOUT)
     output, error = process.communicate()
+
 
 def merge_all_specific_reports(folder_path, merge_wm_report=False, merge_legacy_report=False):
     """ Merge all selected specific subject's report into a single big report.
