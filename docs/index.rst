@@ -1,8 +1,4 @@
-.. ElikoPy documentation master file, created by
-   sphinx-quickstart on Thu Feb 18 16:18:26 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
+===================================
 Welcome to ElikoPy's documentation!
 ===================================
 
@@ -14,72 +10,70 @@ ElikoPy is Python library aiming at easing the processing of diffusion imaging f
 - DIAMOND, a c software that is characterizing brain tissue by assessment of the distribution of anisotropic microstructural environments in diffusion-compartment imaging.
 - Dmipy, a python library estimating diffusion MRI-based microstructure features, used to fit and recover the parameters of multi-compartment microstructure models
 
+This guide aims to give an introduction to ElikoPy and a brief installation instructions.
+   
+Getting Started & Background Information
+========================================
+              
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+              
+   Introduction to ElikoPy <introduction>
+   Installation <installation>
+   Project Structure <elikopy_project>
 
-   elikopy
+Preprocessing datasets 
+======================
+   
+.. toctree::
+   :maxdepth: 2
 
-Indices and tables
-------------------
+   Preprocessing of diffusion images <preprocessing_dmri>
+   Preprocessing of T1 images <preprocessing_T1>
+   Examples <preprocessing_examples>
 
-* :ref:`genindex`
+Computation of microstructural metrics
+======================================
+   
+.. toctree::
+   :maxdepth: 2
 
+   Preprocessing of diffusion images <metrics>
+   Examples <metrics_examples>
+   
+Statistical Analysis
+====================
+   
+.. toctree::
+   :maxdepth: 2
 
-Features
---------
+   Group-wise statistics <stats_tbss>
+   Other statistics <stats_other>
+   Examples <stats_examples>
+   
+Data exportation and other utils
+================================
+   
+.. toctree::
+   :maxdepth: 2
 
-1. Preprocessing of your dMRI data. The preprocessing includes as optional steps the following corrections: reslice, denoising (MP-PCA), gibbs ringing correction, susceptibility and eddy current induced distortions correction, motion correction (volume-to-volume and slice-to-volume).
-2. Generation of a synthesized b0 for diffusion distortion correction using the based on the Synb0-DISCO repository (https://github.com/MASILab/Synb0-DISCO ). This synthesized b0 is usefull for topup if the acquistion was only performed with one phase encoding direction.
-3. The library can compute the DTI, Noddi, DIAMOND and the novel Microstucturefingerprinting metric.
-4. Complete quality reports to review each step of the processing
-5. Tissue segmentation from T1 images
-6. Ability to run TBSS (FSL) on the dataset
-7. A paper on this library will soon provide a complete assesment of the perfomances of the library.
+   Export a study <other_data>
+   Other statistics <other_utils>
+   Examples <other_examples>
 
-Installation
-------------
+Get Involved
+============
+   
+.. toctree::
+   :maxdepth: 2
 
-ElikoPy requires Python v3.7+ to run.
-After cloning the repo, you can either firstly install all the python dependencies including optionnal dependency used to speed up the code::
+   Contributing <contributing>
+   
+Reference
+=========
 
-   pip install -r requirements.txt --user
+.. toctree::
+   :maxdepth: 2
 
-Or you can install directly the library with only the mandatory dependencies (if you performed the previous step, you still need to perform this step)::
-
-   python3 setup.py install --user
-
-Microstructure Fingerprinting is currently not avaible in the standard python repo, you can clone and install this library manually::
-
-   git clone git@github.com:rensonnetg/microstructure_fingerprinting.git
-   cd microstructure_fingerprinting
-   python setup.py install
-
-| FSL also needs to be installed and availabe in our path if you want to perform eddy current correction, mouvement correction or tbss.
-
-| Ants, FSL, Freesurfer, pyTorch, torchvision and Convert3D Tool from ITK-Snap needs to be installed if you want to generate a second direction of encoding for your b0 in order to performs topup even if only a single direction of encoding were taken during the acquisition pahse of your data.
-
-| Unfortunatly, the DIAMOND code is not publically available. If you do not have it in your possesion, you will not be able to use this algorithm. If you have it, simply add the executable to your path.
-
-Contribute
-----------
-
-Want to contribute? Great!
-
-Do not hesitate to open issue or pull request!
-
-- Issue Tracker: https://github.com/Hyedryn/elikopy/issues
-- Source Code: https://github.com/Hyedryn/elikopy
-
-Support
--------
-
-| If you are having issues, please let us know.
-| You can contacted us by email:
-|     quentin.dessain@student.uclouvain.be
-|     mathieu.simon@student.uclouvain.be
-
-License
--------
-
-The project is licensed under the GNU AGPLv3 license.
+   API <elikopy>
+   License <license>
