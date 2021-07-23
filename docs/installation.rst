@@ -125,3 +125,27 @@ After building the container, ElikoPy can be run using the following command:
 	
 .. note::
 	Binding the cuda path is optional and is only needed to speed-up Synb0-DisCo or perform inter slice motion correction with Eddy FSL.
+
+---------------------------------
+Using ElikoPy on the CECI Cluster
+---------------------------------
+
+UCLouvain student who wish to use ElikoPy on the CECI cluster can use the existing installation present in the pilab project directory. 
+First, the following line needs to be added to our *.bash_profile*.
+
+.. code-block:: none
+
+	source /CECI/proj/pilab/Software/config_elikopy.bash
+	
+Then, execute the following line of code to install ElikoPy:
+
+.. code-block:: none
+
+	source /CECI/proj/pilab/Software/install_elikopy.bash
+	
+If you wish to update your ElikoPy installation, you just need to execute again the preceding line of code.
+
+These steps should be sufficient for the *lemaitre3* and *manneback* clusters. When using other clusters, some additional modules may need to be loaded 
+(see the related `CECI documentation <https://support.ceci-hpc.be/doc/_contents/UsingSoftwareAndLibraries/UsingPreInstalledSoftware/index.html>`_ for more information ).
+We also recommend you to familiarize yourself with slurm job when using ElikoPy on the CECI cluster.
+ 
