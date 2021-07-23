@@ -266,7 +266,7 @@ def makedir(dir_path,log_path,log_prefix):
 def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_numberofpermutation=5000):
     """
     [Legacy] Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2. The data type of each subject is specified by the subj_type.json file generated during the call to the patient_list function. The data type corresponds to the original directory of the subject (e.g. a subject that was originally in the folder data_2 is of type 2).
-    It is mandatory to have performed DTI prior to tbss /!\
+    It is mandatory to have performed DTI prior to tbss.
 
     :param folder_path: path to the root directory.
     :param grp1: List of number corresponding to the type of the subjects to put in the first group.
@@ -823,7 +823,7 @@ def inference(T1_path, b0_d_path, model, device):
 
 def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, core_count=1):
     """ Register all the subjects Fractional Anisotropy into a common space, skeletonisedd and non skeletonised. This is performed based on TBSS of FSL.
-    It is mandatory to have performed DTI prior to regall_FA /!\
+    It is mandatory to have performed DTI prior to regall_FA.
 
     :param folder_path: path to the root directory.
     :param grp1: List of number corresponding to the type of the subjects to put in the first group.
@@ -978,7 +978,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
 
 def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
     """ Register all the subjects diffusion metrics specified in the argument metrics_dic into a common space using the transformation computed for the FA with the regall_FA function. This is performed based on TBSS of FSL.
-    It is mandatory to have performed regall_FA prior to regall /!\
+    It is mandatory to have performed regall_FA prior to regall.
 
     :param folder_path: path to the root directory.
     :param grp1: List of number corresponding to the type of the subjects to put in the first group.
@@ -1065,7 +1065,7 @@ def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'nod
 def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, regionWiseMean=True):
     """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
     The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
-    It is mandatory to have performed regall_FA prior to randomise_all /!\
+    It is mandatory to have performed regall_FA prior to randomise_all.
 
     :param folder_path: path to the root directory.
     :param randomise_numberofpermutation: Define the number of permutations. default=5000

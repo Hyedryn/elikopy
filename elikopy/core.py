@@ -1089,7 +1089,7 @@ class Elikopy:
 
     def tbss(self, folder_path=None, grp1=None, grp2=None, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_numberofpermutation=5000, slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
         """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2. The data type of each subject is specified by the subj_type.json file generated during the call to the patient_list function. The data type corresponds to the original directory of the subject (e.g. a subject that was originally in the folder data_2 is of type 2).
-        It is mandatory to have performed DTI prior to tbss /!\
+        It is mandatory to have performed DTI prior to tbss.
         This is function should not be used as it has been replaced by regall_FA, regall and randomise_all to allow for more flexibility.
 
         example : study.tbss(grp1=[1,2], grp2=[3,4])
@@ -1338,7 +1338,7 @@ class Elikopy:
 
     def regall_FA(self, folder_path=None, grp1=None, grp2=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Register all the subjects Fractional Anisotropy into a common space, skeletonisedd and non skeletonised. This is performed based on TBSS of FSL.
-        It is mandatory to have performed DTI prior to regall_FA /!\
+        It is mandatory to have performed DTI prior to regall_FA.
 
         :param folder_path: the path to the root directory. default=study_folder
         :param grp1: List of number corresponding to the type of the subjects to put in the first group.
@@ -1415,7 +1415,7 @@ class Elikopy:
     def regall(self, folder_path=None, grp1=None, grp2=None, metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
                slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Register all the subjects diffusion metrics specified in the argument metrics_dic into a common space using the transformation computed for the FA with the regall_FA function. This is performed based on TBSS of FSL.
-        It is mandatory to have performed regall_FA prior to regall /!\
+        It is mandatory to have performed regall_FA prior to regall.
 
         :param folder_path: the path to the root directory. default=study_folder
         :param grp1: List of number corresponding to the type of the subjects to put in the first group.
@@ -1494,7 +1494,7 @@ class Elikopy:
                slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
         The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
-        It is mandatory to have performed regall_FA prior to randomise_all /!\
+        It is mandatory to have performed regall_FA prior to randomise_all.
 
         :param folder_path: the path to the root directory. default=study_folder
         :param randomise_numberofpermutation: Define the number of permutations. default=5000
