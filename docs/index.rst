@@ -17,6 +17,7 @@ Getting Started & Background Information
               
 .. toctree::
    :maxdepth: 2
+   :caption: Getting Started & Background Information
               
    Introduction to ElikoPy <introduction>
    Installation <installation>
@@ -27,6 +28,7 @@ Preprocessing datasets
    
 .. toctree::
    :maxdepth: 2
+   :caption: Detailed Guides 
 
    Preprocessing of diffusion images <preprocessing_dmri>
    Preprocessing of T1 images <preprocessing_T1>
@@ -70,6 +72,7 @@ Get Involved
    
 .. toctree::
    :maxdepth: 2
+   :caption: About ElikoPy
 
    Contributing <contributing>
    
