@@ -11,24 +11,32 @@ ElikoPy is Python library aiming at easing the processing of diffusion imaging f
 - Dmipy, a python library estimating diffusion MRI-based microstructure features, used to fit and recover the parameters of multi-compartment microstructure models
 
 This guide aims to give an introduction to ElikoPy and a brief installation instructions.
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Getting Started
    
 Getting Started & Background Information
 ========================================
               
 .. toctree::
    :maxdepth: 2
-   :caption: Getting Started & Background Information
               
    Introduction to ElikoPy <introduction>
    Installation <installation>
    Project Structure <elikopy_project>
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Detailed Guides
+   
 Preprocessing datasets 
 ======================
    
 .. toctree::
-   :maxdepth: 2
-   :caption: Detailed Guides 
+   :maxdepth: 2 
 
    Preprocessing of diffusion images <preprocessing_dmri>
    Preprocessing of T1 images <preprocessing_T1>
@@ -67,12 +75,16 @@ Usage and examples
 
    Examples <examples>
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: About ElikoPy
+   
 Get Involved
 ============
    
 .. toctree::
    :maxdepth: 2
-   :caption: About ElikoPy
 
    Contributing <contributing>
    
