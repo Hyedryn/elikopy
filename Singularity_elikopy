@@ -13,7 +13,7 @@ From: nvidia/cuda:9.1-devel-centos7
 	
     # Install X11 + some utils
     yum install -y xorg-x11-server-Xorg xorg-x11-xauth xorg-x11-apps nano
-	yum groupinstall "C Development Tools and Libraries"
+    yum groupinstall "Development Tools"
 	
 	# Requirements FreeSurfer
 	yum update
