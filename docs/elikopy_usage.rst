@@ -46,7 +46,7 @@ Microstructural metrics computation
 
 .. code-block:: python
 	:linenos:
-	:lineno-start: 11
+	:lineno-start: 10
 	
 	study.dti()
 	study.noddi()
@@ -58,7 +58,7 @@ Statistical Analysis
 
 .. code-block:: python
 	:linenos:
-	:lineno-start: 16
+	:lineno-start: 14
 	
 	grp1=[1]
 	grp2=[2]
@@ -74,7 +74,7 @@ Data Exportation
 
 .. code-block:: python
 	:linenos:
-	:lineno-start: 24
+	:lineno-start: 22
 	
 	study.export(raw=False, preprocessing=False, dti=True, 
 		noddi=False, diamond=False, mf=False, wm_mask=False, report=True)
