@@ -10,45 +10,60 @@ From: nvidia/cuda:9.1-devel-centos7
 
     # Update all libraries
     yum -y update
-	
+	yum install epel-release -y
+    
     # Install X11 + some utils
     yum install -y xorg-x11-server-Xorg xorg-x11-xauth xorg-x11-apps nano
     yum groupinstall "Development Tools"
+    
+    # Requirements FreeSurfer
+    yum update -y
+    yum install git wget tcsh gcc gcc-c++ libgfortran-static make vim-common ca-certificates -y
+    yum install lapack-devel lapack-static blas-devel blas-static zlib-devel -y 
+    yum install python-devel python3-devel -y
+    yum install libX11-devel libXmu-devel mesa-libGL-devel -y
+    
+    # Requirements FSL
+    yum install expat-devel libX11-devel mesa-libGL-devel zlib-devel libpng-devel -y
+    
+    # Requirements MRTrix3
+    yum install git gcc-g++ python eigen3-devel zlib-devel mesa-libGL-devel fftw-devel libtiff-devel -y
+    python3 -m pip install numpy
+	yum install centos-release-scl -y
+    yum install devtoolset-8 -y
+	scl enable devtoolset-8 bash
+    
+    #Requirements Convert3D
+    yum -y install wget tar
+    
+    #Requirements ANTs
+    yum -y install git gcc-c++ zlib-devel cmake cmake3
 	
-	# Requirements FreeSurfer
-	yum update
-	yum install git wget tcsh gcc gcc-c++ libgfortran-static make vim-common ca-certificates
-	yum install lapack-devel lapack-static blas-devel blas-static zlib-devel
-	yum install python-devel python3-devel
-	yum install libX11-devel libXmu-devel mesa-libGL-devel
+	alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake 10 \
+	--slave /usr/local/bin/ctest ctest /usr/bin/ctest \
+	--slave /usr/local/bin/cpack cpack /usr/bin/cpack \
+	--slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake \
+	--family cmake
 	
-	# Requirements FSL
-	yum install expat-devel libX11-devel mesa-libGL-devel zlib-devel libpng-devel
-	
-	# Requirements MRTrix3
-	yum install git gcc-g++ python eigen3-devel zlib-devel mesa-libGL-devel fftw-devel libtiff-devel
-	python -m pip install numpy
-	python3 -m pip install numpy
-	yum install devtoolset-7
-	
-	#Requirements Convert3D
-	yum -y install wget tar
-	
-	#Requirements ANTs
-	yum -y install git gcc-c++ zlib-devel cmake cmake3
-	
+	alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake3 20 \
+	--slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
+	--slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
+	--slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
+	--family cmake
+		
     # Install MRTrix3
     cd /Software
     git clone https://github.com/MRtrix3/mrtrix3.git
     cd mrtrix3
-    git checkout 3.0.0
-    ./configure no-gui
+    git checkout 3.0.3
+    ./configure -nogui -openmp 
     ./build
     cd /
 
     # Install FSL
-	wget -O /Installer_tmp/fslinstaller.py "https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py"
+    wget -O /Installer_tmp/fslinstaller.py "https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py"
     cd /Installer_tmp
+	export LC_ALL="en_US.UTF-8"
     python fslinstaller.py -d /Software/fsl6 -V 6.0.4
     cd /
 
@@ -58,8 +73,8 @@ From: nvidia/cuda:9.1-devel-centos7
     cd /
 
     # Clean up
-    rm -r /Installer_tmp/c3d-1.0.0-Linux-x86_64.tar.gz	
-	
+    rm -r /Installer_tmp/c3d-1.0.0-Linux-x86_64.tar.gz  
+    
     # Install ANTs
     cd /Installer_tmp
     mkdir ants_installer
@@ -72,10 +87,11 @@ From: nvidia/cuda:9.1-devel-centos7
     cd ants_build
     cmake3 /Installer_tmp/ants_installer/ANTs -DCMAKE_INSTALL_PREFIX=/Software/ants
     make 2>&1 | tee build.log
+	make 2>&1 | tee build.log
     cd ANTS-build
     make install 2>&1 | tee install.log
     cd /
-	
+    
     # Clean up
     rm -r /Installer_tmp/ants_installer/
 
@@ -85,8 +101,8 @@ From: nvidia/cuda:9.1-devel-centos7
     tar -C /Software -xzvf /Installer_tmp/freesurfer-linux-centos7_x86_64-7.1.1.tar.gz
     echo "This is a dummy license file. Please bind your freesurfer license file to this file." > /Software/freesurfer/license.txt
     cd /
-	
-	# Clean up
+    
+    # Clean up
     rm -r /Installer_tmp/freesurfer-linux-centos7_x86_64-7.1.1.tar.gz
     
     # Make custom folders
@@ -95,22 +111,22 @@ From: nvidia/cuda:9.1-devel-centos7
     # Set Permissions
     chmod 755 /PROJECTS
     chmod 755 /Software
-	
-	# Install MF 
-	cd /Software
-	git clone https://github.com/rensonnetg/microstructure_fingerprinting.git
-	cd microstructure_fingerprinting
-	python setup.py install
-	cd /
-
-	# Install ElikoPy
+    
+    # Install MF 
 	yum -y install git gcc libpq-dev python-dev python-pip python3 python3-dev python3-pip python3-venv python3-wheel
-	cd /Software
-	git clone https://github.com/Hyedryn/elikopy
-	cd elikopy
-	python3 -m pip install -r requirements.txt --user
-	python3 setup.py install --user
-	cd /
+    cd /Software
+    git clone https://github.com/rensonnetg/microstructure_fingerprinting.git
+    cd microstructure_fingerprinting
+    python3 setup.py install
+    cd /
+
+    # Install ElikoPy
+    cd /Software
+    git clone https://github.com/Hyedryn/elikopy
+    cd elikopy
+    python3 -m pip install -r requirements.txt
+    python3 setup.py install
+    cd /
 
     # Clean up
     rm -r /Installer_tmp
@@ -133,4 +149,4 @@ From: nvidia/cuda:9.1-devel-centos7
     source $FREESURFER_HOME/SetUpFreeSurfer.sh
 
 %runscript
-    xvfb-run -a --server-num=$((65536+$$)) --server-args="-screen 0 1600x1280x24 -ac" bash /APPS/elikopy/run_elikopy.sh /PROJECTS "$@"
+    xvfb-run -a --server-num=$((65536+$$)) --server-args="-screen 0 1600x1280x24 -ac" bash /Software/elikopy/run_elikopy.sh /PROJECTS "$@"
