@@ -57,9 +57,7 @@ Description
 
 .. image:: pictures/preproc_bet.jpg
 	:width: 800
-	:alt: Original b0 images and binary mask obtained with using median_otsu are shown in the left and middle panels, while the thresholded histogram used by median otsu is shown in the right panel.
-
-	Original b0 images and binary mask obtained with using median_otsu are shown in the left and middle panels, while the thresholded histogram used by median otsu is shown in the right panel.
+	:alt: Original b0 images and binary mask obtained using median_otsu are shown in the left and middle panels, while the thresholded histogram used by median otsu is shown in the right panel.
 
 The brain is extracted from the skull and other tissues surrounding the brain to increase
 the processing efficiency of subsequent steps and it is generally required before using
@@ -92,8 +90,6 @@ Description
 	:width: 800
 	:alt: Original and denoised b0 images are shown in the left and middle panels, while the difference between these images is shown in the right panel. An unstructured spatial distribution of the right image indicates extraction of random thermal noise.
 
-	Original and denoised b0 images are shown in the left and middle panels, while the difference between these images is shown in the right panel. An unstructured spatial distribution of the right image indicates extraction of random thermal noise.
-
 To reduce Rician noise typically found in MR images, the input images are denoised
 using the Marchenko-Pastur PCA technique as implemented in DiPy. Since the noise in
 diffusion data is spatially dependent in the case of multichannel receive coils, Principal component analysis of Marchenko-Pastur (MPPCA) noise-only
@@ -103,6 +99,11 @@ that does not blur the image or create artifact.
 Related parameters
 ^^^^^^^^^^^^^^^^^^
 
+The denoising step during the preprocessing can be activated using the denoising argument.
+
+.. code-block:: python
+
+	study.preproc(denoising=True)
 
 ------------------------
 Gibbs Ringing Correction
@@ -114,9 +115,6 @@ Description
 .. image:: pictures/preproc_gibbs.jpg
 	:width: 800
 	:alt: Gibbs ringing correction, uncorrected and b0 images corrected for Gibbs ringing are shown in the left and middle panels, while the difference between these images is shown in the right panel. Gibbs ringing artifacts typically occur at interfaces with sharp changes in intensity.
-
-	Gibbs ringing correction, uncorrected and b0 images corrected for Gibbs ringing are shown in the left and middle panels, while the difference between these images is shown in the right panel. Gibbs ringing artifacts typically occur at interfaces with sharp changes in intensity.
-
 
 In general, in the context of diffusion-weighted imaging, derived diffusion-based estimates
 are greatly affected by Gibbs oscillations. To correct for this,
@@ -162,10 +160,4 @@ Related parameters
 ------
 Report
 ------
-
-Description
-^^^^^^^^^^^
-
-Related parameters
-^^^^^^^^^^^^^^^^^^
 
