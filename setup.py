@@ -9,17 +9,23 @@ except (IOError, OSError) as e:
     print(e.errno)
 
 setuptools.setup(
-    name="elikopy-qdessain-msimon", # Replace with your own username
-    version="0.0.1",
+    name="elikopy",
+    packages = ['elikopy'],
+    license='agpl-3.0',
+    version="0.2",
     author="qdessain, msimon",
     author_email="quentin.dessain@student.uclouvain.be, mathieu.simon@student.uclouvain.be",
     description="A set of tools for analysing dMRI",
-    url="https://github.com/Hyedryn/python_dti",
-    packages=setuptools.find_packages(),
+    url="https://github.com/Hyedryn/elikopy",
+    download_url = 'https://github.com/Hyedryn/elikopy/archive/refs/tags/folder_structrure_v1.tar.gz',
+    #packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: AGPLv3 License",
         "Operating System :: OS Independent",
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     python_requires='>=3.7',
     install_requires=[
