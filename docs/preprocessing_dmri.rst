@@ -1,12 +1,16 @@
 .. _preprocessing-dmri:
 
 ========================================
-Project as an easy way to manage a study
+Preprocessing of diffusion images
 ========================================
 
 The preprocessing stage aims at correcting the non idealities affecting the diffusion data
 before computing the diffusion metrics. With the exception of skull stripping, all processing steps are optional and can be applied at the
 user discretion.
+
+.. image:: pictures/preprocessing.PNG
+	:width: 800
+	:alt: Overview of the main processing steps in the ElikoPy pipeline.
 
 -------
 Reslice
