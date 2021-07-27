@@ -508,7 +508,7 @@ class Elikopy:
                     tot_cpu = 8 if cpus is None else cpus
                     core_count = tot_cpu
                     p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(tot_cpu)+" ; export FSLPARALLEL="+str(tot_cpu)+" ; python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/subjects\",\"" + p + "\",eddy=" + str(
+                        "wrap": "export OMP_NUM_THREADS="+str(tot_cpu)+" ; export FSLPARALLEL="+str(tot_cpu)+" ; python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/\",\"" + p + "\",eddy=" + str(
                             eddy) + ",biasfield=" + str(biasfield)  + ",biasfield_convergence=[" + str(biasfield_convergence[0]) + "," + str(biasfield_convergence[1]) + "],biasfield_bsplineFitting=[" + str(biasfield_bsplineFitting[0]) + "," + str(biasfield_bsplineFitting[1]) + "],denoising=" + str(
                             denoising) + ",reslice=" + str(reslice) + ",reslice_addSlice=" + str(reslice_addSlice) + ",gibbs=" + str(
                             gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
@@ -556,7 +556,7 @@ class Elikopy:
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
                 else:
                     core_count = 1 if cpus is None else cpus
-                    preproc_solo(folder_path + "/subjects",p,reslice=reslice,reslice_addSlice=reslice_addSlice,denoising=denoising,gibbs=gibbs,
+                    preproc_solo(folder_path + "/",p,reslice=reslice,reslice_addSlice=reslice_addSlice,denoising=denoising,gibbs=gibbs,
                                  topup=topup, topupConfig=topupConfig, forceSynb0DisCo=forceSynb0DisCo, useGPUsynb0DisCo=useGPUsynb0DisCo,
                                  eddy=eddy,biasfield=biasfield, biasfield_bsplineFitting=biasfield_bsplineFitting, biasfield_convergence=biasfield_convergence,
                                  starting_state=starting_state,
@@ -655,7 +655,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/\",\"" + p + "\")'",
                         "job_name": "dti_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -677,7 +677,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                dti_solo(folder_path + "/subjects",p)
+                dti_solo(folder_path + "/",p)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied DTI on patient %s\n" % p)
                 f.flush()
@@ -691,7 +691,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
         f.close()
 
-    def fingerprinting(self, dictionary_path, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def fingerprinting(self, dictionary_path=None, folder_path=None, CSD_bvalue = None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the Microstructure Fingerprinting metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
         example : study.fingerprinting(dictionary_path='my_dictionary')
@@ -710,6 +710,12 @@ class Elikopy:
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        dictionary_path = folder_path + "/static_files/mf_dic/fixed_rad_dist.mat" if dictionary_path is None else dictionary_path
+
+        import os.path
+        assert os.path.isfile(dictionary_path), 'Invalid path to the MF dictionary'
+
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Microstructure Fingerprinting with slurm:" + str(slurm) + "\n")
@@ -734,7 +740,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/subjects\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ")'",
                         "job_name": "mf_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -755,7 +761,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                mf_solo(folder_path + "/subjects", p, dictionary_path, CSD_bvalue = CSD_bvalue, core_count=core_count)
+                mf_solo(folder_path + "/", p, dictionary_path, CSD_bvalue = CSD_bvalue, core_count=core_count)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
                 f.flush()
@@ -812,7 +818,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/subjects\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -834,7 +840,7 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                white_mask_solo(folder_path + "/subjects", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug)
+                white_mask_solo(folder_path + "/", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug)
                 matplotlib.pyplot.close(fig='all')
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
@@ -892,7 +898,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/subjects\",\"" + p + "\"," + str(force_brain_mask) + ",core_count="+str(core_count)+ ")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/\",\"" + p + "\"," + str(force_brain_mask) + ",core_count="+str(core_count)+ ")'",
                         "job_name": "noddi_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -914,7 +920,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                noddi_solo(folder_path + "/subjects",p,force_brain_mask,core_count=cpus)
+                noddi_solo(folder_path + "/",p,force_brain_mask,core_count=cpus)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
                 f.flush()
@@ -971,7 +977,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_amico_solo; noddi_amico_solo(\"" + folder_path + "/subjects\",\"" + p + "\")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_amico_solo; noddi_amico_solo(\"" + folder_path + "/\",\"" + p + "\")'",
                         "job_name": "noddi_amico_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -994,7 +1000,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                noddi_amico_solo(folder_path + "/subjects",p)
+                noddi_amico_solo(folder_path + "/",p)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI AMICO on patient %s\n" % p)
                 f.flush()
@@ -1051,7 +1057,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/subjects\",\"" + p + "\", reportOnly="+str(reportOnly)+", core_count="+str(core_count)+")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/\",\"" + p + "\", reportOnly="+str(reportOnly)+", core_count="+str(core_count)+")'",
                         "job_name": "diamond_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1073,7 +1079,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                diamond_solo(folder_path + "/subjects",p,core_count=core_count,reportOnly=reportOnly)
+                diamond_solo(folder_path + "/",p,core_count=core_count,reportOnly=reportOnly)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied diamond on patient %s\n" % p)
                 f.flush()
