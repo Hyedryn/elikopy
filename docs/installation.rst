@@ -120,6 +120,8 @@ After building the container, ElikoPy can be run using the following command:
 	/path/to/elikopy.sif
 	/path/to/script.py
 	
+The script.py file contains the Python code that will be executed inside the container. The path to the root directory in your python code must always be "/PROJECTS/" due to the folder binding.
+	
 .. note::
 	Binding the freesurfer license is optional and is only needed for Synb0-DisCo.
 	
@@ -145,7 +147,12 @@ Then, execute the following line of code to install ElikoPy:
 	
 If you wish to update your ElikoPy installation, you just need to execute again the preceding line of code.
 
+Authorized user can update the local ElikoPy repository present in the PiLab directory using the following script. The local repository is update using the master branch of the remote Github repository.
+
+.. code-block:: none
+
+	source /CECI/proj/pilab/Software/update_elikopy.bash
+
 These steps should be sufficient for the *lemaitre3* and *manneback* clusters. When using other clusters, some additional modules may need to be loaded 
 (see the related `CECI documentation <https://support.ceci-hpc.be/doc/_contents/UsingSoftwareAndLibraries/UsingPreInstalledSoftware/index.html>`_ for more information ).
-We also recommend you to familiarize yourself with slurm job when using ElikoPy on the CECI cluster.
- 
+We also strongly recommend you to familiarize yourself with slurm job when using ElikoPy on the CECI cluster.
