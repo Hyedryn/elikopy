@@ -203,10 +203,30 @@ Bias Field Correction
 Description
 ^^^^^^^^^^^
 
+Variability of the signal in tissues of the same type can affect microstructural metrics computation and brain segmentation algorithms.
+This can be corrected using the N4 Bias Field Correction algorithm.
+
 Related parameters
 ^^^^^^^^^^^^^^^^^^
+
+The bias field correction can be activated using the biasfield argument. It is also possible to modify the parameters of the correction method.
+
+* **biasfield_bsplineFitting** - Define the initial mesh resolution in mm and the bspline order of the biasfield correction tool.
+* **biasfield_convergence** - Define the maximum number of iteration and the convergences threshold of the biasfield correction tool.
+
+.. code-block:: python
+
+	study.preproc(biasfield=True, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001])
 
 ------
 Report
 ------
+
+By default, the preproc function outputs a quality report that contains quality control features for the processing. This can be disabled if needed.
+
+.. code-block:: python
+
+	study.preproc(report=False)
+
+
 
