@@ -10,7 +10,17 @@ user discretion.
 
 .. image:: pictures/preprocessing.PNG
 	:width: 800
-	:alt: Overview of the main processing steps in the ElikoPy pipeline.
+	:alt: Overview of the main preprocessing steps.
+
+To preproccess the dMRI data, the following line of code is used. However, this results in the default preprocessing that encompass only the skull striping step. To perform more advanced preprocessing, we need to dive into the arguments of the preproc function.
+
+.. code-block:: python
+
+	study.preproc()
+
+
+The arguments of the preproc function are given in the API : LINK.
+In this page, only the main arguments are explained in order to grasp the key aspects of preprocessing using ElikoPy.
 
 -------
 Reslice
@@ -19,7 +29,7 @@ Reslice
 Description
 ^^^^^^^^^^^
 
-If the raw data is not in its ’native’ resolution, a reslicing process is required. Usually, the
+If the raw data is not in its ’native’ resolution, a reslicing process might be required. Usually, the
 MRI scanner performs automatic interpolation on the data in order to beautify the data
 since clinicians usually have a preference for high resolution images. However, the intrinsic
 resolution is not augmented by this interpolation. While somewhat useful to clinicians, the
@@ -27,13 +37,16 @@ interpolation is usually not desirable for research. Using it means more computa
 and uncorrelated noise becoming correlated which reduces the performances of MPPCA
 denoising algorithms. Moreover, interpolation is not desirable when performing Gibbs
 ringing correction. Reslicing is therefore a way to mitigate the
-effect of mandatory interpolation during the acquisition. Furthermore, it allows to ensure
-isotropic voxels which facilitate most tractography algorithms.
+effect of mandatory interpolation during the acquisition.
 
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
+The reslicing step during the preprocessing can be activated using the reslice argument.
 
+.. code-block:: python
+
+	study.preproc(reslice=True)
 
 ----------------
 Brain Extraction
@@ -49,30 +62,24 @@ Description
 	Original b0 images and binary mask obtained with using median_otsu are shown in the left and middle panels, while the thresholded histogram used by median otsu is shown in the right panel.
 
 The brain is extracted from the skull and other tissues surrounding the brain to increase
-the processing efficiency of subsequent steps. In addition to the gain of processing speed
-for several algorithms, removal of non brain tissues is a fundamental step in enabling
-the processing of diffusion images since brain regions must generally be skull-stripped before using
-other image processing algorithms.
-
-At the end of the preprocessing, a final brain mask readjusted in regard of all the applied
+the processing efficiency of subsequent steps and it is generally required before using
+other image processing algorithms. At the end of the preprocessing, a final brain mask readjusted in regard of all the applied
 preprocessing steps is also provided as output.
 
-The mask is computed using median_otsu from DiPy. Median_otsu has
-been selected since the method is fast, robust, designed for DW-MRI images and directly
-available in Python. First, a non linear median filter is applied to reduce the noise and
-improve the brain segmentation. Second, the Otsu’s method is used to
-separate the brain (foreground) from the background. Using the intensity histogram of the
-brain along multiple volumes, the algorithm returns an intensity threshold that separates
-the voxels between foreground and background. This threshold is computed by maximizing
-the inter-class variance. The skull gives rise to a weak signal in diffusion MRI making this
-technique possible, however it is not applicable on T1 images. It is noteworthy that the
-performance and quality of the image extraction tools depend on the quality of the MR
-images, therefore the first computed mask (before correction) is dilated using mathematical
-morphology.
+The mask is computed using median_otsu from DiPy.
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
 
+The brain extraction is the only mandatory step and cannot be disabled. However, it is possible to change the parameters of the method
+
+* **bet_median_radius** - Radius (in voxels) of the applied median filter during brain extraction. default=2
+* **bet_numpass** - Number of pass of the median filter during brain extraction. default=1
+* **bet_dilate** - Number of iterations for binary dilation during brain extraction. default=2
+
+.. code-block:: python
+
+	study.preproc(bet_median_radius=2, bet_numpass=2, bet_dilate=2)
 
 ---------------
 MPPCA Denoising
