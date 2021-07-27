@@ -170,10 +170,31 @@ Eddy and motion correction
 Description
 ^^^^^^^^^^^
 
-
+Motion, susceptibility and Eddy current induced distortions are artifacts with different origins but a similar effect i.e the displacement and deformation of the brain. They can therefore be jointly corrected. This is achieved using FSL Eddy. The susceptibility distortions are only corrected if they have been estimated during the topup step. By default only the inter-volume (volume-to-volume) motion is corrected but it is also possible to correct for intra-volume (slice-to-volume) motion.
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
+
+The motion and distortion correction can be activated using the eddy argument. The number of iteration for the motion correction algorithm can also be changed.
+
+.. code-block:: python
+
+	study.preproc(eddy=True, niter=5)
+
+In cases with large motion, inter-volume motion correction might not be sufficient and intra-volume correction is required. This option can be enabled using the s2v argument.
+The s2v input is a list of 4 parameters : [mporder,s2v_niter,s2v_lambda,s2v_interp]. The slice-to-volume motion correction is performed if mporder>0. These parameters are explained in depth in the FSL documentation (LINK). If N describes the number of excitations in a volume, setting mporder to N/4 while letting the other 3 parameters to their default values should provide good results in most situations. The slice-to-volume motion correction is only possible with cuda enabled.
+
+Using the framework of Eddy FSL, it is also possible to replace outlier slices. This is done with the olrep argument which is a list of 4 parameters : [repol,ol_nstd,ol_nvox,ol_type]. The outlier replacement is performed if repol==True. These parameters are explained in depth in the FSL documentation.
+
+.. code-block:: python
+
+	study.preproc(eddy=True, niter=5, s2v=[6,5,1,'trilinear'], cuda=True, cuda_name='eddy_cuda10.1', olrep=[True, 4, 250, 'sw'])
+
+.. note::
+    If Eddy FSL is used, ElikoPy needs the acqparam and index files when generating the patient list : LINK (page getting started)
+
+.. note::
+    If slice-to-volume motion correction is enabled, ElikoPy needs the slspec file when generating the patient list : LINK (page getting started)
 
 ---------------------
 Bias Field Correction
