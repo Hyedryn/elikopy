@@ -55,16 +55,17 @@ Brain Extraction
 Description
 ^^^^^^^^^^^
 
-.. image:: pictures/preproc_bet.jpg
-	:width: 800
-	:alt: Original b0 images and binary mask obtained using median_otsu are shown in the left and middle panels, while the thresholded histogram used by median otsu is shown in the right panel.
-
 The brain is extracted from the skull and other tissues surrounding the brain to increase
 the processing efficiency of subsequent steps and it is generally required before using
 other image processing algorithms. At the end of the preprocessing, a final brain mask readjusted in regard of all the applied
 preprocessing steps is also provided as output.
 
 The mask is computed using median_otsu from DiPy.
+
+.. image:: pictures/preproc_bet.jpg
+	:width: 800
+	:alt: Original b0 images and binary mask obtained using median_otsu are shown in the left and middle panels, while the thresholded histogram used by median otsu is shown in the right panel.
+
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
@@ -86,15 +87,16 @@ MPPCA Denoising
 Description
 ^^^^^^^^^^^
 
-.. image:: pictures/preproc_mppca.jpg
-	:width: 800
-	:alt: Original and denoised b0 images are shown in the left and middle panels, while the difference between these images is shown in the right panel. An unstructured spatial distribution of the right image indicates extraction of random thermal noise.
-
 To reduce Rician noise typically found in MR images, the input images are denoised
 using the Marchenko-Pastur PCA technique as implemented in DiPy. Since the noise in
 diffusion data is spatially dependent in the case of multichannel receive coils, Principal component analysis of Marchenko-Pastur (MPPCA) noise-only
 distribution provides an accurate and fast method of noise evaluation and reduction. This methods has been chosen since it is a fast denoising algorithm
 that does not blur the image or create artifact.
+
+.. image:: pictures/preproc_mppca.jpg
+	:width: 800
+	:alt: Original and denoised b0 images are shown in the left and middle panels, while the difference between these images is shown in the right panel. An unstructured spatial distribution of the right image indicates extraction of random thermal noise.
+
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
@@ -112,20 +114,28 @@ Gibbs Ringing Correction
 Description
 ^^^^^^^^^^^
 
-.. image:: pictures/preproc_gibbs.jpg
-	:width: 800
-	:alt: Gibbs ringing correction, uncorrected and b0 images corrected for Gibbs ringing are shown in the left and middle panels, while the difference between these images is shown in the right panel. Gibbs ringing artifacts typically occur at interfaces with sharp changes in intensity.
-
 In general, in the context of diffusion-weighted imaging, derived diffusion-based estimates
-are greatly affected by Gibbs oscillations. To correct for this,
+are affected by Gibbs oscillations. To correct for this,
 gibbs_removal from DiPy is used. This algorithm models the truncation of k-space as a
 convolution with a sinc-function in the image space. The severity of ringing artifacts thus
 depends on how the sampling of the sinc function occurs. The gibbs_removal function
 reinterpolate the image based on local, subvoxel-shifts to sample the ringing pattern at
 the zero-crossings of the oscillating sinc-function.
 
+.. image:: pictures/preproc_gibbs.jpg
+	:width: 800
+	:alt: Gibbs ringing correction, uncorrected and b0 images corrected for Gibbs ringing are shown in the left and middle panels, while the difference between these images is shown in the right panel. Gibbs ringing artifacts typically occur at interfaces with sharp changes in intensity.
+
 Related parameters
 ^^^^^^^^^^^^^^^^^^
+
+The Gibbs removal can be enabled using the gibbs argument.
+
+.. code-block:: python
+
+	study.preproc(gibbs=True)
+
+Unless the data suffer heavily from Gibbs ringing artifacts, we do not advise to use the gibbs ringing removal step as it might blurr out small microstructural features.
 
 -------------------------------
 Susceptibility field estimation
@@ -133,6 +143,8 @@ Susceptibility field estimation
 
 Description
 ^^^^^^^^^^^
+
+
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
