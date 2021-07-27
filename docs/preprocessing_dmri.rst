@@ -144,10 +144,24 @@ Susceptibility field estimation
 Description
 ^^^^^^^^^^^
 
-
+Susceptibility distortions are created by differences in magnetic susceptibility near junctions of tissues. The susceptibility off resonance field is estimated using Topup from FSL. To do so,
+Topup needs data acquired with multiple phase encoding directions (at least 2). If only a single phase encoding direction is available, ElikoPy uses instead a generated synthetic volume based on a T1 structural image using Synb0-DisCo.
+This step only allows to **estimate** the susceptibility distortions, they are corrected at the same time as the eddy current distortions in the Eddy step below.
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
+
+The susceptibility field estimation can be enabled using the topup argument.
+
+.. code-block:: python
+
+	study.preproc(topup=True)
+
+.. note::
+    If Topup is used, ElikoPy needs the acqparam and index files when generating the patient list : LINK (page getting started)
+
+.. note::
+    If topup is enabled for data with a single phase encoding direction, a T1 structural image has to be provided when generating the patient list : LINK (page getting started)
 
 --------------------------
 Eddy and motion correction
@@ -155,6 +169,8 @@ Eddy and motion correction
 
 Description
 ^^^^^^^^^^^
+
+
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
