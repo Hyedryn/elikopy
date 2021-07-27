@@ -4,16 +4,6 @@
 Typical usage for processing a study
 ====================================
 
----------------
-Container Usage
----------------
-
-blablabla
-
------------
-Python Code
------------
-
 On this page is presented a basic usage of the ElikoPy library. More information on all these function are available in the detailled guide. 
 	
 Header and initialisation

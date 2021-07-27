@@ -42,6 +42,8 @@ Description
 	:width: 800
 	:alt: Original b0 images and binary mask obtained with using median_otsu are shown in the left and middle panels, while the thresholded histogram used by median otsu is shown in the right panel.
 
+	Original b0 images and binary mask obtained with using median_otsu are shown in the left and middle panels, while the thresholded histogram used by median otsu is shown in the right panel.
+
 The brain is extracted from the skull and other tissues surrounding the brain to increase
 the processing efficiency of subsequent steps. In addition to the gain of processing speed
 for several algorithms, removal of non brain tissues is a fundamental step in enabling
@@ -79,6 +81,8 @@ Description
 	:width: 800
 	:alt: Original and denoised b0 images are shown in the left and middle panels, while the difference between these images is shown in the right panel. An unstructured spatial distribution of the right image indicates extraction of random thermal noise.
 
+	Original and denoised b0 images are shown in the left and middle panels, while the difference between these images is shown in the right panel. An unstructured spatial distribution of the right image indicates extraction of random thermal noise.
+
 To reduce Rician noise typically found in MR images, the input images are denoised
 using the Marchenko-Pastur PCA technique as implemented in DiPy. Since the noise in
 diffusion data is spatially dependent in the case of multichannel receive coils, Principal component analysis of Marchenko-Pastur (MPPCA) noise-only
@@ -99,6 +103,8 @@ Description
 .. image:: pictures/preproc_gibbs.jpg
 	:width: 800
 	:alt: Gibbs ringing correction, uncorrected and b0 images corrected for Gibbs ringing are shown in the left and middle panels, while the difference between these images is shown in the right panel. Gibbs ringing artifacts typically occur at interfaces with sharp changes in intensity.
+
+	Gibbs ringing correction, uncorrected and b0 images corrected for Gibbs ringing are shown in the left and middle panels, while the difference between these images is shown in the right panel. Gibbs ringing artifacts typically occur at interfaces with sharp changes in intensity.
 
 
 In general, in the context of diffusion-weighted imaging, derived diffusion-based estimates
