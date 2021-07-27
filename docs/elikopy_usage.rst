@@ -4,13 +4,13 @@
 Typical usage for processing a study
 ====================================
 
-On this page is presented a basic usage of the ElikoPy library. More information on all these function are available in the detailled guide. 
+On this page is presented a basic usage of the ElikoPy library. More information on all these functions are available in the detailed guide.
 	
 Header and initialisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The first step to enable ElikoPy is to import it and initialise the ElikoPy object "*study* " specific to the current study. 
-Then only required arguments for the constructor is the path to the root directory of the project.
+The only required argument for the constructor is the path to the root directory of the project.
 
 .. code-block:: python
 	:linenos:
@@ -24,34 +24,54 @@ Then only required arguments for the constructor is the path to the root directo
 	
 	study = elikopy.core.Elikopy(f_path)
 	study.patient_list()
-	
-	
-Preprocessing and generation of the whitematter mask
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following code block show how to preproccess the dMRI data and generate a white matter mask. By default only the brain extraction is enabled in the preprocessing but we recommend you to enable more preprocessing as described in the detailled guide.
-The white_mask() function will use the T1 structural images if provided.
+The root directory must have the following structure during the initialisation
+
+.. image:: pictures/root.png
+	:width: 800
+	:alt: Initialisation of the root directory
+
+The T1 structural images as well as the acqparams, index and slspec files are optional. However, if they are not available, some processing steps might be not available (this is usually specified by a note in the documentation).
+These files can be generated as explained in the following links:
+
+* acqparams.txt and index.txt : LINK
+* slspec.txt : LINK
+
+Preprocessing
+^^^^^^^^^^^^^
+
+The following code block show how to preproccess the dMRI data. By default only the brain extraction is enabled in the preprocessing but we recommend you to enable more preprocessing as described in the detailled guide (LINK).
 
 .. code-block:: python
 	:linenos:
 	:lineno-start: 8
 	
 	study.preproc()
-	study.white_mask()
 
 Microstructural metrics computation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following code block compute microstructural metrics from the four microstructural model available in ElikoPy.
+The following code block computes microstructural metrics from the four microstructural model available in ElikoPy.
 
 .. code-block:: python
 	:linenos:
-	:lineno-start: 10
+	:lineno-start: 9
 	
 	study.dti()
 	study.noddi()
 	study.diamond()
 	study.fingerprinting()
+
+whitematter mask
+^^^^^^^^^^^^^^^^
+
+The following code block computes a white matter mask for each subject from its T1 structural image (if available). If the T1 is not available, the mask is computed using the anisotropic power map generated from the diffusion data.
+
+.. code-block:: python
+	:linenos:
+	:lineno-start: 13
+
+	study.white_mask()
 	
 Statistical Analysis
 ^^^^^^^^^^^^^^^^^^^^
