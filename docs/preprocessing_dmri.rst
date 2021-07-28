@@ -45,7 +45,7 @@ Related parameters
 The reslicing step during the preprocessing can be activated using the reslice argument.
 
 * **reslice** - If true, data will be resliced with a new voxel resolution of 2*2*2. default=False
-* **reslice_addSlice ** - If true, an additional empty slice will be added to each volume (might be useful for motion correction if one slice is dropped during the acquisition and the user still wants to perform easily the slice-to-volume motion correction). default=False
+* **reslice_addSlice** - If true, an additional empty slice will be added to each volume (might be useful for motion correction if one slice is dropped during the acquisition and the user still wants to perform easily the slice-to-volume motion correction). default=False
 
 .. code-block:: python
 
