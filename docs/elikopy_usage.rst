@@ -40,7 +40,7 @@ These files can be generated as explained in the following links:
 Preprocessing
 ^^^^^^^^^^^^^
 
-The following code block show how to preproccess the dMRI data. By default only the brain extraction is enabled in the preprocessing but we recommend you to enable more preprocessing as described in the detailled guide (LINK).
+The following code block show how to preproccess the dMRI data. By default only the brain extraction is enabled in the preprocessing but we recommend you to enable more preprocessing as described in the detailled guide (:ref:`preprocessing-dmri`).
 
 .. code-block:: python
 	:linenos:
