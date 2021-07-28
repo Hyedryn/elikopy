@@ -867,8 +867,8 @@ class Elikopy:
         :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
         :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
-        :param lambda_iso_diff: default=3.e-9
-        :param lambda_par_diff: default=1.7e-9
+        :param lambda_iso_diff: user defined isotropic diffusivity for the CSF model. default=3.e-9
+        :param lambda_par_diff: user defined axial diffusivity of the intra-neurite space. default=1.7e-9
         """
         log_prefix="NODDI"
         folder_path = self._folder_path if folder_path is None else folder_path
