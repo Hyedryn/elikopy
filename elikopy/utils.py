@@ -1063,7 +1063,7 @@ def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'nod
     registration_log.close()
 
 
-def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, regionWiseMean=True):
+def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, regionWiseMean=True, additional_atlases=None):
     """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
     The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
     It is mandatory to have performed regall_FA prior to randomise_all.
@@ -1074,6 +1074,7 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
     :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
     :param regionWiseMean: If true, csv containing atlas-based region wise mean will be generated.
     :param core_count: Number of allocated cpu core. default=1
+    :param additional_atlases:  Define additional atlases to be used as segmentation template for csv generation (see regionWiseMean). Dictionary is in the form {'Atlas_name_1':["path to atlas 1 xml","path to atlas 1 nifti"],'Atlas_name_1':["path to atlas 2 xml","path to atlas 2 nifti"]}.
     """
     outputdir = folder_path + "/registration"
     log_prefix = "randomise"
@@ -1160,7 +1161,10 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
             xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml", atlas_path + "/HarvardOxford-Subcortical.xml", atlas_path + "/JHU-tracts.xml"]
             atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz", atlas_path + "/JHU/JHU-ICBM-tracts-prob-1mm.nii.gz"]
             name = ["MNI", "HarvardCortical", "HarvardSubcortical", "JHUWhiteMatterTractography"]
-
+            if additional_atlases:
+                xmlName = xmlName + list(map(list, zip(*list(additional_atlases.values()))))[0]
+                atlases = atlases + list(map(list, zip(*list(additional_atlases.values()))))[1]
+                name = name + list(additional_atlases.keys())
             # open the data
             data, data_affine = load_nifti(outputdir + '/stats/all_' + key + '.nii.gz')
 
