@@ -11,8 +11,6 @@ library has been elaborated to perform this important step.
 .. image:: pictures/T1_pipeline_steps.jpg
 	:width: 800
 	:alt: T1 preprocessing pipeline.
-	
-	T1 preprocessing pipeline.
 
 On the one hand, when a T1 image is available, a white matter mask can be computed
 from this data. Therefore, the T1 image is first preprocessed then segmented. Finally the
@@ -26,5 +24,3 @@ computed from a segmentation of the diffusion data using Anisotropic Power (AP) 
 .. image:: pictures/APvsT1.jpg
 	:width: 800
 	:alt: AP map is shown in the left panels, while a T1 weighted structural image obtained from the same subject is shown in the right panel.
-	
-	AP map is shown in the left panels, while a T1 weighted structural image obtained from the same subject is shown in the right panel.
