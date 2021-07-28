@@ -854,7 +854,7 @@ class Elikopy:
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of White mask\n")
         f.close()
 
-    def noddi(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def noddi(self, folder_path=None, patient_list_m=None, force_brain_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9):
         """Computes the NODDI metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
         example : study.noddi()
@@ -867,6 +867,8 @@ class Elikopy:
         :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
         :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        :param lambda_iso_diff: default=3.e-9
+        :param lambda_par_diff: default=1.7e-9
         """
         log_prefix="NODDI"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -898,7 +900,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/\",\"" + p + "\"," + str(force_brain_mask) + ",core_count="+str(core_count)+ ")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/\",\"" + p + "\"," + str(force_brain_mask) + ",core_count="+str(core_count)+ ",lambda_iso_diff="+str(lambda_iso_diff) +", lambda_par_diff="+str(lambda_par_diff) + ")'",
                         "job_name": "noddi_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -920,7 +922,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                noddi_solo(folder_path + "/",p,force_brain_mask,core_count=cpus)
+                noddi_solo(folder_path + "/",p,force_brain_mask,core_count=cpus,lambda_iso_diff=lambda_iso_diff, lambda_par_diff=lambda_par_diff)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
                 f.flush()
