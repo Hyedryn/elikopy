@@ -37,6 +37,18 @@ These files can be generated as explained in the following links:
 * acqparams.txt and index.txt : `Eddy FSL acqp <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/Faq#How_do_I_know_what_to_put_into_my_--acqp_file>`_
 * slspec.txt : `Eddy FSL slspec <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/UsersGuide#A--slspec>`_
 
+.. note::
+	If you have volumes that are acquired with reverse phase encoding directions in separate niftis, instead of merging the niftis, it is possible to use the 'reverseEncoding' argument of patient_list.
+
+	.. code-block:: python
+
+		study.patient_list(reverseEncoding=True)
+
+	In this case a reverseEncoding directory containing the data with reversed phase encoding direction can be added in the DATA_N folders and the merging operation will be managed automatically.
+
+.. note::
+	The BIDS format is also supported in input using the bids_path argument of patient_list
+
 Preprocessing
 ^^^^^^^^^^^^^
 
