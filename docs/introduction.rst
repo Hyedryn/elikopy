@@ -11,7 +11,7 @@ framework to ensure reproducibility and consistency, reducing error propagation 
 improve sensitivity. It also grants the possibility for clinicians to perform fast preprocessing
 for a large variety of studies with minimal knowledge.
 
-The ElikoPy library was developed during a Master’s thesis.
+The ElikoPy library was developed during a Master's thesis.
 
 .. note::
 	If you wish to learn more about the library and its validation, we invite you to read our `Master's thesis <http://hdl.handle.net/2078.1/thesis:30673>`_.
@@ -36,8 +36,8 @@ Features
 ========
 
 1. Preprocessing of your dMRI data.
-2. Generation of a synthesized b0 for diffusion distortion correction using the based on the `Synb0-DISCO repository <https://github.com/MASILab/Synb0-DISCO>`_. This synthesized b0 is usefull for topup if the acquistion was only performed with one phase encoding direction.
-3. The library can compute the DTI, Noddi, DIAMOND and the novel Microstucturefingerprinting metric.
+2. Generation of a synthesized b0 for susceptibility distortion correction using the `Synb0-DISCO repository <https://github.com/MASILab/Synb0-DISCO>`_. This synthesized b0 is useful for topup if the acquistion was only performed with one phase encoding direction.
+3. The library can compute the DTI, Noddi, DIAMOND and the novel Microstucture fingerprinting models.
 4. Complete quality reports to review each step of the processing.
 5. Tissue segmentation from T1 images.
 6. Ability to run subject and group wise statistics on the dataset.
