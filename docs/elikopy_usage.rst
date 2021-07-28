@@ -44,10 +44,18 @@ These files can be generated as explained in the following links:
 
 		study.patient_list(reverseEncoding=True)
 
-	In this case a reverseEncoding directory containing the data with reversed phase encoding direction can be added in the DATA_N folders and the merging operation will be managed automatically.
+	In this case a reverse_encoding directory containing the data with reversed phase encoding direction can be added in the data_N folders and the merging operations will be managed automatically.
+
+	.. image:: pictures/root_reverse.png
+		:width: 800
+		:alt: Initialisation of the root directory, reverse phase encoding
 
 .. note::
 	The BIDS format is also supported in input using the bids_path argument of patient_list
+
+	.. code-block:: python
+
+		study.patient_list(bids_path="path_to_BIDS")
 
 Preprocessing
 ^^^^^^^^^^^^^
