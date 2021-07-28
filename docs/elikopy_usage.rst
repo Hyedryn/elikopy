@@ -47,21 +47,7 @@ The following code block show how to preproccess the dMRI data. By default only 
 	:lineno-start: 8
 	
 	study.preproc()
-
-Microstructural metrics computation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The following code block computes microstructural metrics from the four microstructural model available in ElikoPy.
-
-.. code-block:: python
-	:linenos:
-	:lineno-start: 9
 	
-	study.dti()
-	study.noddi()
-	study.diamond()
-	study.fingerprinting()
-
 whitematter mask
 ^^^^^^^^^^^^^^^^
 
@@ -69,9 +55,23 @@ The following code block computes a white matter mask for each subject from its 
 
 .. code-block:: python
 	:linenos:
-	:lineno-start: 13
+	:lineno-start: 9
 
 	study.white_mask()
+	
+Microstructural metrics computation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following code block computes microstructural metrics from the four microstructural model available in ElikoPy.
+
+.. code-block:: python
+	:linenos:
+	:lineno-start: 10
+	
+	study.dti()
+	study.noddi()
+	study.diamond()
+	study.fingerprinting()
 	
 Statistical Analysis
 ^^^^^^^^^^^^^^^^^^^^
@@ -112,3 +112,28 @@ The export function is used to "revert" the folder structure, instead of using a
 		
 .. note::
 	If you wish to learn more about the library and its validation, we recommend you to read the detailled guide and play around with the library.
+	
+	
+	
+Other parameters commonly available
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ElikoPy library has been made compatible with the slurm scheduler commonly present on HPC clusters. The use of the slurm scheduler can be controlled with the **slurm** parameters.
+
+Associated options are:
+
+* **slurm** – Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
+* **slurm_email** – If not None, Topup will use additionnal parameters based on the supplied config file located at <topupConfig>. default=None Email adress to send notification if a task fails. default=None
+* **slurm_timeout** - Replace the default slurm timeout used in the ElikoPy function by a custom timeout.
+* **slurm_mem** - Replace the default amount of ram allocated to the slurm task by a custom amount of ram.
+* **cpus** – Replace the default number of slurm cpus by a custom number of cpus.
+
+
+
+The slurm option and slurm_email option can be globally define during the initialisation of the study object.
+
+When processing a study, the processing for some subjects could fail for various reasons. The ElikoPy library provides two parameters destined to limit the amount of processing necessary to recover from these failures.
+
+* **patient_list_m** – Define a subset of subjects to process instead of all the available subjects. example : [‘patientID1’,’patientID2’,’patientID3’]. default=None
+* **starting_state** – Manually set which step of the function to start from. default=None
+

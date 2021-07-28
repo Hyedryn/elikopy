@@ -44,9 +44,14 @@ Related parameters
 ^^^^^^^^^^^^^^^^^^
 The reslicing step during the preprocessing can be activated using the reslice argument.
 
+* **reslice** - If true, data will be resliced with a new voxel resolution of 2*2*2. default=False
+* **reslice_addSlice ** - If true, an additional empty slice will be added to each volume (might be useful for motion correction if one slice is dropped during the acquisition and the user still wants to perform easily the slice-to-volume motion correction). default=False
+
 .. code-block:: python
 
-	study.preproc(reslice=True)
+	study.preproc(reslice=True,reslice_addSlice=False)
+	
+	
 
 ----------------
 Brain Extraction
@@ -152,6 +157,10 @@ Related parameters
 ^^^^^^^^^^^^^^^^^^
 
 The susceptibility field estimation can be enabled using the topup argument.
+
+* **topup** -  true, Topup will estimate the susceptibility induced distortions. These distortions are corrected at the same time as EC-induced distortions if eddy=True. In the absence of images acquired with a reverse phase encoding direction, a T1 structural image is required. default=False
+* **topupConfig** – If not None, Topup will use additionnal parameters based on the supplied config file located at <topupConfig>. default=None
+* **forceSynb0DisCo** - If true, Topup will always estimate the susceptibility field using the T1 structural image. default=False
 
 .. code-block:: python
 
