@@ -30,10 +30,7 @@ Tract-Based Spatial Statistics of FSL : `TBSS FSL <https://fsl.fmrib.ox.ac.uk/fs
 	Regall_FA is a prerequisite to reall and randomise_all
 
 .. code-block:: python
-	:linenos:
-	:lineno-start: 3
 
-    test
     # coregistration of the FA maps
 	study.regall_FA(grp1=grp1,grp2=grp2)
 
@@ -45,3 +42,4 @@ Tract-Based Spatial Statistics of FSL : `TBSS FSL <https://fsl.fmrib.ox.ac.uk/fs
 	metrics={'dti':'FA','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
 	study.randomise_all(metrics_dic=metrics)
 
+new
