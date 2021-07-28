@@ -12,8 +12,6 @@ ElikoPy is Python library aiming at easing the processing of diffusion imaging f
 
 This guide aims to give an introduction to ElikoPy and a brief installation instructions.
    
-Getting Started & Background Information
-========================================
               
 .. toctree::
    :maxdepth: 2
@@ -24,18 +22,20 @@ Getting Started & Background Information
    Project Structure <elikopy_project>
    Using ElikoPy <elikopy_usage>
 
-Preprocessing datasets 
-======================
+
    
 .. toctree::
    :maxdepth: 2 
    :caption: Detailed Guides
+   
+   Preprocessing datasets 
+   ----------------------
 
    Preprocessing of diffusion images <preprocessing_dmri>
    Preprocessing of T1 images <preprocessing_T1>
 
 Computation of microstructural metrics
-======================================
+--------------------------------------
    
 .. toctree::
    :maxdepth: 2
@@ -43,42 +43,42 @@ Computation of microstructural metrics
    Microstructural metrics <metrics>
    
 Statistical Analysis
-====================
+--------------------
    
 .. toctree::
    :maxdepth: 2
 
-   Group-wise statistics <stats_tbss>
-   Other statistics <stats_other>
+   Statistics <stats>
    
 Data exportation and other utils
-================================
+--------------------------------
    
 .. toctree::
    :maxdepth: 2
 
-   Export a study <other_data>
    Utils function <other_utils>
    
 Usage and examples
-==================
+------------------
    
 .. toctree::
    :maxdepth: 2
 
    Examples <examples>
    
-Get Involved
-============
-   
+
 .. toctree::
    :maxdepth: 2
    :caption: About ElikoPy
+   
+   Get Involved
+   ------------
+   
 
    Contributing <contributing>
    
 Reference
-=========
+---------
 
 .. toctree::
    :maxdepth: 2

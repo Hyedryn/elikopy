@@ -34,8 +34,8 @@ The root directory must have the following structure during the initialisation
 The T1 structural images as well as the acqparams, index and slspec files are optional. However, if they are not available, some processing steps might be not available (this is usually specified by a note in the documentation).
 These files can be generated as explained in the following links:
 
-* acqparams.txt and index.txt : LINK
-* slspec.txt : LINK
+* acqparams.txt and index.txt : `Eddy FSL acqp <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/Faq#How_do_I_know_what_to_put_into_my_--acqp_file>`_
+* slspec.txt : `Eddy FSL slspec <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/Faq#How_should_my_--slspec_file_look.3F>`_
 
 Preprocessing
 ^^^^^^^^^^^^^
