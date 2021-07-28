@@ -17,7 +17,7 @@ setuptools.setup(
     author_email="quentin.dessain@student.uclouvain.be, mathieu.simon@student.uclouvain.be",
     description="A set of tools for analysing dMRI",
     url="https://github.com/Hyedryn/elikopy",
-    download_url = 'https://github.com/Hyedryn/elikopy/archive/refs/tags/v0.2.tar.gz',
+    download_url = 'https://github.com/Hyedryn/elikopy/archive/refs/tags/v0.2.1.tar.gz',
     #packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
