@@ -21,65 +21,40 @@ This guide aims to give an introduction to ElikoPy and a brief installation inst
    Installation <installation>
    Project Structure <elikopy_project>
    Using ElikoPy <elikopy_usage>
-
-
    
 .. toctree::
    :maxdepth: 2 
    :caption: Detailed Guides
-   
-   Preprocessing datasets 
-   ----------------------
 
    Preprocessing of diffusion images <preprocessing_dmri>
    Preprocessing of T1 images <preprocessing_T1>
 
-Computation of microstructural metrics
---------------------------------------
-   
 .. toctree::
    :maxdepth: 2
 
    Microstructural metrics <metrics>
-   
-Statistical Analysis
---------------------
-   
+
 .. toctree::
    :maxdepth: 2
 
    Statistics <stats>
    
-Data exportation and other utils
---------------------------------
-   
 .. toctree::
    :maxdepth: 2
 
    Utils function <other_utils>
-   
-Usage and examples
-------------------
-   
+ 
 .. toctree::
    :maxdepth: 2
 
    Examples <examples>
-   
 
 .. toctree::
    :maxdepth: 2
    :caption: About ElikoPy
    
-   Get Involved
-   ------------
-   
-
    Contributing <contributing>
    
-Reference
----------
-
 .. toctree::
    :maxdepth: 2
 
