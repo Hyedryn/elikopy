@@ -8,7 +8,7 @@ Providing a white matter mask is a useful step to accelerate microstructural fea
 computation and more easily do tractography. The white_mask function of the ElikoPy
 library has been elaborated to perform this important step.
 
-.. image:: pictures/T1_pipeline_steps.jpg
+.. image:: pictures/provisoire.png
 	:width: 800
 	:alt: T1 preprocessing pipeline.
 
