@@ -1,8 +1,8 @@
 .. _preprocessing-T1:
 
-================
-T1 Preprocessing
-================
+=================
+White matter mask
+=================
 
 Providing a white matter mask is a useful step to accelerate microstructural features
 computation and more easily do tractography. The white_mask function of the ElikoPy

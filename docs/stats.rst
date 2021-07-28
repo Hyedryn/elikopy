@@ -1,5 +1,7 @@
 .. _stats-others:
 
-========================================
-Project as an easy way to manage a study
-========================================
+====================
+Statistical Analysis
+====================
+
+TODO
