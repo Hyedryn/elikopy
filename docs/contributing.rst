@@ -22,8 +22,7 @@ Write Documentation
 
 We (like almost all open source software providers) have a documentation 
 dilemma… We tend to focus on the code features and functionality before working 
-on documentation. And there is very good reason for this: we want to share the 
-love so nobody feels left out!
+on documentation.
 
 You can contribute to the documentation by `raising an issue to suggest an 
 improvement <https://github.com/Hyedryn/elikopy/issues/new>`_ or by 
@@ -143,11 +142,11 @@ will need to follow the next steps:
 .. code-block:: none
 
     $ git remote add upstream https://github.com/Hyedryn/elikopy.git && # to add a new remote named "upstream" \
-        git checkout master && # or another branch to be updated \
-        git pull upstream master && \
-        git push origin master && # to update your fork \
-        git checkout new-feature && \
-        git merge master 
+      git checkout master && # or another branch to be updated \
+      git pull upstream master && \
+      git push origin master && # to update your fork \
+      git checkout new-feature && \
+      git merge master 
 
 
 
