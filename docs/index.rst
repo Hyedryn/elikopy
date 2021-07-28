@@ -27,7 +27,7 @@ This guide aims to give an introduction to ElikoPy and a brief installation inst
    :caption: Detailed Guides
 
    Preprocessing of diffusion images <preprocessing_dmri>
-   Preprocessing of T1 images <preprocessing_T1>
+   White matter mask <preprocessing_T1>
 
 .. toctree::
    :maxdepth: 2
