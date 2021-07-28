@@ -10,8 +10,6 @@ degeneration and disease. The group comparison can be performed between any two 
 For example, to perform a group comparison between the data in DATA_1 DATA_2 and the data in DATA_3 DATA_4:
 
 .. code-block:: python
-	:linenos:
-	:lineno-start: 1
 
 	grp1=[1,2]
 	grp2=[3,4]
@@ -42,4 +40,34 @@ Tract-Based Spatial Statistics of FSL : `TBSS FSL <https://fsl.fmrib.ox.ac.uk/fs
 	metrics={'dti':'FA','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
 	study.randomise_all(metrics_dic=metrics)
 
-new
+As a result of the above lines of code the following results are provided. For each diffusion metric:
+
+* A nii of the coregistered subjects metric for the whole brain AND the skeleton.
+* CSV files with the mean and standard deviation for each subject of the metric across regions of atlases.
+* Nii maps of the p and t values (FWE corrected and not corrected) for the statistical differences between the two compared groups (positive and negative)
+
+The default dictionaries supported by ElikoPy are (`Atlases <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/Atlases>`_):
+
+* The Harvard-Oxford cortical and subcortical structural 1mm probabilistic atlases
+* The JHU DTI-based white matter tractography 1mm probabilistic atlas
+* The MNI structural 1mm probabilistic atlas
+
+It is also possible to specify a custom atlas using the additional_atlases argument of randomise_all
+
+.. code-block:: python
+
+	study.randomise_all(metrics_dic=metrics, additional_atlases={'Atlas_name_1':["path to atlas 1 xml","path to atlas 1 nifti"],'Atlas_name_2':["path to atlas 2 xml","path to atlas 2 nifti"]})
+
+
+Other useful arguments
+^^^^^^^^^^^^^^^^^^^^^^
+
+randomise_all:
+
+- randomise_numberofpermutation - Define the number of permutations
+- skeletonised - If True, randomize will be using only the white matter skeleton instead of the whole brain.
+
+regall_FA:
+
+- registration_type - Could either be '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is aligned to every other one, identifying the "most representative" one, and using it as the target image.
+
