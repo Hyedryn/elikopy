@@ -12,8 +12,7 @@ library has been elaborated to perform this important step.
 	:width: 800
 	:alt: T1 preprocessing pipeline.
 
-On the one hand, when a T1 image is available, a white matter mask can be computed
-from this data. Therefore, the T1 image is first preprocessed then segmented. Finally the
+When a T1 image is available, it is preprocessed then segmented. Finally the
 segmented white matter mask is projected into the space of the preprocessed diffusion
 image.
 
