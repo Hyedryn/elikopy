@@ -2407,6 +2407,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
     else:
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Diamond Path not found! MF will be based on CSD \n")
+        assert CSD_bvalue, 'CSD_bvalues must be defined when diamond is not used!'
         sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue - 5) <= bvals, bvals <= (CSD_bvalue + 5)))
         data_CSD = data[..., sel_b]
         gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
