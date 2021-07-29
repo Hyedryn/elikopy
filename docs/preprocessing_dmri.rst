@@ -19,7 +19,7 @@ To preproccess the dMRI data, the following line of code is used. However, this 
 	study.preproc()
 
 
-The arguments of the preproc function are given in the API : LINK.
+The arguments of the preproc function are given in the API.
 In this page, only the main arguments are explained in order to grasp the key aspects of preprocessing using ElikoPy.
 
 -------
@@ -140,7 +140,7 @@ The Gibbs removal can be enabled using the gibbs argument.
 
 	study.preproc(gibbs=True)
 
-Unless the data suffer heavily from Gibbs ringing artifacts, we do not advise to use the gibbs ringing removal step as it might blurr out small microstructural features.
+Unless the data suffers heavily from Gibbs ringing artifacts, we do not advise to use the gibbs ringing removal step as it might blurr out small microstructural features.
 
 -------------------------------
 Susceptibility field estimation
@@ -151,7 +151,7 @@ Description
 
 Susceptibility distortions are created by differences in magnetic susceptibility near junctions of tissues. The susceptibility off resonance field is estimated using Topup from FSL. To do so,
 Topup needs data acquired with multiple phase encoding directions (at least 2). If only a single phase encoding direction is available, ElikoPy uses instead a generated synthetic volume based on a T1 structural image using Synb0-DisCo.
-This step only allows to **estimate** the susceptibility distortions, they are corrected at the same time as the eddy current distortions in the Eddy step below.
+This step only allows to **estimate** the susceptibility distortions, they are corrected at the same time as the Eddy current distortions in the Eddy step below.
 
 Related parameters
 ^^^^^^^^^^^^^^^^^^
@@ -167,10 +167,10 @@ The susceptibility field estimation can be enabled using the topup argument.
 	study.preproc(topup=True)
 
 .. note::
-    If Topup is used, ElikoPy needs the acqparam and index files when generating the patient list : LINK (page getting started)
+    If Topup is used, ElikoPy needs the acqparam and index files when generating the patient list : :ref:`elikopy-usage`
 
 .. note::
-    If topup is enabled for data with a single phase encoding direction, a T1 structural image has to be provided when generating the patient list : LINK (page getting started)
+    If topup is enabled for data with a single phase encoding direction, a T1 structural image has to be provided when generating the patient list : :ref:`elikopy-usage`
 
 --------------------------
 Eddy and motion correction
@@ -191,19 +191,19 @@ The motion and distortion correction can be activated using the eddy argument. T
 	study.preproc(eddy=True, niter=5)
 
 In cases with large motion, inter-volume motion correction might not be sufficient and intra-volume correction is required. This option can be enabled using the s2v argument.
-The s2v input is a list of 4 parameters : [mporder,s2v_niter,s2v_lambda,s2v_interp]. The slice-to-volume motion correction is performed if mporder>0. These parameters are explained in depth in the FSL documentation (LINK). If N describes the number of excitations in a volume, setting mporder to N/4 while letting the other 3 parameters to their default values should provide good results in most situations. The slice-to-volume motion correction is only possible with cuda enabled.
+The s2v input is a list of 4 parameters : [mporder,s2v_niter,s2v_lambda,s2v_interp]. The slice-to-volume motion correction is performed if mporder>0. These parameters are explained in depth in the `Eddy FSL documentation <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/UsersGuide>`_. If N describes the number of excitations in a volume, setting mporder to N/4 while letting the other 3 parameters to their default values should provide good results in most situations. The slice-to-volume motion correction is currently only possible with cuda enabled.
 
-Using the framework of Eddy FSL, it is also possible to replace outlier slices. This is done with the olrep argument which is a list of 4 parameters : [repol,ol_nstd,ol_nvox,ol_type]. The outlier replacement is performed if repol==True. These parameters are explained in depth in the FSL documentation.
+Using the framework of Eddy FSL, it is also possible to replace outlier slices. This is done with the olrep argument which is a list of 4 parameters : [repol,ol_nstd,ol_nvox,ol_type]. The outlier replacement is performed if repol==True. These parameters are explained in depth in the `Eddy FSL documentation <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/UsersGuide>`_.
 
 .. code-block:: python
 
 	study.preproc(eddy=True, niter=5, s2v=[6,5,1,'trilinear'], cuda=True, cuda_name='eddy_cuda10.1', olrep=[True, 4, 250, 'sw'])
 
 .. note::
-    If Eddy FSL is used, ElikoPy needs the acqparam and index files when generating the patient list : LINK (page getting started)
+    If Eddy FSL is used, ElikoPy needs the acqparam and index files when generating the patient list :ref:`elikopy-usage`.
 
 .. note::
-    If slice-to-volume motion correction is enabled, ElikoPy needs the slspec file when generating the patient list : LINK (page getting started)
+    If slice-to-volume motion correction is enabled, ElikoPy needs the slspec file when generating the patient list :ref:`elikopy-usage`.
 
 ---------------------
 Bias Field Correction

@@ -38,7 +38,7 @@ These files can be generated as explained in the following links:
 * slspec.txt : `Eddy FSL slspec <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/UsersGuide#A--slspec>`_
 
 .. note::
-	If you have volumes that are acquired with reverse phase encoding directions in separate niftis, instead of merging the niftis, it is possible to use the 'reverseEncoding' argument of patient_list.
+	If you have volumes that are acquired with reverse phase encoding directions in separate NIFTI files, instead of merging the NIFTIs, it is possible to use the 'reverseEncoding' argument of patient_list.
 
 	.. code-block:: python
 
@@ -51,7 +51,7 @@ These files can be generated as explained in the following links:
 		:alt: Initialisation of the root directory, reverse phase encoding
 
 .. note::
-	The BIDS format is also supported in input using the bids_path argument of patient_list
+	The BIDS format is also supported as input using the bids_path argument of patient_list
 
 	.. code-block:: python
 
@@ -60,7 +60,7 @@ These files can be generated as explained in the following links:
 Preprocessing
 ^^^^^^^^^^^^^
 
-The following code block show how to preproccess the dMRI data. By default only the brain extraction is enabled in the preprocessing but we recommend you to enable more preprocessing as described in the detailled guide (see :ref:`preprocessing-dmri`).
+The following code block shows how to preproccess the dMRI data. By default only the brain extraction is enabled in the preprocessing but we recommend you to enable more preprocessing steps as described in the detailed guide (see :ref:`preprocessing-dmri`).
 
 .. code-block:: python
 	:linenos:
@@ -82,7 +82,7 @@ The following code block computes a white matter mask for each subject from its 
 Microstructural metrics computation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following code block computes microstructural metrics from the four microstructural model available in ElikoPy.
+The following code block computes microstructural metrics from the four microstructural models available in ElikoPy.
 
 .. code-block:: python
 	:linenos:
@@ -96,9 +96,9 @@ The following code block computes microstructural metrics from the four microstr
 Statistical Analysis
 ^^^^^^^^^^^^^^^^^^^^
 
-In the following code block, fractional anisotropy (FA) from DTI along other additional metrics are registered into a common space. The registration is computed using the FA and the mathematical transformation is applied to other metrics.
+In the following code block, fractional anisotropy (FA) from DTI, along with other additional metrics, are registered into a common space. The registration is computed using the FA and the mathematical transformation is then applied to the other metrics.
 
-Afterwards, the randomise_all function performs group wise statistic for the defined metrics along extraction of individual region wise value for each subject into csv files. 
+Afterward, the randomise_all function performs group wise statistic for the defined metrics along extraction of individual region wise values for each subject into csv files.
 
 .. code-block:: python
 	:linenos:
@@ -131,7 +131,7 @@ The export function is used to "revert" the folder structure, instead of using a
 		
 		
 .. note::
-	If you wish to learn more about the library and its validation, we recommend you to read the detailled guide and play around with the library.
+	If you wish to learn more about the library and its validation, we recommend you to read the detailed guide and play around with the library.
 	
 	
 	

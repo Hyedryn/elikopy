@@ -7,7 +7,7 @@ Additionnal utility functions
 Get a list of patient by types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If no type are provided, print a list of patient for each type present in the study.
+If no types are provided, print a list of patients for each type present in the study.
 If a specific type is provided, only print the list of patient corresponding to that type.
 
 .. code-block:: python
@@ -26,9 +26,9 @@ Merge all subjects quality control reports into a single report.
 Dicom to NifTi
 ^^^^^^^^^^^^^^
 
-Convert dicom data into compressed nifti. 
-Converted dicoms are then moved to a sub-folder named original_data. 
-The niftis are named patientID_ProtocolName_SequenceName.
+Convert DICOM data into compressed NIFTIs.
+Converted DICOMs are then moved to a sub-folder named original_data.
+The NIFTIs are named patientID_ProtocolName_SequenceName.
 
 .. code-block:: python
 
@@ -37,8 +37,8 @@ The niftis are named patientID_ProtocolName_SequenceName.
 Anonymise NifTi
 ^^^^^^^^^^^^^^^
 
-Anonymise all nifti present in rootdir by removing the PatientName and PatientBirthDate 
-(only month and day) in the json and renaming the nifti file name to the PatientID.
+Anonymize all NIFTIs present in rootdir by removing the PatientName and PatientBirthDate
+(only month and day) in the json and renaming the NIFTI files name to the PatientID.
 
 * **rootdir** - Folder containing all the nifti to anonimyse.
 * **anonymize_json** - If true, edit the json to remove the PatientName and replace the PatientBirthDate by the year of birth.

@@ -6,7 +6,7 @@ Contributing
 
 ElikoPy is an open source project, meaning we have the challenge of limited 
 resources. We are grateful for any support that you can offer. Helping other 
-users, raising issues, helping write documentation, or contributing code are all 
+users, raising issues, helping write documentation, or contributing codes are all
 ways to help!
 
 --------------

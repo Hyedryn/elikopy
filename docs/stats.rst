@@ -6,8 +6,8 @@ Statistical Analysis
 
 The microstructural diffusion metrics estimated after preprocessing can be used to compute
 basic group comparison statistics in order to rapidly localize brain changes related to development,
-degeneration and disease. The group comparison can be performed between any two groups that are in different DATA_N directories.
-For example, to perform a group comparison between the data in DATA_1 DATA_2 and the data in DATA_3 DATA_4:
+degeneration and disease. The group comparison can be performed between any two groups that are in different data_N directories.
+For example, to perform a group comparison between the data in data_1 data_2 and the data in data_3 data_4:
 
 .. code-block:: python
 
@@ -25,7 +25,7 @@ Tract-Based Spatial Statistics of FSL : `TBSS FSL <https://fsl.fmrib.ox.ac.uk/fs
 	The DTI is a prerequisite for regall_FA
 
 .. note::
-	Regall_FA is a prerequisite to reall and randomise_all
+	Regall_FA is a prerequisite to regall and randomise_all
 
 .. code-block:: python
 
@@ -42,9 +42,9 @@ Tract-Based Spatial Statistics of FSL : `TBSS FSL <https://fsl.fmrib.ox.ac.uk/fs
 
 As a result of the above lines of code the following results are provided. For each diffusion metric:
 
-* A nii of the coregistered subjects metric for the whole brain AND the skeleton.
-* CSV files with the mean and standard deviation for each subject of the metric across regions of atlases.
-* Nii maps of the p and t values (FWE corrected and not corrected) for the statistical differences between the two compared groups (positive and negative)
+* A NIFTI of the coregistered subjects metric for the whole brain AND the skeleton.
+* CSV files with the mean and standard deviation for each subject for the metric across regions of atlases.
+* NIFTI maps of the p and t values (FWE corrected and not corrected) for the statistical differences between the two compared groups (positive and negative)
 
 The default dictionaries supported by ElikoPy are (`Atlases <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/Atlases>`_):
 
@@ -52,7 +52,7 @@ The default dictionaries supported by ElikoPy are (`Atlases <https://fsl.fmrib.o
 * The JHU DTI-based white matter tractography 1mm probabilistic atlas
 * The MNI structural 1mm probabilistic atlas
 
-It is also possible to specify a custom atlas using the additional_atlases argument of randomise_all
+It is also possible to specify custom atlases using the additional_atlases argument of randomise_all
 
 .. code-block:: python
 

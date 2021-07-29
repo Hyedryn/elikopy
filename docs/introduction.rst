@@ -27,8 +27,7 @@ acquisition of large multi-scanner multi-site data sets. The substantial acquisi
 sequence has also encouraged the extensive use of Echo Planar Imaging which suffers from additional
 artifacts and noise. Several tools have been developed in order to correct those individual problems
 but they come with the disadvantages of processing only one subject at a time and requiring different
-softwares making them cumbersome to use. This work presents and evaluates the performances of the
-ElikoPy library, a complete diffusion MRI processing pipeline that reduces common sources of artifact and
+softwares making them cumbersome to use. This work presents the ElikoPy library, a complete diffusion MRI processing pipeline that reduces common sources of artifact and
 captures information on the brain microstructure through multiple microstructural diffusion models. ElikoPy
 has been designed to deal with large databases and to be robust to different types of acquisitions.
 	
@@ -40,7 +39,7 @@ Features
 3. The library can compute the DTI, Noddi, DIAMOND and the novel Microstucture fingerprinting models.
 4. Complete quality reports to review each step of the processing.
 5. Tissue segmentation from T1 images.
-6. Ability to run subject and group wise statistics on the dataset.
+6. Ability to run group wise statistics on the dataset.
 
 
 

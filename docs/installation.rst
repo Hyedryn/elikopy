@@ -14,19 +14,19 @@ Doing a manual installation is not recommended if you have only a limited knownl
 Installation of the dependencies
 ================================
 
-You must first install dependency to your system. Some dependencies are optionnal while other are mandatory.
+You must first install dependency to your system. Some dependencies are optional while others are mandatory.
 
 FSL installation (mandatory)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 FSL is a mandatory comprehensive library dependency used among other steps for the preprocessing of diffusion images. 
-FSL is available ready to run on `the official FSL installation page <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation>`_.
+FSL is available, ready to run, on `the official FSL installation page <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation>`_.
 
 FreeSurfer installation (optionnal)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 FreeSurfer is a software package for the analysis and visualization of structural and functional neuroimaging data 
-from cross-sectional or longitudinal studies. This software is mandatory when correcting from susceptibility distortion 
+for cross-sectional or longitudinal studies. This software is mandatory when correcting from susceptibility distortion
 using T1 structural images in the preprocessing. To install it, visit the `FreeSurfer Downloads page <https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall>`_ 
 and pick a package archive suitable to the environment you are in.
 
@@ -35,7 +35,7 @@ ANTs installation (optionnal)
 
 ANTs computes high-dimensional mappings to capture the statistics of brain structure and function. This software is mandatory 
 when correcting from susceptibility distortion using T1 structural images in the preprocessing. ANTs can be compiled from 
-source or installed via pre-built package using their `Github page <https://github.com/ANTsX/ANTs>`_.
+source or installed via a pre-built package using their `Github page <https://github.com/ANTsX/ANTs>`_.
 
 C3D installation (optionnal)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -65,7 +65,7 @@ Then, navigate to the folder where this repository was cloned or downloaded (the
 DIAMOND installation (optionnal)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Unfortunatly, the DIAMOND code is not publically available. If you do not have it in your possesion, you will not be able to use this algorithm. 
+Unfortunatly, the DIAMOND code is not publicly available. If you do not have it in your possession, you will not be able to use this algorithm.
 If you have it, simply add the executable to your path.
 
 Installation of ElikoPy
@@ -78,7 +78,7 @@ ElikoPy requires Python v3.7+ to run.To install it, first download a copy or clo
 	git clone git@github.com:Hyedryn/elikopy.git
 
 
-After cloning the repo, you can either firstly install all the python dependencies including optionnal dependency used to speed up the code.
+After cloning the repo, you can either firstly install all the python dependencies including optional dependencies used to speed up the code.
 
 .. code-block:: none
 
@@ -133,7 +133,7 @@ Using ElikoPy on the CECI Cluster
 ---------------------------------
 
 UCLouvain student who wish to use ElikoPy on the CECI cluster can use the existing installation present in the pilab project directory. 
-First, the following line needs to be added to our *.bash_profile*.
+First, the following line needs to be added to your *.bash_profile*.
 
 .. code-block:: none
 
@@ -147,7 +147,7 @@ Then, execute the following line of code to install ElikoPy:
 	
 If you wish to update your ElikoPy installation, you just need to execute again the preceding line of code.
 
-Authorized user can update the local ElikoPy repository present in the PiLab directory using the following script. The local repository is update using the master branch of the remote Github repository.
+Authorized user can update the local ElikoPy repository present in the PiLab directory using the following script. The local repository is updated using the master branch of the remote Github repository.
 
 .. code-block:: none
 
