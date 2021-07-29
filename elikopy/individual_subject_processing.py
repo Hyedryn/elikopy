@@ -1203,12 +1203,13 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     f.close()
 
 
-def dti_solo(folder_path, p):
+def dti_solo(folder_path, p, use_wm_mask=False):
     """
     Computes the DTI metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
+    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
     """
     log_prefix = "DTI SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -1227,7 +1228,13 @@ def dti_solo(folder_path, p):
     # load the data======================================
     data, affine = load_nifti(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+
     mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
+
+    wm_mask_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    if use_wm_mask and os.path.isfile(wm_mask_path):
+        mask, _ = load_nifti(wm_mask_path)
+
     bvals, bvecs = read_bvals_bvecs(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
@@ -1822,12 +1829,12 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
     f.close()
 
 
-def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
+def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
     """ Computes the NODDI metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param force_brain_mask: Force the use of a brain mask even if a whitematter mask exist. default=False
+    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
     :param lambda_iso_diff: Define the noddi lambda_iso_diff parameters. default=3.e-9
     :param lambda_par_diff: Define the noddi lambda_par_diff parameters. default=1.7e-9
     :param use_amico: If true, use the amico optimizer. default=FALSE
@@ -1874,7 +1881,7 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
-    if os.path.isfile(wm_path) and not force_brain_mask:
+    if os.path.isfile(wm_path) and use_wm_mask:
         mask, _ = load_nifti(wm_path)
     else:
         mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
@@ -2058,11 +2065,12 @@ def noddi_solo(folder_path, p, force_brain_mask=False, lambda_iso_diff=3.e-9, la
     f.close()
 
 
-def noddi_amico_solo(folder_path, p):
+def noddi_amico_solo(folder_path, p, use_wm_mask=False):
     """ Perform noddi amico on a single subject and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi_amico/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
+    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
     """
     print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI AMICO processing for patient %s \n" % p)
@@ -2080,7 +2088,7 @@ def noddi_amico_solo(folder_path, p):
             log_prefix)
 
     wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
-    if os.path.isfile(wm_path):
+    if use_wm_mask and os.path.isfile(wm_path):
         mask, _ = load_nifti(wm_path)
     else:
         mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
@@ -2111,12 +2119,13 @@ def noddi_amico_solo(folder_path, p):
     f.close()
 
 
-def diamond_solo(folder_path, p, core_count=4, reportOnly=False):
+def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=False):
     """Computes the DIAMOND metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
     :param core_count: Number of allocated cpu cores. default=4
+    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
     """
     log_prefix = "DIAMOND SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2147,7 +2156,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False):
     #    bashCommand = 'crlDCIEstimate -i ' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + ' -m ' + folder_path + '/subjects/' + patient_path + '/dMRI/masks/' + patient_path + '_brain_mask.nii.gz' + ' -n 3 --automose aicu --fascicle diamondcyl -o ' + folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + ' -p 4'
     # else:
     wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
-    if os.path.isfile(wm_path):
+    if use_wm_mask and os.path.isfile(wm_path):
         mask = wm_path
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": white matter mask based on T1 is used \n")
@@ -2340,7 +2349,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False):
     f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1):
+def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2348,6 +2357,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1):
     :param dictionary_path: Path to the dictionary of fingerprints (mandatory).
     :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
     :param core_count: Define the number of available core. default=1
+    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
     """
     log_prefix = "MF SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2379,7 +2389,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1):
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
-    if os.path.isfile(wm_path):
+    if use_wm_mask and os.path.isfile(wm_path):
         mask, _ = load_nifti(wm_path)
     else:
         mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
