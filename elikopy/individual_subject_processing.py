@@ -2119,13 +2119,14 @@ def noddi_amico_solo(folder_path, p, use_wm_mask=False):
     f.close()
 
 
-def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=False):
+def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=False,customDiamond=""):
     """Computes the DIAMOND metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
     :param core_count: Number of allocated cpu cores. default=4
     :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
+    :param customDiamond: If not empty, the string define custom value for --ntensors, -reg, --estimb0, --automose, --mosemodels, --fascicle, --waterfraction, --waterDiff, --omtm, --residuals, --fractions_sumto1, --verbose and --log
     """
     log_prefix = "DIAMOND SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2174,7 +2175,13 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
         f.close()
 
     if not reportOnly:
-        bashCommand = 'export OMP_NUM_THREADS=' +str(core_count)+ ' ; crlDCIEstimate --input "' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc ' + str(core_count) + ' --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
+        bashCommand = 'export OMP_NUM_THREADS=' + str(
+            core_count) + ' ; crlDCIEstimate --input "' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc ' + str(
+            core_count)
+        if not customDiamond:
+            bashCommand = bashCommand + customDiamond
+        else:
+            bashCommand = bashCommand + ' --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
 
         import subprocess
         bashcmd = bashCommand.split()

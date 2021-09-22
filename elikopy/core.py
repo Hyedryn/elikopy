@@ -1017,7 +1017,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
         f.close()
 
-    def diamond(self, folder_path=None, patient_list_m=None, reportOnly=False, use_wm_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def diamond(self, folder_path=None, patient_list_m=None, reportOnly=False, use_wm_mask=False, customDiamond="", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the DIAMOND metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
         example : study.diamond()
@@ -1060,7 +1060,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/\",\"" + p + "\", reportOnly="+str(reportOnly) + ", core_count="+str(core_count) + ", use_wm_mask=" + str(use_wm_mask) + ")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/\",\"" + p + "\", reportOnly="+str(reportOnly) + ", core_count="+str(core_count) + ", use_wm_mask=" + str(use_wm_mask) + ", customDiamond=\"" + customDiamond + "\")'",
                         "job_name": "diamond_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1082,7 +1082,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                diamond_solo(folder_path + "/",p,core_count=core_count,reportOnly=reportOnly,use_wm_mask=use_wm_mask)
+                diamond_solo(folder_path + "/",p,core_count=core_count,reportOnly=reportOnly,use_wm_mask=use_wm_mask,customDiamond=customDiamond)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied diamond on patient %s\n" % p)
                 f.flush()
