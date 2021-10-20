@@ -2457,45 +2457,13 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         "%d.%b %Y %H:%M:%S") + ": End of fitting\n")
 
     # extract info
-    M0 = MF_fit.M0
     frac_f0 = MF_fit.frac_f0
-    DIFF_ex_f0 = MF_fit.DIFF_ex_f0
-    fvf_f0 = MF_fit.fvf_f0
-    frac_f1 = MF_fit.frac_f1
-    DIFF_ex_f1 = MF_fit.DIFF_ex_f1
-    fvf_f1 = MF_fit.fvf_f1
     fvf_tot = MF_fit.fvf_tot
-    # frac_ear = MF_fit.frac_ear
-    # D_ear = MF_fit.D_ear
-    frac_csf = MF_fit.frac_csf
     MSE = MF_fit.MSE
     R2 = MF_fit.R2
 
-    # # Save nifti
-    # save_nifti(mf_path + '/' + patient_path + '_mf_peaks.nii.gz', peaks.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_M0.nii.gz', M0.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_frac_f0.nii.gz', frac_f0.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_DIFF_ex_f0.nii.gz', DIFF_ex_f0.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_fvf_f0.nii.gz', fvf_f0.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_frac_f1.nii.gz', frac_f1.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_DIFF_ex_f1.nii.gz', DIFF_ex_f1.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_fvf_f1.nii.gz', fvf_f1.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_fvf_tot.nii.gz', fvf_tot.astype(np.float32), affine)
-    # # save_nifti(mf_path + '/' + patient_path + '_mf_frac_ear.nii.gz', frac_ear.astype(np.float32), affine)
-    # # save_nifti(mf_path + '/' + patient_path + '_mf_D_ear.nii.gz', D_ear.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_frac_csf.nii.gz', frac_csf.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_MSE.nii.gz', MSE.astype(np.float32), affine)
-    # save_nifti(mf_path + '/' + patient_path + '_mf_R2.nii.gz', R2.astype(np.float32), affine)
 
     MF_fit.write_nifti(mf_path + '/' + patient_path + '_mf.nii.gz', affine=affine)
-
-    #All the outputed metrics can be obtrained using MF_fit.param_names
-    # Code used in MF:
-    #for p in self.param_names:
-    #    nii = nib.Nifti1Image(getattr(self, p), affine)
-    #    nii_fname = '%s_%s%s' % (basename, p, ext)
-    #    nib.save(nii, nii_fname)
-    #    fnames.append(nii_fname)
 
 
 
