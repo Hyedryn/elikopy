@@ -2356,7 +2356,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
     f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False):
+def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False, csf_mask=True, ear_mask=False):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2445,10 +2445,6 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         "%d.%b %Y %H:%M:%S") + ": Loading of MF dic\n")
     # get the dictionary
     mf_model = mf.MFModel(dictionary_path)
-
-    # compute csf_mask and ear_mask
-    csf_mask = True
-    ear_mask = False  # (numfasc == 1)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
