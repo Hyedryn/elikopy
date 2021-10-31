@@ -1060,6 +1060,14 @@ def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'nod
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log, stderr=subprocess.STDOUT)
             output, error = process.communicate()
 
+            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + ' && fslmaths stats/all_' + key + ' -Tmean stats/mean_' + key
+            bashcmd = bashCommand.split()
+            print("Bash command is:\n{}\n".format(bashcmd))
+            registration_log.write(bashCommand + "\n")
+            registration_log.flush()
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log, stderr=subprocess.STDOUT)
+            output, error = process.communicate()
+
     registration_log.close()
 
 
