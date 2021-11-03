@@ -2449,9 +2449,20 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
 
+    import time
+
+    start = time.time()
     # Fit to data:
     MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask,
                           ear_mask=ear_mask, verbose=3, parallel=True)
+
+    end = time.time()
+    stats_header = "patient_id, elapsed_time, core_count"
+    stats_val = p + ", " + str(end - start) + ", " + str(core_count)
+    print(stats_header)
+    print(stats_val)
+    f.write(stats_header)
+    f.write(stats_val)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": End of fitting\n")

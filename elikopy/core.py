@@ -1636,7 +1636,7 @@ class Elikopy:
         f.close()
 
 
-    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=False, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=False, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, slurm_path=None):
         """ A wrapper function that apply a function given as an argument to every subject of the study. The wrapped function must takes two arguments as input, the patient\_name and the path to the root of the study.
 
         :param folder_path: the path to the root directory. default=study_folder
@@ -1654,6 +1654,7 @@ class Elikopy:
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
+        slurm_path = folder_path + '/' + "slurm-%j" if slurm_path is None else slurm_path
 
         log_prefix = "wrapper_elikopy"
 
@@ -1689,8 +1690,8 @@ class Elikopy:
                     "time": "20:00:00",
                     "mail_user": slurm_email,
                     "mail_type": "FAIL",
-                    "output": folder_path + '/' + "slurm-%j.out",
-                    "error": folder_path + '/' + "slurm-%j.err",
+                    "output": slurm_path + ".out",
+                    "error": slurm_path + ".err",
                 }
                 job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
                 job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
