@@ -12,6 +12,7 @@ import subprocess
 
 import matplotlib.pyplot
 import matplotlib
+import numpy as np
 
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
@@ -100,7 +101,7 @@ class Elikopy:
         makedir(folder_path + '/subjects/', folder_path + "/logs.txt", log_prefix)
 
         import os
-        import re
+        import re     
 
         error = []
         success = []
@@ -776,7 +777,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def white_mask(self, folder_path=None, patient_list_m=None, corr_gibbs=True, forceUsePowerMap=False, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def white_mask(self, folder_path=None, patient_list_m=None, corr_gibbs=True, forceUsePowerMap=False, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, masks_path=None):
         """ Computes a white matter mask for each subject based on the T1 structural images or on the anisotropic power maps
         (obtained from the diffusion images) if the T1 images are not available. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/masks/.
         The T1 images can be gibbs ringing corrected.
@@ -798,6 +799,14 @@ class Elikopy:
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
+        
+        masks = []
+        if masks_path!=None:
+            with os.scandir(masks_path) as masks_files:
+                for mask in masks_files: 
+                    masks.append(mask.split('.')[0])
+                masks_files.close()
+            assert len(list(set(masks)))==len(os.listdir(masks_path)), "several masks files have the same names!"
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of white with slurm:" + str(slurm) + "\n")
@@ -816,34 +825,41 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
-            if slurm:
-                core_count = 1 if cpus is None else cpus
-                p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
-                        "job_name": "whitemask_" + p,
-                        "ntasks": 1,
-                        "cpus_per_task": core_count,
-                        "mem_per_cpu": 8096,
-                        "time": "3:00:00",
-                        "mail_user": slurm_email,
-                        "mail_type": "FAIL",
-                        "output": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.out",
-                        "error": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.err",
-                    }
-                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
-                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
-                #p_job_id = pyslurm.job().submit_batch_job(p_job)
-
-                p_job_id = {}
-                p_job_id["id"] = submit_job(p_job)
-                p_job_id["name"] = p
-                job_list.append(p_job_id)
-                f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
-                f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
-            else:
-                white_mask_solo(folder_path + "/", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug)
+            if masks_path==None or (masks_path!=None and np.all(masks!=p)):  # no mask is available
+                if slurm:
+                    core_count = 1 if cpus is None else cpus
+                    p_job = {
+                            "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
+                            "job_name": "whitemask_" + p,
+                            "ntasks": 1,
+                            "cpus_per_task": core_count,
+                            "mem_per_cpu": 8096,
+                            "time": "3:00:00",
+                            "mail_user": slurm_email,
+                            "mail_type": "FAIL",
+                            "output": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.out",
+                            "error": folder_path + '/subjects/' + patient_path + '/masks/' + "slurm-%j.err",
+                        }
+                    p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                    p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+                    #p_job_id = pyslurm.job().submit_batch_job(p_job)
+    
+                    p_job_id = {}
+                    p_job_id["id"] = submit_job(p_job)
+                    p_job_id["name"] = p
+                    job_list.append(p_job_id)
+                    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+                    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+                else:
+                    white_mask_solo(folder_path + "/", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug)
+                    matplotlib.pyplot.close(fig='all')
+                    f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
+                    f.flush()
+            else: 
+                mask_path = os.path.join(masks_path,*masks[masks==p])
+                white_mask_solo(folder_path + "/", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug, ex_mask_path=mask_path)
                 matplotlib.pyplot.close(fig='all')
-                f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
+                f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully copied white mask of patient %s\n" % p)
                 f.flush()
         f.close()
 

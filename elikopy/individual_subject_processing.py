@@ -1431,7 +1431,7 @@ def dti_solo(folder_path, p, use_wm_mask=False):
         f.close()
 
 
-def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePowerMap=False, debug=False):
+def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePowerMap=False, debug=False, ex_mask_path=None):
     """ Computes a white matter mask for a single subject based on the T1 structural image or on the anisotropic power map
     (obtained from the diffusion images) if the T1 image is not available. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/masks/.
     The T1 images can be gibbs ringing corrected.
@@ -1443,10 +1443,15 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
     :param forceUsePowerMap: Force the use of an AnisotropicPower map for the white matter mask generation. default=False
     :param debug: If true, additional intermediate output will be saved. default=False
     """
-
+    
     log_prefix = "White mask solo"
-    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
+    
+    if ex_mask_path==None:
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
+    else:    
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Copying of white mask of patient %s \n" % p)
 
     from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
     from dipy.align.transforms import (TranslationTransform3D, RigidTransform3D, AffineTransform3D)
@@ -1462,7 +1467,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
 
     patient_path = os.path.splitext(p)[0]
     anat_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
-    if os.path.isfile(anat_path) and not forceUsePowerMap:
+    if os.path.isfile(anat_path) and not forceUsePowerMap and ex_mask_path==None:
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
         f = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
@@ -1578,9 +1583,9 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         initial_segmentation, final_segmentation, PVE = hmrf.classify(anat, nclass, beta)
         # save the white matter mask ============================================
         white_mask = PVE[..., 2]
-
+        
         # Save whitemask in T1 space
-        out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_whitemask.nii.gz'
+        out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_whitemask.nii.gz' 
         save_nifti(out_path, white_mask.astype(np.float32), moving_affine)
 
         # Save segmentation in T1 space
@@ -1589,9 +1594,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
 
         white_mask[white_mask >= 0.01] = 1
         white_mask[white_mask < 0.01] = 0
-
-
-
+  
         # transform the white matter mask ======================================
         white_mask = affine.transform(white_mask)
         white_mask[white_mask != 0] = 1
@@ -1601,9 +1604,8 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         # Save corrected projected T1
         out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_corr_projected.nii.gz'
         save_nifti(out_path, affine.transform(moving_data).astype(np.float32), anat_affine)
-
-
-    else:
+ 
+    elif ex_mask_path==None:
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
         f = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
@@ -1643,7 +1645,10 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         white_mask[white_mask < 0.01] = 0
         anat_affine = affine
         segmentation = np.copy(final_segmentation)
-
+    
+    if ex_mask_path!=None:
+        white_mask, _ = load_nifti(ex_mask_path)
+    
     mask_path = folder_path + '/subjects/' + patient_path + "/masks"
     makedir(mask_path, folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", log_prefix)
 
