@@ -78,6 +78,7 @@ class Elikopy:
         self._slurm = slurm
         self._slurm_email = slurm_email
         self._cuda = cuda
+        print("hello, it's vertiges group version (;")
 
     def patient_list(self, folder_path=None, bids_path=None, reverseEncoding=True):
         """ From the root folder containing data_1, data_2, ... data_n folders with nifti files (and their corresponding
@@ -425,7 +426,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
+    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True, starting_step=None):
         """ Performs data preprocessing. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
         denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
         The results are stored in the preprocessing subfolder of each study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -562,7 +563,7 @@ class Elikopy:
                                  eddy=eddy,biasfield=biasfield, biasfield_bsplineFitting=biasfield_bsplineFitting, biasfield_convergence=biasfield_convergence,
                                  starting_state=starting_state,
                                  bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda, qc_reg=qc_reg, core_count=core_count,
-                                 cuda_name=cuda_name, s2v=s2v, olrep=olrep, niter=niter, slspec_gc_path=slspec_gc_path, report=report)
+                                 cuda_name=cuda_name, s2v=s2v, olrep=olrep, niter=niter, slspec_gc_path=slspec_gc_path, report=report, starting_step=starting_step)
                     matplotlib.pyplot.close(fig='all')
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preprocessed patient %s\n" % p)
                     f.flush()
