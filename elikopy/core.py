@@ -78,7 +78,7 @@ class Elikopy:
         self._slurm = slurm
         self._slurm_email = slurm_email
         self._cuda = cuda
-        print("hello, it's vertiges group version (;")
+        print("\nHello, it's vertige's group version (;\n")
 
     def patient_list(self, folder_path=None, bids_path=None, reverseEncoding=True):
         """ From the root folder containing data_1, data_2, ... data_n folders with nifti files (and their corresponding
@@ -805,7 +805,7 @@ class Elikopy:
         if masks_path!=None:
             with os.scandir(masks_path) as masks_files:
                 for mask in masks_files: 
-                    masks.append(mask.split('.')[0])
+                    masks.append(mask.name)
                 masks_files.close()
             assert len(list(set(masks)))==len(os.listdir(masks_path)), "several masks files have the same names!"
 
@@ -826,7 +826,7 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
-            if masks_path==None or (masks_path!=None and np.all(masks!=p)):  # no mask is available
+            if masks_path==None:
                 if slurm:
                     core_count = 1 if cpus is None else cpus
                     p_job = {
@@ -856,9 +856,9 @@ class Elikopy:
                     matplotlib.pyplot.close(fig='all')
                     f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                     f.flush()
-            else: 
-                mask_path = os.path.join(masks_path,*masks[masks==p])
-                white_mask_solo(folder_path + "/", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug, ex_mask_path=mask_path)
+            else:   
+                assert (masks_path!=None and np.any([m==p for m in masks])) , " ".join(("no masks are available for patient",p,"!")) 
+                white_mask_solo(folder_path + "/", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug, ex_mask_path=masks_path)
                 matplotlib.pyplot.close(fig='all')
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully copied white mask of patient %s\n" % p)
                 f.flush()

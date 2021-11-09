@@ -490,6 +490,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz",
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/tmp',
             core_count)
+         
+        bashCommand= "N4BiasFieldCorrection -i " + inputImage + " -o [" + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz, " + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz] -d 4"        
 
         '''bashCommand = 'export OMP_NUM_THREADS=' + str(
             core_count) + ' ; dwibiascorrect ants {} {} -fslgrad {} {} -mask {} -bias {} -scratch {} -force -info -nthreads {} -ants.b {} -ants.c {} '.format(
@@ -1647,7 +1649,10 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         segmentation = np.copy(final_segmentation)
     
     if ex_mask_path!=None:
-        white_mask, _ = load_nifti(ex_mask_path)
+        white_mask, anat_affine = load_nifti(ex_mask_path + '/' + patient_path + '/wm.nii.gz')
+        segmentation, _ = load_nifti(ex_mask_path + '/' + patient_path + '/wm.seg.nii.gz') 
+        # affine = ?
+        # + sauvegarde ds T1?
     
     mask_path = folder_path + '/subjects/' + patient_path + "/masks"
     makedir(mask_path, folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", log_prefix)
