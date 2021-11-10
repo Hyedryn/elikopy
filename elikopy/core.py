@@ -78,7 +78,7 @@ class Elikopy:
         self._slurm = slurm
         self._slurm_email = slurm_email
         self._cuda = cuda
-        print("\nHello, it's vertige's group version (;\n")
+        print("\nHello, it's vertige's group version :D\n")
 
     def patient_list(self, folder_path=None, bids_path=None, reverseEncoding=True):
         """ From the root folder containing data_1, data_2, ... data_n folders with nifti files (and their corresponding
@@ -513,7 +513,7 @@ class Elikopy:
                         "wrap": "export OMP_NUM_THREADS="+str(tot_cpu)+" ; export FSLPARALLEL="+str(tot_cpu)+" ; python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/\",\"" + p + "\",eddy=" + str(
                             eddy) + ",biasfield=" + str(biasfield)  + ",biasfield_convergence=[" + str(biasfield_convergence[0]) + "," + str(biasfield_convergence[1]) + "],biasfield_bsplineFitting=[" + str(biasfield_bsplineFitting[0]) + "," + str(biasfield_bsplineFitting[1]) + "],denoising=" + str(
                             denoising) + ",reslice=" + str(reslice) + ",reslice_addSlice=" + str(reslice_addSlice) + ",gibbs=" + str(
-                            gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
+                            gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"" + str(starting_state) + "\",starting_step=\"" + str(starting_step) + "\",bet_median_radius=" + str(
                             bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", report=" + str(report) + ", slspec_gc_path=" + str(slspec_gc_path) + ", core_count=" + str(core_count)+ ", niter=" + str(niter)+",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
                         "job_name": "preproc_" + p,
                         "ntasks": 1,

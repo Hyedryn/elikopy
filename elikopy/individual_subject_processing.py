@@ -490,8 +490,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz",
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/tmp',
             core_count)
-         
-        bashCommand= "N4BiasFieldCorrection -i " + inputImage + " -o [" + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_corr.nii.gz, " + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz] -d 4"        
+            
 
         '''bashCommand = 'export OMP_NUM_THREADS=' + str(
             core_count) + ' ; dwibiascorrect ants {} {} -fslgrad {} {} -mask {} -bias {} -scratch {} -force -info -nthreads {} -ants.b {} -ants.c {} '.format(
@@ -1648,18 +1647,20 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         anat_affine = affine
         segmentation = np.copy(final_segmentation)
     
-    if ex_mask_path!=None:
-        white_mask, anat_affine = load_nifti(ex_mask_path + '/' + patient_path + '/wm.nii.gz')
-        segmentation, _ = load_nifti(ex_mask_path + '/' + patient_path + '/wm.seg.nii.gz') 
-        # affine = ?
-        # + sauvegarde ds T1?
-    
     mask_path = folder_path + '/subjects/' + patient_path + "/masks"
     makedir(mask_path, folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", log_prefix)
 
     out_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
-    save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
-    save_nifti(folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz', segmentation.astype(np.float32), anat_affine)
+    
+    if ex_mask_path!=None: # marche pas parce qu'il faut registrer les images ensemble?
+        import shutil
+        shutil.copy(ex_mask_path + '/' + patient_path + '/wm.nii.gz', out_path)
+        shutil.copy(ex_mask_path + '/' + patient_path + '/wm.seg.nii.gz', folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz')
+        # affine ?
+        # + sauvegarde ds T1/ ?
+    else:  
+        save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
+        save_nifti(folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz', segmentation.astype(np.float32), anat_affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control  %s \n" % p)
