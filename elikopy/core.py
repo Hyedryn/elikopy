@@ -525,6 +525,7 @@ class Elikopy:
                         "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
                     }
+                    print(p_job['wrap']) 
                     if not denoising and not eddy:
                         p_job["time"] = "00:30:00"
                         p_job["cpus_per_task"] = 1
