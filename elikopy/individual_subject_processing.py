@@ -2462,10 +2462,11 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
 
     import time
 
+    parallel = False if core_count == 1 else True
     start = time.time()
     # Fit to data:
     MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask,
-                          ear_mask=ear_mask, verbose=3, parallel=True)
+                          ear_mask=ear_mask, verbose=3, parallel=parallel)
 
     end = time.time()
     stats_header = "patient_id, elapsed_time, core_count"
