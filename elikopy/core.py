@@ -514,11 +514,7 @@ class Elikopy:
                             eddy) + ",biasfield=" + str(biasfield)  + ",biasfield_convergence=[" + str(biasfield_convergence[0]) + "," + str(biasfield_convergence[1]) + "],biasfield_bsplineFitting=[" + str(biasfield_bsplineFitting[0]) + "," + str(biasfield_bsplineFitting[1]) + "],denoising=" + str(
                             denoising) + ",reslice=" + str(reslice) + ",reslice_addSlice=" + str(reslice_addSlice) + ",gibbs=" + str(
                             gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"" + str(starting_state) + "\",starting_step=\"" + str(starting_step) + "\",bet_median_radius=" + str(
-                            bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", report=" + str(report) + ", slspec_gc_path=" + str(slspec_gc_path) + ", core_count=" + str(core_count)+ ", niter=" + str(niter)+",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"]); preproc(\"" + folder_path + "/\",\"" + p + "\",eddy=" + str(
-                            eddy) + ",biasfield=" + str(biasfield)  + ",biasfield_convergence=[" + str(biasfield_convergence[0]) + "," + str(biasfield_convergence[1]) + "],biasfield_bsplineFitting=[" + str(biasfield_bsplineFitting[0]) + "," + str(biasfield_bsplineFitting[1]) + "],denoising=" + str(
-                            denoising) + ",reslice=" + str(reslice) + ",reslice_addSlice=" + str(reslice_addSlice) + ",gibbs=" + str(
-                            gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"post_report\",starting_step=\"" + str(starting_step) + "\",bet_median_radius=" + str(
-                            bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", report=" + str(report) + ", slspec_gc_path=" + str(slspec_gc_path) + ", core_count=" + str(core_count)+ ", niter=" + str(niter)+",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"],slurm=False)'",
+                            bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", report=" + str(report) + ", slspec_gc_path=" + str(slspec_gc_path) + ", core_count=" + str(core_count)+ ", niter=" + str(niter)+",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
                         "job_name": "preproc_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 8,
@@ -528,8 +524,7 @@ class Elikopy:
                         "mail_type": "FAIL",
                         "output": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.out",
                         "error": folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + "slurm-%j.err",
-                    }
-                    print(p_job['wrap']) 
+                    } 
                     if not denoising and not eddy:
                         p_job["time"] = "00:30:00"
                         p_job["cpus_per_task"] = 1
@@ -812,7 +807,7 @@ class Elikopy:
                 for mask in masks_files: 
                     masks.append(mask.name)
                 masks_files.close()
-            assert len(list(set(masks)))==len(os.listdir(masks_path)), "several masks files have the same names!"
+            assert len(list(set(masks)))==len(os.listdir(masks_path)), "Several masks files have the same names!"
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of white with slurm:" + str(slurm) + "\n")
