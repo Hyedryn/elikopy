@@ -807,7 +807,7 @@ class Elikopy:
                 for mask in masks_files: 
                     masks.append(mask.name)
                 masks_files.close()
-            assert len(list(set(masks)))==len(os.listdir(masks_path)), "Several masks files have the same names!"
+            assert len(list(set(masks)))==len(os.listdir(masks_path)), "Several masks folders have the same names!"
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of white with slurm:" + str(slurm) + "\n")
@@ -830,7 +830,7 @@ class Elikopy:
                 if slurm:
                     core_count = 1 if cpus is None else cpus
                     p_job = {
-                            "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
+                            "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + ",masks_path=" + str(masks_path) + " )'",
                             "job_name": "whitemask_" + p,
                             "ntasks": 1,
                             "cpus_per_task": core_count,

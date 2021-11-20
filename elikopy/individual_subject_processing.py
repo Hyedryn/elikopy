@@ -1446,7 +1446,8 @@ def white_mask_solo(folder_path, p, corr_gibbs=False, core_count=1, forceUsePowe
     """
     
     log_prefix = "White mask solo"
-    
+    if ex_mask_path = "None":
+        ex_mask_path = None
     if ex_mask_path==None:
         corr_gibbs = True
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
