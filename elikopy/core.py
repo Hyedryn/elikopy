@@ -830,7 +830,7 @@ class Elikopy:
                 if slurm:
                     core_count = 1 if cpus is None else cpus
                     p_job = {
-                            "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + ",masks_path=" + str(masks_path) + " )'",
+                            "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + ",ex_mask_path=" + str(masks_path) + " )'",
                             "job_name": "whitemask_" + p,
                             "ntasks": 1,
                             "cpus_per_task": core_count,
