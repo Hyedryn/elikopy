@@ -11,7 +11,7 @@ from elikopy.utils import makedir
 from dipy.denoise.gibbs import gibbs_removal
 
 
-def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
+def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False,gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None, starting_step=None):
     """ Performs data preprocessing on a single subject. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
     denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
     The results are stored in the preprocessing subfolder of the study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -340,7 +340,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
             process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=topup_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
-            synb0DisCo(folder_path,topup_path,patient_path,starting_step=None,topup=True,gpu=useGPUsynb0DisCo)
+            synb0DisCo(folder_path,topup_path,patient_path,starting_step=starting_step,topup=True,gpu=useGPUsynb0DisCo)
 
             if not eddy:
                 bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
@@ -490,6 +490,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + "_biasfield_est.nii.gz",
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/tmp',
             core_count)
+            
 
         '''bashCommand = 'export OMP_NUM_THREADS=' + str(
             core_count) + ' ; dwibiascorrect ants {} {} -fslgrad {} {} -mask {} -bias {} -scratch {} -force -info -nthreads {} -ants.b {} -ants.c {} '.format(
@@ -1431,7 +1432,7 @@ def dti_solo(folder_path, p, use_wm_mask=False):
         f.close()
 
 
-def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePowerMap=False, debug=False):
+def white_mask_solo(folder_path, p, corr_gibbs=False, core_count=1, forceUsePowerMap=False, debug=False, ex_mask_path=None):
     """ Computes a white matter mask for a single subject based on the T1 structural image or on the anisotropic power map
     (obtained from the diffusion images) if the T1 image is not available. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/masks/.
     The T1 images can be gibbs ringing corrected.
@@ -1443,10 +1444,17 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
     :param forceUsePowerMap: Force the use of an AnisotropicPower map for the white matter mask generation. default=False
     :param debug: If true, additional intermediate output will be saved. default=False
     """
-
+    
     log_prefix = "White mask solo"
-    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
+    if ex_mask_path = "None":
+        ex_mask_path = None
+    if ex_mask_path==None:
+        corr_gibbs = True
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of individual white mask processing for patient %s \n" % p)
+    else:    
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Starting registration of given white mask for patient %s \n" % p)
 
     from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
     from dipy.align.transforms import (TranslationTransform3D, RigidTransform3D, AffineTransform3D)
@@ -1462,18 +1470,26 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
 
     patient_path = os.path.splitext(p)[0]
     anat_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
-    if os.path.isfile(anat_path) and not forceUsePowerMap:
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
-        f = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
-        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
-        f.close()
+    if os.path.isfile(anat_path) and not forceUsePowerMap or ex_mask_path!=None:
+        if ex_mask_path!=None:
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Mask copied for %s \n" % p)
+            f = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Mask copied for %s \n" % p)
+            f.close()
+        else: 
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
+            f = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Mask done from T1 %s \n" % p)
+            f.close()
         # Read the moving image ====================================
         anat_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
 
-        wm_log = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
-
+        wm_log = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+") 
+        
         # Correct for gibbs ringing
         if corr_gibbs:
             wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -1496,26 +1512,30 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
             input_bet_path = corrected_gibbs_path
         else:
             input_bet_path = anat_path
+       
+        bet_path = None
+        if ex_mask_path!=None:
+            bet_path = ex_mask_path + "/" + patient_path + "/T1.nii.gz" #Ligne pour faire registration sur T1 de freesurfer
+        else:   
+            # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
+            bet_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
+            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -B'
+            if debug:
+                bashCommand = bashCommand + " -d"
+            bashcmd = bashCommand.split()
+    
+            wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Bet launched for patient %s \n" % p + " with bash command " + bashCommand)
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Bet launched for patient %s \n" % p + " with bash command " + bashCommand)
+        
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
+            output, error = process.communicate()
 
-        # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
-        bet_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -B'
-        if debug:
-            bashCommand = bashCommand + " -d"
-        bashcmd = bashCommand.split()
-
-        wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Bet launched for patient %s \n" % p + " with bash command " + bashCommand)
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Bet launched for patient %s \n" % p + " with bash command " + bashCommand)
-
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
-        output, error = process.communicate()
-
-        wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": End of BET for patient %s \n" % p)
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": End of BET for patient %s \n" % p)
+            wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of BET for patient %s \n" % p)
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of BET for patient %s \n" % p)
 
         wm_log.close()
 
@@ -1570,39 +1590,59 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         # save the white matter mask ============================================
         white_mask = np.where(final_segmentation == 3, 1, 0)
         """
-        # make the white matter segmentation ===================================
-        anat = moving
-        nclass = 3
-        beta = 0.1
-        hmrf = TissueClassifierHMRF()
-        initial_segmentation, final_segmentation, PVE = hmrf.classify(anat, nclass, beta)
-        # save the white matter mask ============================================
-        white_mask = PVE[..., 2]
-
-        # Save whitemask in T1 space
-        out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_whitemask.nii.gz'
-        save_nifti(out_path, white_mask.astype(np.float32), moving_affine)
-
-        # Save segmentation in T1 space
-        out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_segmentation.nii.gz'
-        save_nifti(out_path, final_segmentation.astype(np.float32), moving_affine)
-
-        white_mask[white_mask >= 0.01] = 1
-        white_mask[white_mask < 0.01] = 0
-
-
-
-        # transform the white matter mask ======================================
-        white_mask = affine.transform(white_mask)
-        white_mask[white_mask != 0] = 1
-        anat_affine = static_grid2world
-        segmentation = affine.transform(final_segmentation)
-
-        # Save corrected projected T1
-        out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_corr_projected.nii.gz'
-        save_nifti(out_path, affine.transform(moving_data).astype(np.float32), anat_affine)
-
-
+        if ex_mask_path==None:
+            # make the white matter segmentation ===================================
+            anat = moving
+            nclass = 3
+            beta = 0.1
+            hmrf = TissueClassifierHMRF()
+            initial_segmentation, final_segmentation, PVE = hmrf.classify(anat, nclass, beta)
+            # save the white matter mask ============================================
+            white_mask = PVE[..., 2]
+        
+            # Save whitemask in T1 space
+            out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_whitemask.nii.gz' 
+            save_nifti(out_path, white_mask.astype(np.float32), moving_affine)
+    
+            # Save segmentation in T1 space
+            out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_segmentation.nii.gz'
+            save_nifti(out_path, final_segmentation.astype(np.float32), moving_affine)
+    
+            white_mask[white_mask >= 0.01] = 1
+            white_mask[white_mask < 0.01] = 0
+      
+            # transform the white matter mask ======================================
+            white_mask = affine.transform(white_mask)
+            white_mask[white_mask != 0] = 1
+            anat_affine = static_grid2world
+            segmentation = affine.transform(final_segmentation)
+    
+            # Save corrected projected T1
+            out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_corr_projected.nii.gz'
+            save_nifti(out_path, affine.transform(moving_data).astype(np.float32), anat_affine)
+        else:       
+            white_mask, _ = load_nifti(ex_mask_path + '/' + patient_path + '/wm.nii.gz') #Pour telecharger les masques faits par Anais
+            final_segmentation, _ = load_nifti(ex_mask_path + '/' + patient_path + '/wm.seg.nii.gz') #Pour telecharger les masques faits par Anais
+            
+            # Save whitemask in T1 space
+            out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_whitemask.nii.gz' 
+            save_nifti(out_path, white_mask.astype(np.float32), moving_affine)
+    
+            # Save segmentation in T1 space
+            out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_segmentation.nii.gz'
+            save_nifti(out_path, final_segmentation.astype(np.float32), moving_affine)
+            
+            # transform the white matter mask ======================================
+            white_mask = affine.transform(white_mask)  
+            white_mask[white_mask.astype('uint8') > 200] = 0 #Pour enlever le liquide cerebrospinal 
+            white_mask[white_mask != 0] = 1
+            anat_affine = static_grid2world
+            segmentation = affine.transform(final_segmentation)
+    
+            # Save corrected projected T1
+            out_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_corr_projected.nii.gz'
+            save_nifti(out_path, affine.transform(moving_data).astype(np.float32), anat_affine)
+        
     else:
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
@@ -1643,16 +1683,28 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         white_mask[white_mask < 0.01] = 0
         anat_affine = affine
         segmentation = np.copy(final_segmentation)
-
-    mask_path = folder_path + '/subjects/' + patient_path + "/masks"
-    makedir(mask_path, folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", log_prefix)
-
-    out_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
-    save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
-    save_nifti(folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz', segmentation.astype(np.float32), anat_affine)
+    
+    if ex_mask_path!=None:  
+        mask_path = folder_path + '/subjects/' + patient_path + "/masks"
+        makedir(mask_path, folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", log_prefix)
+    
+        out_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+        
+        save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
+        save_nifti(folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz', segmentation.astype(np.float32), anat_affine)
+        
+    else:  
+        mask_path = folder_path + '/subjects/' + patient_path + "/masks"
+        makedir(mask_path, folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", log_prefix)
+    
+        out_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+        
+        save_nifti(out_path, white_mask.astype(np.float32), anat_affine)
+        save_nifti(folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz', segmentation.astype(np.float32), anat_affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control  %s \n" % p)
+         
     f = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
@@ -1664,15 +1716,16 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
     import matplotlib.pyplot as plt
     from fpdf import FPDF
     from PyPDF2 import PdfFileMerger
-
+ 
     wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
     seg_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_segmentation.nii.gz'
     T1_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
     T1gibbs_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_gibbscorrected.nii.gz'
     T1brain_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
     ap_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_ap.nii.gz'
-    preproc_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
     qc_path = folder_path + '/subjects/' + patient_path + '/masks/' + 'quality_control'
+        
+    preproc_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
     makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
     fig, axs = plt.subplots(2, 1, figsize=(2, 1))
@@ -1711,8 +1764,9 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
     plt.tight_layout()
     plt.savefig(qc_path + "/segmentation.jpg", dpi=300, bbox_inches='tight')
 
-    if os.path.isfile(T1_path):
-        fig, axs = plt.subplots(3, 1, figsize=(10, 6))
+    if os.path.isfile(T1_path): 
+        axl = 3 if os.path.isfile(T1gibbs_path) else 2
+        fig, axs = plt.subplots(axl, 1, figsize=(10, 6))
         anat_data, anat_affine = load_nifti(T1_path)
         sl = np.shape(anat_data)[2] // 2 + 15
         plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
@@ -1724,17 +1778,18 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         axs[0].imshow(plot_anat, cmap='gray')
         axs[0].set_title('T1')
         axs[0].set_axis_off()
-        anat_data, anat_affine = load_nifti(T1gibbs_path)
-        sl = np.shape(anat_data)[2] // 2 + 15
-        plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
-        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
-        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
-        plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
-        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
-        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
-        axs[1].imshow(plot_anat, cmap='gray')
-        axs[1].set_title('T1 gibbs ringing corrected')
-        axs[1].set_axis_off()
+        if os.path.isfile(T1gibbs_path):
+            anat_data, anat_affine = load_nifti(T1gibbs_path)
+            sl = np.shape(anat_data)[2] // 2 + 15
+            plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
+            plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
+            plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+            plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
+            plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
+            plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+            axs[1].imshow(plot_anat, cmap='gray')
+            axs[1].set_title('T1 gibbs ringing corrected')
+            axs[1].set_axis_off()
         anat_data, anat_affine = load_nifti(T1brain_path)
         sl = np.shape(anat_data)[2] // 2 + 15
         plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
@@ -1743,9 +1798,10 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
         plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
         plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
-        axs[2].imshow(plot_anat, cmap='gray')
-        axs[2].set_title('T1 brain extracted')
-        axs[2].set_axis_off()
+        iii = 2 if os.path.isfile(T1gibbs_path) else 1
+        axs[iii].imshow(plot_anat, cmap='gray')
+        axs[iii].set_title('T1 brain extracted')
+        axs[iii].set_axis_off()
         plt.tight_layout()
         plt.savefig(qc_path + "/origin.jpg", dpi=300, bbox_inches='tight')
     else:
@@ -1765,7 +1821,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         plt.savefig(qc_path + "/origin.jpg", dpi=300, bbox_inches='tight')
 
     elem = [qc_path + "/title.jpg", qc_path + "/segmentation.jpg", qc_path + "/origin.jpg", ]
-
+    title_vertige = "_vertige" if ex_mask_path!=None else ""
     class PDF(FPDF):
         def __init__(self):
             super().__init__()
@@ -1776,7 +1832,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
             # self.image('assets/logo.png', 10, 8, 33)
             self.set_font('Arial', 'B', 11)
             self.cell(self.WIDTH - 80)
-            self.cell(60, 1, 'Quality control report - White matter mask - ' + patient_path, 0, 0, 'R')
+            self.cell(60, 1, 'Quality control report - White matter mask - ' + title_vertige + patient_path, 0, 0, 'R')
             self.ln(20)
 
         def footer(self):

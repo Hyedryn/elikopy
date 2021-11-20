@@ -575,6 +575,9 @@ def synb0DisCo(folder_path,topuppath,patient_path,starting_step=None,topup=True,
     import torch.nn.functional as F
     import torch.optim as optim
 
+    if starting_step == "None":
+        starting_step = None
+         
     assert starting_step in (None, "Registration", "Inference", "Apply", "topup")
 
     synb0path = topuppath + "/synb0-DisCo"
@@ -678,7 +681,7 @@ def synb0DisCo(folder_path,topuppath,patient_path,starting_step=None,topup=True,
             model_path = glob.glob(model_path)[0]
             # Get model
             model = UNet3D(2, 1).to(device)
-            model.load_state_dict(torch.load(model_path))
+            model.load_state_dict(torch.load(model_path,map_location=device))
 
             # Inference
             step3_log.write("[SynB0DISCO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of inference " + str(i) +"\n\n")
