@@ -1446,7 +1446,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=False, core_count=1, forceUsePowe
     """
     
     log_prefix = "White mask solo"
-    if ex_mask_path = "None":
+    if ex_mask_path == "None":
         ex_mask_path = None
     if ex_mask_path==None:
         corr_gibbs = True
@@ -1516,6 +1516,8 @@ def white_mask_solo(folder_path, p, corr_gibbs=False, core_count=1, forceUsePowe
         bet_path = None
         if ex_mask_path!=None:
             bet_path = ex_mask_path + "/" + patient_path + "/T1.nii.gz" #Ligne pour faire registration sur T1 de freesurfer
+            data, af = load_nifti(bet_path)
+            save_nifti(folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz',data,af)
         else:   
             # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
             bet_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
