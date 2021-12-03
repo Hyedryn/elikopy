@@ -157,7 +157,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             makedir(denoising_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt",
                     log_prefix)
             bvals_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval'
-            bvals = np.loadtxt(b0_mask,bvals_path)
+            bvals = np.loadtxt(bvals_path)
             denoised = patch2self(data, bvals)
             save_nifti(denoising_path + '/' + patient_path + '_patch2self.nii.gz', denoised.astype(np.float32), affine)
 
