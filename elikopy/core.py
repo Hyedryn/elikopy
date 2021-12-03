@@ -363,7 +363,7 @@ class Elikopy:
                             #Edit bvec:
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object:
                                 lines = file_object.readlines()
-                                lines.append("0 0 0\n")
+                                lines.append("1 0 0\n")
 
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "w") as f:
                                 for line in lines:
@@ -374,7 +374,7 @@ class Elikopy:
                                 file_object=file_object.read().rstrip()
 
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
-                                myfile.write(file_object + "\n 0"+ "\n")
+                                myfile.write(file_object + "\n0"+ "\n")
 
                             #Edit index:
                             with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', "r") as f0:
