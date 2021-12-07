@@ -37,9 +37,7 @@ def dicom_to_nifti(folder_path):
     #wait until mricron finish
     output, error = process.communicate()
 
-
     #Move all old dicom to dicom folder
-
     dest = folder_path + "/dicom"
     files = os.listdir(folder_path)
     if not(os.path.exists(dest)):
@@ -51,11 +49,11 @@ def dicom_to_nifti(folder_path):
             print ("Successfully created the directory %s " % dest)
 
     f=open(folder_path + "/logs.txt", "a+")
-    for f in files:
-        if "mrdc" in f or "MRDC" in f:
-            shutil.move(folder_path + '/' + f, dest)
+    for file in files:
+        if "mrdc" in file or "MRDC" in file:
+            shutil.move(folder_path + '/' + file, dest)
 
-            f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Moved " + f + " to " + dest + "\n")
+            f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Moved " + file + " to " + dest + "\n")
     f.close()
 
 
