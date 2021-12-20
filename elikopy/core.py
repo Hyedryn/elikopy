@@ -37,9 +37,7 @@ def dicom_to_nifti(folder_path):
     #wait until mricron finish
     output, error = process.communicate()
 
-
     #Move all old dicom to dicom folder
-
     dest = folder_path + "/dicom"
     files = os.listdir(folder_path)
     if not(os.path.exists(dest)):
@@ -51,11 +49,11 @@ def dicom_to_nifti(folder_path):
             print ("Successfully created the directory %s " % dest)
 
     f=open(folder_path + "/logs.txt", "a+")
-    for f in files:
-        if "mrdc" in f or "MRDC" in f:
-            shutil.move(folder_path + '/' + f, dest)
+    for file in files:
+        if "mrdc" in file or "MRDC" in file:
+            shutil.move(folder_path + '/' + file, dest)
 
-            f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Moved " + f + " to " + dest + "\n")
+            f.write("[DICOM TO NIFTI] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Moved " + file + " to " + dest + "\n")
     f.close()
 
 
@@ -363,9 +361,7 @@ class Elikopy:
                             #Edit bvec:
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object:
                                 lines = file_object.readlines()
-                                for index, line in enumerate(lines):
-                                    if index < 3:
-                                        lines[index] = line.strip() + " 0" + "\n"
+                                lines.append("1 0 0\n")
 
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "w") as f:
                                 for line in lines:
@@ -376,7 +372,7 @@ class Elikopy:
                                 file_object=file_object.read().rstrip().rstrip("\n")
 
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
-                                myfile.write(file_object + " 0"+ "\n")
+                                myfile.write(file_object + "\n0"+ "\n")
 
                             #Edit index:
                             with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', "r") as f0:
