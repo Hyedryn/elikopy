@@ -373,7 +373,7 @@ class Elikopy:
 
                             #Edit bval
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "r") as file_object:
-                                file_object=file_object.read().rstrip()
+                                file_object=file_object.read().rstrip().rstrip("\n")
 
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
                                 myfile.write(file_object + " 0"+ "\n")
