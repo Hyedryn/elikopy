@@ -617,7 +617,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
         f.close()
 
-    def dti(self,folder_path=None, patient_list_m=None, use_wm_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def dti(self,folder_path=None, patient_list_m=None, use_wm_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None, vertige=False):
         """Computes the DTI metrics for each subject using Weighted Least-Squares. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
         example : study.dti()
@@ -652,13 +652,13 @@ class Elikopy:
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
 
-            dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti"
-            makedir(dti_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt",
-                    log_prefix)
+            dti_folder = "dti" if not vertige else "dti_vertige"
+            dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + dti_folder
+            makedir(dti_path, dti_path + "/dti_logs.txt",log_prefix)
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/\",\"" + p + "\",use_wm_mask=" + str(use_wm_mask) + ")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/\",\"" + p + "\",use_wm_mask=" + str(use_wm_mask) + ",vertige=" + str(vertige) + ")'",
                         "job_name": "dti_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -666,8 +666,8 @@ class Elikopy:
                         "time": "1:00:00",
                         "mail_user": slurm_email,
                         "mail_type": "FAIL",
-                        "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.out",
-                        "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + "slurm-%j.err",
+                        "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + dti_folder + "/slurm-%j.out",
+                        "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + dti_folder + "slurm-%j.err",
                     }
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
                 p_job["cpus_per_task"] = p_job["cpus_per_task"] if slurm_cpus is None else slurm_cpus
@@ -680,7 +680,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                dti_solo(folder_path + "/",p,use_wm_mask=use_wm_mask)
+                dti_solo(folder_path + "/",p,use_wm_mask=use_wm_mask,vertige=vertige)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied DTI on patient %s\n" % p)
                 f.flush()
@@ -872,7 +872,7 @@ class Elikopy:
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of White mask\n")
         f.close()
 
-    def noddi(self, folder_path=None, patient_list_m=None, use_wm_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9):
+    def noddi(self, folder_path=None, patient_list_m=None, use_wm_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9,vertige=False):
         """Computes the NODDI metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
         example : study.noddi()
@@ -911,14 +911,14 @@ class Elikopy:
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
 
-            noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi"
-            makedir(noddi_path,folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt",
-                    log_prefix)
+            noddi_folder = "noddi" if not vertige else "noddi_vertige"
+            noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + noddi_folder
+            makedir(noddi_path,noddi_path + "/noddi_logs.txt",log_prefix)
 
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/\",\"" + p + "\",use_wm_mask=" + str(use_wm_mask) + ",core_count="+str(core_count)+ ",lambda_iso_diff="+str(lambda_iso_diff) +", lambda_par_diff="+str(lambda_par_diff) + ")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/\",\"" + p + "\",use_wm_mask=" + str(use_wm_mask) + ",core_count="+str(core_count)+ ",lambda_iso_diff="+str(lambda_iso_diff) +", lambda_par_diff="+str(lambda_par_diff) + ", vertige=" + str(vertige) + ")'",
                         "job_name": "noddi_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -926,8 +926,8 @@ class Elikopy:
                         "time": "10:00:00",
                         "mail_user": slurm_email,
                         "mail_type": "FAIL",
-                        "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.out",
-                        "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/noddi/' + "slurm-%j.err",
+                        "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + noddi_folder + "/slurm-%j.out",
+                        "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + noddi_folder + "/slurm-%j.err",
                     }
                 #p_job_id = pyslurm.job().submit_batch_job(p_job)
                 p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
@@ -940,7 +940,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                noddi_solo(folder_path + "/",p,core_count=cpus,lambda_iso_diff=lambda_iso_diff, lambda_par_diff=lambda_par_diff,use_wm_mask=use_wm_mask)
+                noddi_solo(folder_path + "/",p,core_count=cpus,lambda_iso_diff=lambda_iso_diff, lambda_par_diff=lambda_par_diff,use_wm_mask=use_wm_mask,vertige=vertige)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
                 f.flush()
@@ -1362,7 +1362,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of Export\n")
         f.close()
 
-    def regall_FA(self, folder_path=None, grp1=None, grp2=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def regall_FA(self, folder_path=None, grp1=None, grp2=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None,patient_list=None):
         """ Register all the subjects Fractional Anisotropy into a common space, skeletonisedd and non skeletonised. This is performed based on TBSS of FSL.
         It is mandatory to have performed DTI prior to regall_FA.
 
@@ -1426,7 +1426,7 @@ class Elikopy:
             job_list.append(p_job_id)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            regall_FA(folder_path=folder_path, grp1=grp1, grp2=grp2, starting_state=starting_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold, core_count=core_count)
+            regall_FA(folder_path=folder_path, grp1=grp1, grp2=grp2, starting_state=starting_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold, core_count=core_count,patient_list=patient_list)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied REGALL_FA \n")
             f.flush()
         f.close()
@@ -1439,7 +1439,7 @@ class Elikopy:
         f.close()
 
     def regall(self, folder_path=None, grp1=None, grp2=None, metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
-               slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+               slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None,patient_list=None):
         """ Register all the subjects diffusion metrics specified in the argument metrics_dic into a common space using the transformation computed for the FA with the regall_FA function. This is performed based on TBSS of FSL.
         It is mandatory to have performed regall_FA prior to regall.
 
@@ -1501,7 +1501,7 @@ class Elikopy:
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            regall(folder_path=folder_path, grp1=grp1, grp2=grp2, core_count=core_count, metrics_dic=metrics_dic)
+            regall(folder_path=folder_path, grp1=grp1, grp2=grp2, core_count=core_count, metrics_dic=metrics_dic, patient_list=patient_list)
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied REGALL \n")
             f.flush()

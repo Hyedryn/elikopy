@@ -1204,7 +1204,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     f.close()
 
 
-def dti_solo(folder_path, p, use_wm_mask=False):
+def dti_solo(folder_path, p, use_wm_mask=False,vertige=False):
     """
     Computes the DTI metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
@@ -1222,9 +1222,10 @@ def dti_solo(folder_path, p, use_wm_mask=False):
     import dipy.reconst.dti as dti
 
     patient_path = os.path.splitext(p)[0]
-
-    dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti"
-    makedir(dti_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
+ 
+    dti_folder = "/dti/" if not vertige else "/dti_vertige/"
+    dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure" + dti_folder
+    makedir(dti_path, dti_path + "dti_logs.txt", log_prefix)
 
     # load the data======================================
     data, affine = load_nifti(
@@ -1232,7 +1233,8 @@ def dti_solo(folder_path, p, use_wm_mask=False):
 
     mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
-    wm_mask_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    masks_folder = "/masks/" if not vertige else "/masks_vertige/"
+    wm_mask_path = folder_path + '/subjects/' + patient_path + masks_folder + patient_path + '_wm_mask.nii.gz' 
     if use_wm_mask and os.path.isfile(wm_mask_path):
         mask, _ = load_nifti(wm_mask_path)
 
@@ -1247,42 +1249,32 @@ def dti_solo(folder_path, p, use_wm_mask=False):
     FA = dti.fractional_anisotropy(tenfit.evals)
     FA[np.isnan(FA)] = 0
     FA = np.clip(FA, 0, 1)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-               FA.astype(np.float32), affine)
+    save_nifti(dti_path + patient_path + "_FA.nii.gz", FA.astype(np.float32), affine)
     # colored FA ========================================
     RGB = dti.color_fa(FA, tenfit.evecs)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_fargb.nii.gz",
-               np.array(255 * RGB, 'uint8'), affine)
+    save_nifti(dti_path + patient_path + "_fargb.nii.gz", np.array(255 * RGB, 'uint8'), affine)
     # Mean diffusivity ==================================
     MD = dti.mean_diffusivity(tenfit.evals)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_MD.nii.gz",
-               MD.astype(np.float32), affine)
+    save_nifti(dti_path + patient_path + "_MD.nii.gz", MD.astype(np.float32), affine)
     # Radial diffusivity ==================================
     RD = dti.radial_diffusivity(tenfit.evals)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_RD.nii.gz",
-               RD.astype(np.float32), affine)
+    save_nifti(dti_path + patient_path + "_RD.nii.gz", RD.astype(np.float32), affine)
     # Axial diffusivity ==================================
     AD = dti.axial_diffusivity(tenfit.evals)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_AD.nii.gz",
-               AD.astype(np.float32), affine)
+    save_nifti(dti_path + patient_path + "_AD.nii.gz", AD.astype(np.float32), affine)
     # eigen vectors =====================================
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_evecs.nii.gz",
-               tenfit.evecs.astype(np.float32), affine)
+    save_nifti(dti_path + patient_path + "_evecs.nii.gz", tenfit.evecs.astype(np.float32), affine)
     # eigen values ======================================
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_evals.nii.gz",
-               tenfit.evals.astype(np.float32), affine)
+    save_nifti(dti_path + patient_path + "_evals.nii.gz", tenfit.evals.astype(np.float32), affine)
     # diffusion tensor ====================================
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_dtensor.nii.gz",
-               tenfit.quadratic_form.astype(np.float32), affine)
+    save_nifti(dti_path + patient_path + "_dtensor.nii.gz", tenfit.quadratic_form.astype(np.float32), affine)
     # Residual ============================================
     reconstructed = tenfit.predict(gtab, S0=data[...,0])
     residual = data - reconstructed
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_residual.nii.gz",
-               residual.astype(np.float32), affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
-    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+    f = open(dti_path + "dti_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
     f.close()
@@ -1293,8 +1285,8 @@ def dti_solo(folder_path, p, use_wm_mask=False):
 
     metric1 = np.array(255 * RGB, 'uint8')
     metric2 = np.copy(MD)
-    qc_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/quality_control"
-    makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
+    qc_path = dti_path + "quality_control"
+    makedir(qc_path, dti_path + "dti_logs.txt", log_prefix)
 
     mse = np.mean(residual ** 2, axis=-1)
     R2 = np.zeros_like(mse)
@@ -1426,7 +1418,7 @@ def dti_solo(folder_path, p, use_wm_mask=False):
 
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+        f = open(dti_path + "dti_logs.txt", "a+")
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
@@ -1446,7 +1438,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=False, core_count=1, forceUsePowe
     """
     
     log_prefix = "White mask solo"
-    if ex_mask_path = "None":
+    if ex_mask_path == "None":
         ex_mask_path = None
     if ex_mask_path==None:
         corr_gibbs = True
@@ -1516,6 +1508,8 @@ def white_mask_solo(folder_path, p, corr_gibbs=False, core_count=1, forceUsePowe
         bet_path = None
         if ex_mask_path!=None:
             bet_path = ex_mask_path + "/" + patient_path + "/T1.nii.gz" #Ligne pour faire registration sur T1 de freesurfer
+            data, af = load_nifti(bet_path)
+            save_nifti(folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz',data,af)
         else:   
             # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
             bet_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
@@ -1885,7 +1879,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=False, core_count=1, forceUsePowe
     f.close()
 
 
-def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
+def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1,vertige=False):
     """ Computes the NODDI metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
     :param folder_path: the path to the root directory.
@@ -1906,8 +1900,9 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
     patient_path = os.path.splitext(p)[0]
     log_prefix = "NODDI SOLO"
 
-    noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi"
-    makedir(noddi_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", log_prefix)
+    noddi_folder = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/"
+    noddi_path = noddi_folder + "noddi" if not vertige else noddi_folder + "noddi_vertige"
+    makedir(noddi_path, noddi_path + "/noddi_logs.txt", log_prefix)
 
     # initialize the compartments model
     from dmipy.signal_models import cylinder_models, gaussian_models
@@ -1936,7 +1931,8 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
     bvals, bvecs = read_bvals_bvecs(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
-    wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    wm_folder = "/masks/" if not vertige else "/masks_vertige/"
+    wm_path = folder_path + '/subjects/' + patient_path +  wm_folder + patient_path + '_wm_mask.nii.gz'
     if os.path.isfile(wm_path) and use_wm_mask:
         mask, _ = load_nifti(wm_path)
     else:
@@ -1983,7 +1979,7 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
-    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+    f = open(noddi_path + "/noddi_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
     f.close()
@@ -1995,8 +1991,8 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
 
     metric1 = np.copy(odi)
     metric2 = np.copy(f_iso)
-    qc_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/quality_control"
-    makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", log_prefix)
+    qc_path = noddi_path + "/quality_control"
+    makedir(qc_path, noddi_path + "/noddi_logs.txt", log_prefix)
 
     fig, axs = plt.subplots(2, 1, figsize=(2, 1))
     fig.suptitle('Elikopy : Quality control report - NODDI', fontsize=50)
@@ -2115,7 +2111,7 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+    f = open(noddi_path + "/noddi_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()

@@ -825,7 +825,7 @@ def inference(T1_path, b0_d_path, model, device):
     return img_model
 
 
-def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, core_count=1):
+def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, core_count=1,patient_list=None):
     """ Register all the subjects Fractional Anisotropy into a common space, skeletonisedd and non skeletonised. This is performed based on TBSS of FSL.
     It is mandatory to have performed DTI prior to regall_FA.
 
@@ -856,8 +856,9 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
 
     # open the subject and is_control lists
     dest_success = folder_path + "/subjects/subj_list.json"
-    with open(dest_success, 'r') as f:
-        patient_list = json.load(f)
+    if patient_list==None:
+      with open(dest_success, 'r') as f:
+          patient_list = json.load(f)
     dest_subj_type = folder_path + "/subjects/subj_type.json"
     with open(dest_subj_type, 'r') as f:
         subj_type = json.load(f)
@@ -980,7 +981,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
     registration_log.flush()
 
 
-def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
+def regall(folder_path, grp1, grp2, patient_list=None, core_count=1 ,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
     """ Register all the subjects diffusion metrics specified in the argument metrics_dic into a common space using the transformation computed for the FA with the regall_FA function. This is performed based on TBSS of FSL.
     It is mandatory to have performed regall_FA prior to regall.
 
@@ -1007,8 +1008,9 @@ def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'nod
 
     # open the subject and is_control lists
     dest_success = folder_path + "/subjects/subj_list.json"
-    with open(dest_success, 'r') as f:
-        patient_list = json.load(f)
+    if patient_list in (None,'None'):
+      with open(dest_success, 'r') as f:
+          patient_list = json.load(f)
     dest_subj_type = folder_path + "/subjects/subj_type.json"
     with open(dest_subj_type, 'r') as f:
         subj_type = json.load(f)
@@ -1172,25 +1174,39 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
             xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml", atlas_path + "/HarvardOxford-Subcortical.xml", atlas_path + "/JHU-tracts.xml"]
             atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz", atlas_path + "/JHU/JHU-ICBM-tracts-prob-1mm.nii.gz"]
             name = ["MNI", "HarvardCortical", "HarvardSubcortical", "JHUWhiteMatterTractography"]
+            csv_or_xml = ["xml","xml","xml","xml"]
             if additional_atlases:
                 xmlName = xmlName + list(map(list, zip(*list(additional_atlases.values()))))[0]
                 atlases = atlases + list(map(list, zip(*list(additional_atlases.values()))))[1]
+                csv_or_xml = csv_or_xml + list(map(list, zip(*list(additional_atlases.values()))))[2]
                 name = name + list(additional_atlases.keys())
             # open the data
             data, data_affine = load_nifti(outputdir + '/stats/all_' + key + '.nii.gz')
 
             for iteration in range(len(atlases)):
-
-                # read the labels in xml file
-                x = etree.parse(xmlName[iteration])
-                labels = []
-                for elem in x.iter():
-                    if elem.tag == 'label':
-                        labels.append([elem.attrib['index'], elem.text])
-                labels = np.array(labels)[:, 1]
-
+                
+                csv = csv_or_xml[iteration]=='csv'
+                if csv:
+                    # read the labels in csv file
+                    labels = pd.read_csv(xmlName[iteration],header=None,names=['index','Area'])
+                    labels = labels['Area'].values
+                else:
+                    # read the labels in xml file
+                    x = etree.parse(xmlName[iteration])
+                    labels = []
+                    for elem in x.iter():
+                        if elem.tag == 'label':
+                            labels.append([elem.attrib['index'], elem.text])
+                    labels = np.array(labels)[:, 1]
+                
                 # open the atlas
                 atlas, atlas_affine = load_nifti(atlases[iteration])
+                if csv:
+                    atlas_stack = np.zeros((np.shape(atlas)[0],np.shape(atlas)[1],np.shape(atlas)[2],int(len(np.unique(atlas.flatten())[1:]))))
+                    for ivalue, value in enumerate(np.unique(atlas.flatten())[1:]): 
+                        atlas_stack[..., int(ivalue-1)] = atlas==value  
+                    # define a 3D image for each label and stack them together    
+                    atlas = atlas_stack  
 
                 matrix = np.zeros((np.shape(data)[-1], np.shape(atlas)[-1]))
                 for i in range(np.shape(atlas)[-1]):
