@@ -361,18 +361,41 @@ class Elikopy:
                             #Edit bvec:
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object:
                                 lines = file_object.readlines()
-                                lines.append("1 0 0\n")
 
-                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "w") as f:
-                                for line in lines:
-                                    f.write(line)
+
+                            nlines = file_object.count('\n')
+                            if nlines > 4:
+                                lines.append("1 0 0\n")
+                                with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec",
+                                          "w") as f:
+                                    for line in lines:
+                                        f.write(line)
+                            else:
+                                with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec",
+                                          "w") as f:
+                                    i = 0
+                                    for line in lines:
+                                        if i==0:
+                                            f.write(line + " 1")
+                                        elif i==1:
+                                            f.write(line + " 0")
+                                        elif i==2:
+                                            f.write(line + " 0")
+                                        else:
+                                            f.write(line)
+                                        i = i + 1
 
                             #Edit bval
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "r") as file_object:
                                 file_object=file_object.read().rstrip().rstrip("\n")
 
-                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
-                                myfile.write(file_object + "\n0"+ "\n")
+                            nlines = file_object.count('\n')
+                            if nlines > 4:
+                                with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
+                                    myfile.write(file_object + "\n0"+ "\n")
+                            else:
+                                with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
+                                    myfile.write(file_object + " 0"+ "\n")
 
                             #Edit index:
                             with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', "r") as f0:
