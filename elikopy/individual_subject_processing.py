@@ -22,6 +22,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     :param reslice: If true, data will be resliced with a new voxel resolution of 2*2*2. default=False
     :param reslice_addSlice: If true, an additional empty slice will be added to each volume (might be useful for motion correction if one slice is dropped during the acquisition and the user still wants to perform easily the slice-to-volume motion correction). default=False
     :param denoising: If true, Patch-to-self/MPPCA-denoising is performed on the data. default=False
+    :param mppca_legacy_denoising: If true, MPPCA-denoising is performed instead of Patch-to-self denoising. default=False
     :param gibbs: If true, Gibbs ringing correction is performed. We do not advise to use this correction unless the data suffers from a lot of Gibbs ringing artifacts. default=False
     :param topup: If true, Topup will estimate the susceptibility induced distortions. These distortions are corrected at the same time as EC-induced distortions if eddy=True. In the absence of images acquired with a reverse phase encoding direction, a T1 structural image is required. default=False
     :param topupConfig: If not None, Topup will use additionnal parameters based on the supplied config file located at <topupConfig>. default=None
@@ -160,6 +161,10 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             bvals = np.loadtxt(bvals_path)
             denoised = patch2self(data, bvals)
             save_nifti(denoising_path + '/' + patient_path + '_patch2self.nii.gz', denoised.astype(np.float32), affine)
+
+            # computes and save the residuals
+            rms_diff = np.sqrt((data - denoised) ** 2)
+            save_nifti(denoising_path + '/' + patient_path + '_patch2self_residuals.nii.gz', rms_diff.astype(np.float32), affine)
 
         f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
