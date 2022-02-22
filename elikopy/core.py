@@ -376,11 +376,11 @@ class Elikopy:
                                     i = 0
                                     for line in lines:
                                         if i==0:
-                                            f.write(line + " 1")
+                                            f.write(line.rstrip().rstrip("\n") + " 1\n")
                                         elif i==1:
-                                            f.write(line + " 0")
+                                            f.write(line.rstrip().rstrip("\n") + " 0\n")
                                         elif i==2:
-                                            f.write(line + " 0")
+                                            f.write(line.rstrip().rstrip("\n") + " 0\n")
                                         else:
                                             f.write(line)
                                         i = i + 1
