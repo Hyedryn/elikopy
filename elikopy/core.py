@@ -361,9 +361,9 @@ class Elikopy:
                             #Edit bvec:
                             with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object:
                                 lines = file_object.readlines()
+                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object2:
+                                nlines = file_object2.read().count('\n')
 
-
-                            nlines = file_object.count('\n')
                             if nlines > 4:
                                 lines.append("1 0 0\n")
                                 with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec",
