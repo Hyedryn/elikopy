@@ -2516,8 +2516,8 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         mu2 = normPeaks1
         frac1 = csd_peaks.peak_values[..., 0]
         frac2 = csd_peaks.peak_values[..., 1]
-        #(peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
-        #                                         mask=mask, frac12=None)
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
+                                                 mask=mask, frac12=None)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Loading of MF dic\n")
