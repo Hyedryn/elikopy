@@ -32,7 +32,7 @@ setuptools.setup(
     install_requires=[
         'numpy',
         'dipy',
-        'dmipy',
+        #'dmipy',
         'lxml',
         'PyPDF2',
         'fpdf',
