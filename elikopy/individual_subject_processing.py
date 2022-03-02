@@ -66,7 +66,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         topupConfig = None
 
     log_prefix = "PREPROC SOLO"
-    patient_path = os.path.splitext(p)[0]
+    patient_path = p
     preproc_path = folder_path + '/subjects/' + patient_path + "/dMRI/preproc/bet"
     makedir(preproc_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
@@ -1262,7 +1262,7 @@ def dti_solo(folder_path, p, use_wm_mask=False):
     from dipy.core.gradients import gradient_table
     import dipy.reconst.dti as dti
 
-    patient_path = os.path.splitext(p)[0]
+    patient_path = p
 
     dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti"
     makedir(dti_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
@@ -1502,7 +1502,7 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
     from dipy.io.gradients import read_bvals_bvecs
     from dipy.core.gradients import gradient_table
 
-    patient_path = os.path.splitext(p)[0]
+    patient_path = p
     anat_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
     if os.path.isfile(anat_path) and not forceUsePowerMap:
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -1889,7 +1889,7 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
 
-    patient_path = os.path.splitext(p)[0]
+    patient_path = p
     log_prefix = "NODDI SOLO"
 
     noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi"
@@ -2123,7 +2123,7 @@ def noddi_amico_solo(folder_path, p, use_wm_mask=False):
 
     log_prefix = "NODDI AMICO SOLO"
 
-    patient_path = os.path.splitext(p)[0]
+    patient_path = p
 
     noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi_amico"
     makedir(noddi_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt",
@@ -2173,7 +2173,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
     log_prefix = "DIAMOND SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual DIAMOND processing for patient %s \n" % p)
-    patient_path = os.path.splitext(p)[0]
+    patient_path = p
 
     diamond_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
     makedir(diamond_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt",
@@ -2411,7 +2411,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
     log_prefix = "MF SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p, flush = True)
-    patient_path = os.path.splitext(p)[0]
+    patient_path = p
 
     mfdir = "mf" if mfdir is None else mfdir
     f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir + "/mf_logs.txt", "a+")
