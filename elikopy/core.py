@@ -521,7 +521,7 @@ class Elikopy:
 
         if starting_state!="post_report":
             for p in patient_list:
-                patient_path = os.path.splitext(p)[0]
+                patient_path = p
                 preproc_path = folder_path + '/subjects/' + patient_path + "/dMRI/preproc/bet"
                 makedir(preproc_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
@@ -612,7 +612,7 @@ class Elikopy:
             # 2) merge both pdfs
             from PyPDF2 import PdfFileMerger
             for p in patient_list:
-                patient_path = os.path.splitext(p)[0]
+                patient_path = p
                 if os.path.exists(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.qc/qc_updated.pdf'):
                     pdfs = [folder_path + '/subjects/' + patient_path + '/dMRI/preproc/quality_control/qc_report.pdf',
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.qc/qc_updated.pdf']
@@ -627,7 +627,7 @@ class Elikopy:
                         folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
         else:
             for p in patient_list:
-                patient_path = os.path.splitext(p)[0]
+                patient_path = p
                 shutil.copyfile(
                     folder_path + '/subjects/' + patient_path + '/dMRI/preproc/quality_control/qc_report.pdf',
                     folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
@@ -669,7 +669,7 @@ class Elikopy:
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
+            patient_path = p
 
             dti_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti"
             makedir(dti_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt",
@@ -756,7 +756,7 @@ class Elikopy:
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
+            patient_path = p
 
             mf_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir
             makedir(mf_path,folder_path + '/subjects/' + patient_path+"/dMRI/microstructure/" + mfdir + "/mf_logs.txt",log_prefix)
@@ -837,7 +837,7 @@ class Elikopy:
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
+            patient_path = p
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
@@ -914,7 +914,7 @@ class Elikopy:
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
+            patient_path = p
 
             noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi"
             makedir(noddi_path,folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt",
@@ -995,7 +995,7 @@ class Elikopy:
         job_list = []
         f=open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
+            patient_path = p
 
             noddi_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi_amico"
             makedir(noddi_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi_amico/noddi_amico_logs.txt", log_prefix)
@@ -1074,7 +1074,7 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
 
         for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
+            patient_path = p
 
             diamond_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
             makedir(diamond_path,folder_path+'/subjects/'+patient_path+"/dMRI/microstructure/diamond/diamond_logs.txt",
@@ -1624,7 +1624,7 @@ class Elikopy:
         job_list = []
         f = open(folder_path + "/logs.txt", "a+")
         for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
+            patient_path = p
 
             fintra_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_fintra.nii.gz"
             fbundle_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_fbundle.nii.gz"
@@ -1697,7 +1697,7 @@ class Elikopy:
         job_list = []
 
         for p in patient_list:
-            patient_path = os.path.splitext(p)[0]
+            patient_path = p
 
             if slurm:
                 job = {
