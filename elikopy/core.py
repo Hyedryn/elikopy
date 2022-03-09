@@ -482,14 +482,14 @@ class Elikopy:
         :param report: If False, no quality report will be generated. default=True
         """
 
-        assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "post_report"), 'invalid starting state!'
+        assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "post_report", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"), 'invalid starting state!'
         if mppca_legacy_denoising==True:
             assert denoising == True, 'if mppca_legacy_denoising is True, denoising must be True!'
         if starting_state=="denoising":
             assert denoising == True, 'if starting_state is denoising, denoising must be True!'
         if starting_state=="gibbs":
             assert gibbs == True, 'if starting_state is gibbs, gibbs must be True!'
-        if starting_state=="topup":
+        if starting_state in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"):
             assert topup == True, 'if starting_state is topup, topup must be True!'
         if starting_state=="eddy":
             assert eddy == True, 'if starting_state is eddy, eddy must be True!'

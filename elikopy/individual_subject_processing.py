@@ -48,12 +48,12 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     """
 
     in_reslice = reslice
-    assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield", "report"), 'invalid starting state!'
+    assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"), 'invalid starting state!'
     if starting_state == "denoising":
         assert denoising == True, 'if starting_state is denoising, denoising must be True!'
     if starting_state == "gibbs":
         assert gibbs == True, 'if starting_state is gibbs, gibbs must be True!'
-    if starting_state == "topup":
+    if starting_state in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"):
         assert topup == True, 'if starting_state is topup, topup must be True!'
     if starting_state == "eddy":
         assert eddy == True, 'if starting_state is eddy, eddy must be True!'
@@ -133,7 +133,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     else:
         denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/patch2self'
         denoising_ext = '_patch2self.nii.gz'
-    if denoising and starting_state!="gibbs" and starting_state!="eddy" and starting_state!="topup" and starting_state!="biasfield" and starting_state!="report":
+    if denoising and starting_state!="gibbs" and starting_state!="eddy" and (starting_state not in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup")) and starting_state!="biasfield" and starting_state!="report":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
         f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
@@ -187,7 +187,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if gibbs and starting_state!="eddy" and starting_state!="topup" and starting_state!="biasfield" and starting_state!="report":
+    if gibbs and starting_state!="eddy" and (starting_state not in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"))  and starting_state!="biasfield" and starting_state!="report":
         gibbs_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs'
         makedir(gibbs_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
@@ -350,7 +350,16 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
             process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=topup_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
-            synb0DisCo(folder_path,topup_path,patient_path,starting_step=None,topup=True,gpu=useGPUsynb0DisCo)
+            synb0DisCo_starting_step = None
+            if starting_state=="topup_synb0DisCo_Registration":
+                synb0DisCo_starting_step = "Registration"
+            elif starting_state=="topup_synb0DisCo_Inference":
+                synb0DisCo_starting_step = "Inference"
+            elif starting_state=="topup_synb0DisCo_Apply":
+                synb0DisCo_starting_step = "Apply"
+            elif starting_state =="topup_synb0DisCo_topup":
+                synb0DisCo_starting_step = "topup"
+            synb0DisCo(folder_path,topup_path,patient_path,starting_step=synb0DisCo_starting_step,topup=True,gpu=useGPUsynb0DisCo)
 
             if not eddy:
                 bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
