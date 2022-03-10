@@ -1290,7 +1290,9 @@ def dti_solo(folder_path, p, use_wm_mask=False):
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
     # create the model===================================
-    gtab = gradient_table(bvals, bvecs)
+    b0_threshold = np.min(bvals)+10
+    b0_threshold = max(50, b0_threshold)
+    gtab = gradient_table(bvals, bvecs,b0_threshold=b0_threshold)
     tenmodel = dti.TensorModel(gtab)
     tenfit = tenmodel.fit(data, mask=mask)
     # FA ================================================
