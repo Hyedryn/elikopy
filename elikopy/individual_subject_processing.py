@@ -1254,7 +1254,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     f.close()
 
 
-def dti_solo(folder_path, p, use_wm_mask=False):
+def dti_solo(folder_path, p, use_wm_mask=False, report=True):
     """
     Computes the DTI metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
@@ -1339,149 +1339,152 @@ def dti_solo(folder_path, p, use_wm_mask=False):
         "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
     f.close()
 
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
 
-    metric1 = np.array(255 * RGB, 'uint8')
-    metric2 = np.copy(MD)
-    qc_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/quality_control"
-    makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
+    if report:
 
-    mse = np.mean(residual ** 2, axis=-1)
-    R2 = np.zeros_like(mse)
-    (itot, jtot, ktot) = np.shape(R2)
-    for i in range(itot):
-        for j in range(jtot):
-            for k in range(ktot):
-                R2[i, j, k] = np.corrcoef(data[i, j, k, :], reconstructed[i, j, k, :])[0, 1] ** 2
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
 
-    fig, axs = plt.subplots(2, 1, figsize=(2, 1))
-    fig.suptitle('Elikopy : Quality control report - DTI', fontsize=50)
-    axs[0].set_axis_off()
-    axs[1].set_axis_off()
-    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+        metric1 = np.array(255 * RGB, 'uint8')
+        metric2 = np.copy(MD)
+        qc_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/quality_control"
+        makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", log_prefix)
 
-    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
-    sl = np.shape(mse)[2] // 2
-    masked_mse = np.ma.array(mse, mask=1 - mask)
-    max_plot = masked_mse.mean() + 0.5 * masked_mse.std()
-    plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
-    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
-    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
-    plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
-    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
-    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
-    im0 = axs[0].imshow(plot_mse, cmap='gray', vmax=max_plot)
-    axs[0].set_title('MSE')
-    axs[0].set_axis_off()
-    fig.colorbar(im0, ax=axs[0], orientation='horizontal')
-    sl = np.shape(R2)[2] // 2
-    plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
-    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
-    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
-    plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
-    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
-    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
-    im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
-    axs[1].set_title('R2')
-    axs[1].set_axis_off()
-    fig.colorbar(im1, ax=axs[1], orientation='horizontal');
-    plt.tight_layout()
-    plt.savefig(qc_path + "/error.jpg", dpi=300, bbox_inches='tight');
+        mse = np.mean(residual ** 2, axis=-1)
+        R2 = np.zeros_like(mse)
+        (itot, jtot, ktot) = np.shape(R2)
+        for i in range(itot):
+            for j in range(jtot):
+                for k in range(ktot):
+                    R2[i, j, k] = np.corrcoef(data[i, j, k, :], reconstructed[i, j, k, :])[0, 1] ** 2
 
-    fig, axs = plt.subplots(2, 1, figsize=(12, 6))
-    sl = np.shape(metric1)[2] // 2
-    plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5, 3), dtype=np.int16)
-    plot_metric1[:, 0:np.shape(metric1)[1], :] = metric1[..., sl - 10, :]
-    plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2), :] = metric1[..., sl - 5, :]
-    plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3), :] = metric1[..., sl, :]
-    plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4), :] = metric1[..., sl + 5, :]
-    plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5), :] = metric1[..., sl + 10, :]
-    axs[0].imshow(plot_metric1)
-    axs[0].set_title('Fractional anisotropy')
-    axs[0].set_axis_off()
-    sl = np.shape(metric2)[2] // 2
-    plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
-    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
-    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
-    plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
-    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
-    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
-    im1 = axs[1].imshow(plot_metric2, cmap='gray')
-    axs[1].set_title('Mean diffusivity')
-    axs[1].set_axis_off()
-    plt.tight_layout();
-    plt.savefig(qc_path + "/metrics.jpg", dpi=300, bbox_inches='tight');
+        fig, axs = plt.subplots(2, 1, figsize=(2, 1))
+        fig.suptitle('Elikopy : Quality control report - DTI', fontsize=50)
+        axs[0].set_axis_off()
+        axs[1].set_axis_off()
+        plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
 
-    """Save as a pdf"""
+        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+        sl = np.shape(mse)[2] // 2
+        masked_mse = np.ma.array(mse, mask=1 - mask)
+        max_plot = masked_mse.mean() + 0.5 * masked_mse.std()
+        plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
+        plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
+        plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
+        plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
+        plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
+        plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
+        im0 = axs[0].imshow(plot_mse, cmap='gray', vmax=max_plot)
+        axs[0].set_title('MSE')
+        axs[0].set_axis_off()
+        fig.colorbar(im0, ax=axs[0], orientation='horizontal')
+        sl = np.shape(R2)[2] // 2
+        plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
+        plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
+        plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
+        plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
+        plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
+        plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
+        im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
+        axs[1].set_title('R2')
+        axs[1].set_axis_off()
+        fig.colorbar(im1, ax=axs[1], orientation='horizontal');
+        plt.tight_layout()
+        plt.savefig(qc_path + "/error.jpg", dpi=300, bbox_inches='tight');
 
-    elem = [qc_path + "/title.jpg", qc_path + "/error.jpg", qc_path + "/metrics.jpg"]
+        fig, axs = plt.subplots(2, 1, figsize=(12, 6))
+        sl = np.shape(metric1)[2] // 2
+        plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5, 3), dtype=np.int16)
+        plot_metric1[:, 0:np.shape(metric1)[1], :] = metric1[..., sl - 10, :]
+        plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2), :] = metric1[..., sl - 5, :]
+        plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3), :] = metric1[..., sl, :]
+        plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4), :] = metric1[..., sl + 5, :]
+        plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5), :] = metric1[..., sl + 10, :]
+        axs[0].imshow(plot_metric1)
+        axs[0].set_title('Fractional anisotropy')
+        axs[0].set_axis_off()
+        sl = np.shape(metric2)[2] // 2
+        plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
+        plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
+        plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
+        plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
+        plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
+        plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
+        im1 = axs[1].imshow(plot_metric2, cmap='gray')
+        axs[1].set_title('Mean diffusivity')
+        axs[1].set_axis_off()
+        plt.tight_layout();
+        plt.savefig(qc_path + "/metrics.jpg", dpi=300, bbox_inches='tight');
 
-    from fpdf import FPDF
+        """Save as a pdf"""
 
-    class PDF(FPDF):
-        def __init__(self):
-            super().__init__()
-            self.WIDTH = 210
-            self.HEIGHT = 297
+        elem = [qc_path + "/title.jpg", qc_path + "/error.jpg", qc_path + "/metrics.jpg"]
 
-        def header(self):
-            # self.image('assets/logo.png', 10, 8, 33)
-            self.set_font('Arial', 'B', 11)
-            self.cell(self.WIDTH - 80)
-            self.cell(60, 1, 'Quality control report - DTI', 0, 0, 'R')
-            self.ln(20)
+        from fpdf import FPDF
 
-        def footer(self):
-            # Page numbers in the footer
-            self.set_y(-15)
-            self.set_font('Arial', 'I', 8)
-            self.set_text_color(128)
-            self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
+        class PDF(FPDF):
+            def __init__(self):
+                super().__init__()
+                self.WIDTH = 210
+                self.HEIGHT = 297
 
-        def page_body(self, images):
-            # Determine how many plots there are per page and set positions
-            # and margins accordingly
-            if len(images) == 3:
-                self.image(images[0], 15, 25, self.WIDTH - 30)
-                self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
-                self.image(images[2], 15, self.WIDTH / 2 + 75, self.WIDTH - 30)
-            elif len(images) == 2:
-                self.image(images[0], 15, 25, self.WIDTH - 30)
-                self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
-            else:
-                self.image(images[0], 15, 25, self.WIDTH - 30)
+            def header(self):
+                # self.image('assets/logo.png', 10, 8, 33)
+                self.set_font('Arial', 'B', 11)
+                self.cell(self.WIDTH - 80)
+                self.cell(60, 1, 'Quality control report - DTI', 0, 0, 'R')
+                self.ln(20)
 
-        def print_page(self, images):
-            # Generates the report
-            self.add_page()
-            self.page_body(images)
+            def footer(self):
+                # Page numbers in the footer
+                self.set_y(-15)
+                self.set_font('Arial', 'I', 8)
+                self.set_text_color(128)
+                self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
 
-    pdf = PDF()
-    pdf.print_page(elem)
-    pdf.output(qc_path + '/qc_report.pdf', 'F');
+            def page_body(self, images):
+                # Determine how many plots there are per page and set positions
+                # and margins accordingly
+                if len(images) == 3:
+                    self.image(images[0], 15, 25, self.WIDTH - 30)
+                    self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
+                    self.image(images[2], 15, self.WIDTH / 2 + 75, self.WIDTH - 30)
+                elif len(images) == 2:
+                    self.image(images[0], 15, 25, self.WIDTH - 30)
+                    self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
+                else:
+                    self.image(images[0], 15, 25, self.WIDTH - 30)
 
-    if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
-        shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-    else:
-        """Merge with QC of preproc""";
-        from PyPDF2 import PdfFileMerger
-        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-        merger = PdfFileMerger()
-        for pdf in pdfs:
-            merger.append(pdf)
-        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_dti.pdf')
-        merger.close()
-        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_dti.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+            def print_page(self, images):
+                # Generates the report
+                self.add_page()
+                self.page_body(images)
 
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
-        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-        f.close()
+        pdf = PDF()
+        pdf.print_page(elem)
+        pdf.output(qc_path + '/qc_report.pdf', 'F');
+
+        if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
+            shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        else:
+            """Merge with QC of preproc""";
+            from PyPDF2 import PdfFileMerger
+            pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+            merger = PdfFileMerger()
+            for pdf in pdfs:
+                merger.append(pdf)
+            merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_dti.pdf')
+            merger.close()
+            os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+            os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_dti.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+            f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/dti/dti_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+            f.close()
 
 
 def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePowerMap=False, debug=False):
@@ -2409,7 +2412,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
     f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False, csf_mask=True, ear_mask=False, useDIAMOND=False, mfdir=None, usePrecomputedCSD=True):
+def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False, report=True, csf_mask=True, ear_mask=False, useDIAMOND=False, mfdir=None, usePrecomputedCSD=True):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2576,138 +2579,139 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
     f.close()
     # ==================================================================================================================
 
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+    if report:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
 
-    mse = np.copy(MSE)
-    metric1 = np.copy(fvf_tot)
-    metric2 = np.copy(frac_f0)
-    qc_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir + "/quality_control"
-    makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir + "/mf_logs.txt",
-            log_prefix)
+        mse = np.copy(MSE)
+        metric1 = np.copy(fvf_tot)
+        metric2 = np.copy(frac_f0)
+        qc_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir + "/quality_control"
+        makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir + "/mf_logs.txt",
+                log_prefix)
 
-    fig, axs = plt.subplots(2, 1, figsize=(2, 1))
-    fig.suptitle('Elikopy : Quality control report - Microstructure fingerprinting', fontsize=50)
-    axs[0].set_axis_off()
-    axs[1].set_axis_off()
-    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+        fig, axs = plt.subplots(2, 1, figsize=(2, 1))
+        fig.suptitle('Elikopy : Quality control report - Microstructure fingerprinting', fontsize=50)
+        axs[0].set_axis_off()
+        axs[1].set_axis_off()
+        plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
 
-    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
-    sl = np.shape(mse)[2] // 2
-    plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
-    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
-    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
-    plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
-    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
-    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
-    im0 = axs[0].imshow(plot_mse, cmap='gray')
-    axs[0].set_title('MSE')
-    axs[0].set_axis_off()
-    fig.colorbar(im0, ax=axs[0], orientation='horizontal')
-    sl = np.shape(R2)[2] // 2
-    plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
-    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
-    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
-    plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
-    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
-    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
-    im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
-    axs[1].set_title('R2')
-    axs[1].set_axis_off()
-    fig.colorbar(im1, ax=axs[1], orientation='horizontal');
-    plt.tight_layout()
-    plt.savefig(qc_path + "/error.jpg", dpi=300, bbox_inches='tight');
+        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+        sl = np.shape(mse)[2] // 2
+        plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
+        plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
+        plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
+        plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
+        plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
+        plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
+        im0 = axs[0].imshow(plot_mse, cmap='gray')
+        axs[0].set_title('MSE')
+        axs[0].set_axis_off()
+        fig.colorbar(im0, ax=axs[0], orientation='horizontal')
+        sl = np.shape(R2)[2] // 2
+        plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
+        plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
+        plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
+        plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
+        plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
+        plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
+        im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
+        axs[1].set_title('R2')
+        axs[1].set_axis_off()
+        fig.colorbar(im1, ax=axs[1], orientation='horizontal');
+        plt.tight_layout()
+        plt.savefig(qc_path + "/error.jpg", dpi=300, bbox_inches='tight');
 
-    fig, axs = plt.subplots(2, 1, figsize=(12, 6))
-    sl = np.shape(metric1)[2] // 2
-    plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5))
-    plot_metric1[:, 0:np.shape(metric1)[1]] = metric1[..., sl - 10]
-    plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2)] = metric1[..., sl - 5]
-    plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3)] = metric1[..., sl]
-    plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4)] = metric1[..., sl + 5]
-    plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5)] = metric1[..., sl + 10]
-    axs[0].imshow(plot_metric1, cmap='gray')
-    axs[0].set_title('fvf_tot')
-    axs[0].set_axis_off()
-    sl = np.shape(metric2)[2] // 2
-    plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
-    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
-    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
-    plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
-    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
-    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
-    axs[1].imshow(plot_metric2, cmap='gray')
-    axs[1].set_title('frac_f0')
-    axs[1].set_axis_off()
-    plt.tight_layout();
-    plt.savefig(qc_path + "/metrics.jpg", dpi=300, bbox_inches='tight');
+        fig, axs = plt.subplots(2, 1, figsize=(12, 6))
+        sl = np.shape(metric1)[2] // 2
+        plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5))
+        plot_metric1[:, 0:np.shape(metric1)[1]] = metric1[..., sl - 10]
+        plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2)] = metric1[..., sl - 5]
+        plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3)] = metric1[..., sl]
+        plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4)] = metric1[..., sl + 5]
+        plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5)] = metric1[..., sl + 10]
+        axs[0].imshow(plot_metric1, cmap='gray')
+        axs[0].set_title('fvf_tot')
+        axs[0].set_axis_off()
+        sl = np.shape(metric2)[2] // 2
+        plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
+        plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
+        plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
+        plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
+        plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
+        plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
+        axs[1].imshow(plot_metric2, cmap='gray')
+        axs[1].set_title('frac_f0')
+        axs[1].set_axis_off()
+        plt.tight_layout();
+        plt.savefig(qc_path + "/metrics.jpg", dpi=300, bbox_inches='tight');
 
-    """Save as a pdf"""
+        """Save as a pdf"""
 
-    elem = [qc_path + "/title.jpg", qc_path + "/error.jpg", qc_path + "/metrics.jpg"]
+        elem = [qc_path + "/title.jpg", qc_path + "/error.jpg", qc_path + "/metrics.jpg"]
 
-    from fpdf import FPDF
+        from fpdf import FPDF
 
-    class PDF(FPDF):
-        def __init__(self):
-            super().__init__()
-            self.WIDTH = 210
-            self.HEIGHT = 297
+        class PDF(FPDF):
+            def __init__(self):
+                super().__init__()
+                self.WIDTH = 210
+                self.HEIGHT = 297
 
-        def header(self):
-            # self.image('assets/logo.png', 10, 8, 33)
-            self.set_font('Arial', 'B', 11)
-            self.cell(self.WIDTH - 80)
-            self.cell(60, 1, 'Quality control report - MF', 0, 0, 'R')
-            self.ln(20)
+            def header(self):
+                # self.image('assets/logo.png', 10, 8, 33)
+                self.set_font('Arial', 'B', 11)
+                self.cell(self.WIDTH - 80)
+                self.cell(60, 1, 'Quality control report - MF', 0, 0, 'R')
+                self.ln(20)
 
-        def footer(self):
-            # Page numbers in the footer
-            self.set_y(-15)
-            self.set_font('Arial', 'I', 8)
-            self.set_text_color(128)
-            self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
+            def footer(self):
+                # Page numbers in the footer
+                self.set_y(-15)
+                self.set_font('Arial', 'I', 8)
+                self.set_text_color(128)
+                self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
 
-        def page_body(self, images):
-            # Determine how many plots there are per page and set positions
-            # and margins accordingly
-            if len(images) == 3:
-                self.image(images[0], 15, 25, self.WIDTH - 30)
-                self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
-                self.image(images[2], 15, self.WIDTH / 2 + 75, self.WIDTH - 30)
-            elif len(images) == 2:
-                self.image(images[0], 15, 25, self.WIDTH - 30)
-                self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
-            else:
-                self.image(images[0], 15, 25, self.WIDTH - 30)
+            def page_body(self, images):
+                # Determine how many plots there are per page and set positions
+                # and margins accordingly
+                if len(images) == 3:
+                    self.image(images[0], 15, 25, self.WIDTH - 30)
+                    self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
+                    self.image(images[2], 15, self.WIDTH / 2 + 75, self.WIDTH - 30)
+                elif len(images) == 2:
+                    self.image(images[0], 15, 25, self.WIDTH - 30)
+                    self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
+                else:
+                    self.image(images[0], 15, 25, self.WIDTH - 30)
 
-        def print_page(self, images):
-            # Generates the report
-            self.add_page()
-            self.page_body(images)
+            def print_page(self, images):
+                # Generates the report
+                self.add_page()
+                self.page_body(images)
 
-    pdf = PDF()
-    pdf.print_page(elem)
-    pdf.output(qc_path + '/qc_report.pdf', 'F');
+        pdf = PDF()
+        pdf.print_page(elem)
+        pdf.output(qc_path + '/qc_report.pdf', 'F');
 
-    """Merge with QC of preproc""";
-    from PyPDF2 import PdfFileMerger
-    pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-    merger = PdfFileMerger()
-    for pdf in pdfs:
-        merger.append(pdf)
-    merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf')
-    merger.close()
-    os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-    os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        """Merge with QC of preproc""";
+        from PyPDF2 import PdfFileMerger
+        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+        merger = PdfFileMerger()
+        for pdf in pdfs:
+            merger.append(pdf)
+        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf')
+        merger.close()
+        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
 
-    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/"+mfdir+"/mf_logs.txt", "a+")
-    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f.close()
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/"+mfdir+"/mf_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f.close()
 
 
 def report_solo(folder_path,patient_path, slices=None, short=False):
