@@ -683,11 +683,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         shell_index = np.where(np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50))[0]
         # plot the shell
         plot_shell = np.zeros((np.shape(raw_data)[0], np.shape(raw_data)[1] * 5))
-        plot_shell[:, 0:np.shape(raw_data)[1]] = raw_data[..., sl - 10, shell_index[0]]
-        plot_shell[:, np.shape(raw_data)[1]:(np.shape(raw_data)[1] * 2)] = raw_data[..., sl - 5, shell_index[0]]
+        plot_shell[:, 0:np.shape(raw_data)[1]] = raw_data[..., max(sl - 10, 0), shell_index[0]]
+        plot_shell[:, np.shape(raw_data)[1]:(np.shape(raw_data)[1] * 2)] = raw_data[..., max(sl - 5, 0), shell_index[0]]
         plot_shell[:, (np.shape(raw_data)[1] * 2):(np.shape(raw_data)[1] * 3)] = raw_data[..., sl, shell_index[0]]
-        plot_shell[:, (np.shape(raw_data)[1] * 3):(np.shape(raw_data)[1] * 4)] = raw_data[..., sl + 5, shell_index[0]]
-        plot_shell[:, (np.shape(raw_data)[1] * 4):(np.shape(raw_data)[1] * 5)] = raw_data[..., sl + 10, shell_index[0]]
+        plot_shell[:, (np.shape(raw_data)[1] * 3):(np.shape(raw_data)[1] * 4)] = raw_data[..., min(sl + 5, 2*sl-1), shell_index[0]]
+        plot_shell[:, (np.shape(raw_data)[1] * 4):(np.shape(raw_data)[1] * 5)] = raw_data[..., min(sl + 10, 2*sl-1), shell_index[0]]
         axs[i].imshow(plot_shell, cmap='gray')
         axs[i].set_axis_off()
         axs[i].set_title('Raw data at b=' + str(list_bval[i]))
@@ -717,11 +717,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         fig.suptitle('Overview of processing steps for b=' + str(list_bval[i]), y=0.95, fontsize=16)
 
         # plot bet
-        X1, Y1 = mask_to_coor(mask_raw[..., sl - 10])
-        X2, Y2 = mask_to_coor(mask_raw[..., sl - 5])
+        X1, Y1 = mask_to_coor(mask_raw[..., max(sl - 10, 0)])
+        X2, Y2 = mask_to_coor(mask_raw[..., max(sl - 5, 0)])
         X3, Y3 = mask_to_coor(mask_raw[..., sl])
-        X4, Y4 = mask_to_coor(mask_raw[..., sl + 5])
-        X5, Y5 = mask_to_coor(mask_raw[..., sl + 10])
+        X4, Y4 = mask_to_coor(mask_raw[..., min(sl + 5, 2*sl-1)])
+        X5, Y5 = mask_to_coor(mask_raw[..., min(sl + 10, 2*sl-1)])
         Y = Y1 + Y2 + Y3 + Y4 + Y5
         X = X1 + [x + np.shape(mask_raw)[1] for x in X2] + [x + np.shape(mask_raw)[1] * 2 for x in X3] + [
             x + np.shape(mask_raw)[1] * 3 for x in X4] + [x + np.shape(mask_raw)[1] * 4 for x in X5]
@@ -730,11 +730,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         else:
             axs[current_subplot].scatter(X, Y, marker='.', s=1, c='red')
         plot_bet = np.zeros((np.shape(bet_data)[0], np.shape(bet_data)[1] * 5))
-        plot_bet[:, 0:np.shape(bet_data)[1]] = bet_data[..., sl - 10, shell_index[0]]
-        plot_bet[:, np.shape(bet_data)[1]:(np.shape(bet_data)[1] * 2)] = bet_data[..., sl - 5, shell_index[0]]
+        plot_bet[:, 0:np.shape(bet_data)[1]] = bet_data[..., max(sl - 10, 0), shell_index[0]]
+        plot_bet[:, np.shape(bet_data)[1]:(np.shape(bet_data)[1] * 2)] = bet_data[..., max(sl - 5, 0), shell_index[0]]
         plot_bet[:, (np.shape(bet_data)[1] * 2):(np.shape(bet_data)[1] * 3)] = bet_data[..., sl, shell_index[0]]
-        plot_bet[:, (np.shape(bet_data)[1] * 3):(np.shape(bet_data)[1] * 4)] = bet_data[..., sl + 5, shell_index[0]]
-        plot_bet[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = bet_data[..., sl + 10, shell_index[0]]
+        plot_bet[:, (np.shape(bet_data)[1] * 3):(np.shape(bet_data)[1] * 4)] = bet_data[..., min(sl + 5, 2*sl-1), shell_index[0]]
+        plot_bet[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = bet_data[..., min(sl + 10, 2*sl-1), shell_index[0]]
         if numstep==1:
             plt.imshow(plot_bet, cmap='gray')
             #fig_scat.set_axis_off()
@@ -747,15 +747,15 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         # plot mppca
         if bool_mppca:
             plot_mppca = np.zeros((np.shape(mppca_data)[0], np.shape(mppca_data)[1] * 5))
-            plot_mppca[:, 0:np.shape(mppca_data)[1]] = mppca_data[..., sl - 10, shell_index[0]]
+            plot_mppca[:, 0:np.shape(mppca_data)[1]] = mppca_data[..., max(sl - 10, 0), shell_index[0]]
             plot_mppca[:, np.shape(mppca_data)[1]:(np.shape(mppca_data)[1] * 2)] = mppca_data[
-                ..., sl - 5, shell_index[0]]
+                ..., max(sl - 5, 0), shell_index[0]]
             plot_mppca[:, (np.shape(mppca_data)[1] * 2):(np.shape(mppca_data)[1] * 3)] = mppca_data[
                 ..., sl, shell_index[0]]
             plot_mppca[:, (np.shape(mppca_data)[1] * 3):(np.shape(mppca_data)[1] * 4)] = mppca_data[
-                ..., sl + 5, shell_index[0]]
+                ..., min(sl + 5, 2*sl-1), shell_index[0]]
             plot_mppca[:, (np.shape(mppca_data)[1] * 4):(np.shape(mppca_data)[1] * 5)] = mppca_data[
-                ..., sl + 10, shell_index[0]]
+                ..., min(sl + 10, 2*sl-1), shell_index[0]]
             axs[current_subplot].imshow(plot_mppca, cmap='gray')
             axs[current_subplot].set_axis_off()
             axs[current_subplot].set_title('Denoising MPPCA')
@@ -764,15 +764,15 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         # plot patch2self
         if bool_patch2self:
             plot_patch2self = np.zeros((np.shape(patch2self_data)[0], np.shape(patch2self_data)[1] * 5))
-            plot_patch2self[:, 0:np.shape(patch2self_data)[1]] = patch2self_data[..., sl - 10, shell_index[0]]
+            plot_patch2self[:, 0:np.shape(patch2self_data)[1]] = patch2self_data[..., max(sl - 10, 0), shell_index[0]]
             plot_patch2self[:, np.shape(patch2self_data)[1]:(np.shape(patch2self_data)[1] * 2)] = patch2self_data[
-                ..., sl - 5, shell_index[0]]
+                ..., max(sl - 5, 0), shell_index[0]]
             plot_patch2self[:, (np.shape(patch2self_data)[1] * 2):(np.shape(patch2self_data)[1] * 3)] = patch2self_data[
                 ..., sl, shell_index[0]]
             plot_patch2self[:, (np.shape(patch2self_data)[1] * 3):(np.shape(patch2self_data)[1] * 4)] = patch2self_data[
-                ..., sl + 5, shell_index[0]]
+                ..., min(sl + 5, 2*sl-1), shell_index[0]]
             plot_patch2self[:, (np.shape(patch2self_data)[1] * 4):(np.shape(patch2self_data)[1] * 5)] = patch2self_data[
-                ..., sl + 10, shell_index[0]]
+                ..., min(sl + 10, 2*sl-1), shell_index[0]]
             axs[current_subplot].imshow(plot_patch2self, cmap='gray')
             axs[current_subplot].set_axis_off()
             axs[current_subplot].set_title('Denoising patch2self')
@@ -781,15 +781,15 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         # plot gibbs
         if bool_gibbs:
             plot_gibbs = np.zeros((np.shape(gibbs_data)[0], np.shape(gibbs_data)[1] * 5))
-            plot_gibbs[:, 0:np.shape(gibbs_data)[1]] = gibbs_data[..., sl - 10, shell_index[0]]
+            plot_gibbs[:, 0:np.shape(gibbs_data)[1]] = gibbs_data[..., max(sl - 10, 0), shell_index[0]]
             plot_gibbs[:, np.shape(gibbs_data)[1]:(np.shape(gibbs_data)[1] * 2)] = gibbs_data[
-                ..., sl - 5, shell_index[0]]
+                ..., max(sl - 5, 0), shell_index[0]]
             plot_gibbs[:, (np.shape(gibbs_data)[1] * 2):(np.shape(gibbs_data)[1] * 3)] = gibbs_data[
                 ..., sl, shell_index[0]]
             plot_gibbs[:, (np.shape(gibbs_data)[1] * 3):(np.shape(gibbs_data)[1] * 4)] = gibbs_data[
-                ..., sl + 5, shell_index[0]]
+                ..., min(sl + 5, 2*sl-1), shell_index[0]]
             plot_gibbs[:, (np.shape(gibbs_data)[1] * 4):(np.shape(gibbs_data)[1] * 5)] = gibbs_data[
-                ..., sl + 10, shell_index[0]]
+                ..., min(sl + 10, 2*sl-1), shell_index[0]]
             axs[current_subplot].imshow(plot_gibbs, cmap='gray')
             axs[current_subplot].set_axis_off()
             axs[current_subplot].set_title('Gibbs ringing correction')
@@ -797,15 +797,15 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         # plot topup
         if bool_topup and not eddy:
             plot_topup = np.zeros((np.shape(topup_data)[0], np.shape(topup_data)[1] * 5))
-            plot_topup[:, 0:np.shape(topup_data)[1]] = topup_data[..., sl - 10, shell_index[0]]
+            plot_topup[:, 0:np.shape(topup_data)[1]] = topup_data[..., max(sl - 10, 0), shell_index[0]]
             plot_topup[:, np.shape(topup_data)[1]:(np.shape(topup_data)[1] * 2)] = topup_data[
-                ..., sl - 5, shell_index[0]]
+                ..., max(sl - 5, 0), shell_index[0]]
             plot_topup[:, (np.shape(topup_data)[1] * 2):(np.shape(topup_data)[1] * 3)] = topup_data[
                 ..., sl, shell_index[0]]
             plot_topup[:, (np.shape(topup_data)[1] * 3):(np.shape(topup_data)[1] * 4)] = topup_data[
-                ..., sl + 5, shell_index[0]]
+                ..., min(sl + 5, 2*sl-1), shell_index[0]]
             plot_topup[:, (np.shape(topup_data)[1] * 4):(np.shape(topup_data)[1] * 5)] = topup_data[
-                ..., sl + 10, shell_index[0]]
+                ..., min(sl + 10, 2*sl-1), shell_index[0]]
             axs[current_subplot].imshow(plot_topup, cmap='gray')
             axs[current_subplot].set_axis_off()
             axs[current_subplot].set_title('Susceptibility induced distortions correction')
@@ -813,15 +813,15 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         # plot eddy
         if bool_eddy:
             plot_eddy = np.zeros((np.shape(preproc_data)[0], np.shape(preproc_data)[1] * 5))
-            plot_eddy[:, 0:np.shape(preproc_data)[1]] = preproc_data[..., sl - 10, shell_index[0]]
+            plot_eddy[:, 0:np.shape(preproc_data)[1]] = preproc_data[..., max(sl - 10, 0), shell_index[0]]
             plot_eddy[:, np.shape(preproc_data)[1]:(np.shape(preproc_data)[1] * 2)] = preproc_data[
-                ..., sl - 5, shell_index[0]]
+                ..., max(sl - 5, 0), shell_index[0]]
             plot_eddy[:, (np.shape(preproc_data)[1] * 2):(np.shape(preproc_data)[1] * 3)] = preproc_data[
                 ..., sl, shell_index[0]]
             plot_eddy[:, (np.shape(preproc_data)[1] * 3):(np.shape(preproc_data)[1] * 4)] = preproc_data[
-                ..., sl + 5, shell_index[0]]
+                ..., min(sl + 5, 2*sl-1), shell_index[0]]
             plot_eddy[:, (np.shape(preproc_data)[1] * 4):(np.shape(preproc_data)[1] * 5)] = preproc_data[
-                ..., sl + 10, shell_index[0]]
+                ..., min(sl + 10, 2*sl-1), shell_index[0]]
             axs[current_subplot].imshow(plot_eddy, cmap='gray')
             axs[current_subplot].set_axis_off()
             axs[current_subplot].set_title('Eddy and motion correction')
@@ -978,11 +978,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             snr = mean_signal / mean_sigma
             sl = np.shape(sigma)[2] // 2
             plot_sigma = np.zeros((np.shape(sigma)[0], np.shape(sigma)[1] * 5))
-            plot_sigma[:, 0:np.shape(sigma)[1]] = sigma[..., sl - 10]
-            plot_sigma[:, np.shape(sigma)[1]:(np.shape(sigma)[1] * 2)] = sigma[..., sl - 5]
+            plot_sigma[:, 0:np.shape(sigma)[1]] = sigma[..., max(sl - 10, 0)]
+            plot_sigma[:, np.shape(sigma)[1]:(np.shape(sigma)[1] * 2)] = sigma[..., max(sl - 5, 0)]
             plot_sigma[:, (np.shape(sigma)[1] * 2):(np.shape(sigma)[1] * 3)] = sigma[..., sl]
-            plot_sigma[:, (np.shape(sigma)[1] * 3):(np.shape(sigma)[1] * 4)] = sigma[..., sl + 5]
-            plot_sigma[:, (np.shape(sigma)[1] * 4):(np.shape(sigma)[1] * 5)] = sigma[..., sl + 10]
+            plot_sigma[:, (np.shape(sigma)[1] * 3):(np.shape(sigma)[1] * 4)] = sigma[..., min(sl + 5, 2*sl-1)]
+            plot_sigma[:, (np.shape(sigma)[1] * 4):(np.shape(sigma)[1] * 5)] = sigma[..., min(sl + 10, 2*sl-1)]
             rows = ["MPPCA SNR estimation"]
             cell_text = [[snr]]
             fig = plt.figure(figsize=(14, 4))
@@ -1016,33 +1016,33 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 sl = np.shape(bet_data)[2] // 2
                 # image of raw
                 plot_raw = np.zeros((np.shape(bet_data)[0], np.shape(bet_data)[1] * 5))
-                plot_raw[:, 0:np.shape(bet_data)[1]] = tsnr_raw[..., sl - 10]
-                plot_raw[:, np.shape(bet_data)[1]:(np.shape(bet_data)[1] * 2)] = tsnr_raw[..., sl - 5]
+                plot_raw[:, 0:np.shape(bet_data)[1]] = tsnr_raw[..., max(sl - 10, 0)]
+                plot_raw[:, np.shape(bet_data)[1]:(np.shape(bet_data)[1] * 2)] = tsnr_raw[..., max(sl - 5, 0)]
                 plot_raw[:, (np.shape(bet_data)[1] * 2):(np.shape(bet_data)[1] * 3)] = tsnr_raw[..., sl]
-                plot_raw[:, (np.shape(bet_data)[1] * 3):(np.shape(bet_data)[1] * 4)] = tsnr_raw[..., sl + 5]
-                plot_raw[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = tsnr_raw[..., sl + 10]
+                plot_raw[:, (np.shape(bet_data)[1] * 3):(np.shape(bet_data)[1] * 4)] = tsnr_raw[..., min(sl + 5, 2*sl-1)]
+                plot_raw[:, (np.shape(bet_data)[1] * 4):(np.shape(bet_data)[1] * 5)] = tsnr_raw[..., min(sl + 10, 2*sl-1)]
                 # image of preproc
                 plot_preproc = np.zeros((np.shape(preproc_data)[0], np.shape(preproc_data)[1] * 5))
-                plot_preproc[:, 0:np.shape(preproc_data)[1]] = tsnr_preproc[..., sl - 10]
-                plot_preproc[:, np.shape(preproc_data)[1]:(np.shape(preproc_data)[1] * 2)] = tsnr_preproc[..., sl - 5]
+                plot_preproc[:, 0:np.shape(preproc_data)[1]] = tsnr_preproc[..., max(sl - 10, 0)]
+                plot_preproc[:, np.shape(preproc_data)[1]:(np.shape(preproc_data)[1] * 2)] = tsnr_preproc[..., max(sl - 5, 0)]
                 plot_preproc[:, (np.shape(preproc_data)[1] * 2):(np.shape(preproc_data)[1] * 3)] = tsnr_preproc[..., sl]
                 plot_preproc[:, (np.shape(preproc_data)[1] * 3):(np.shape(preproc_data)[1] * 4)] = tsnr_preproc[
-                    ..., sl + 5]
+                    ..., min(sl + 5, 2*sl-1)]
                 plot_preproc[:, (np.shape(preproc_data)[1] * 4):(np.shape(preproc_data)[1] * 5)] = tsnr_preproc[
-                    ..., sl + 10]
+                    ..., min(sl + 10, 2*sl-1)]
                 # image of difference
                 plot_diff = np.zeros((np.shape(preproc_data)[0], np.shape(preproc_data)[1] * 5))
-                plot_diff[:, 0:np.shape(preproc_data)[1]] = tsnr_raw[..., sl - 10] - tsnr_preproc[..., sl - 10]
-                plot_diff[:, np.shape(preproc_data)[1]:(np.shape(preproc_data)[1] * 2)] = tsnr_raw[..., sl - 5] - \
-                                                                                          tsnr_preproc[..., sl - 5]
+                plot_diff[:, 0:np.shape(preproc_data)[1]] = tsnr_raw[..., max(sl - 10, 0)] - tsnr_preproc[..., max(sl - 10, 0)]
+                plot_diff[:, np.shape(preproc_data)[1]:(np.shape(preproc_data)[1] * 2)] = tsnr_raw[..., max(sl - 5, 0)] - \
+                                                                                          tsnr_preproc[..., max(sl - 5, 0)]
                 plot_diff[:, (np.shape(preproc_data)[1] * 2):(np.shape(preproc_data)[1] * 3)] = tsnr_raw[..., sl] - \
                                                                                                 tsnr_preproc[..., sl]
-                plot_diff[:, (np.shape(preproc_data)[1] * 3):(np.shape(preproc_data)[1] * 4)] = tsnr_raw[..., sl + 5] - \
+                plot_diff[:, (np.shape(preproc_data)[1] * 3):(np.shape(preproc_data)[1] * 4)] = tsnr_raw[..., min(sl + 5, 2*sl-1)] - \
                                                                                                 tsnr_preproc[
-                                                                                                    ..., sl + 5]
-                plot_diff[:, (np.shape(preproc_data)[1] * 4):(np.shape(preproc_data)[1] * 5)] = tsnr_raw[..., sl + 10] - \
+                                                                                                    ..., min(sl + 5, 2*sl-1)]
+                plot_diff[:, (np.shape(preproc_data)[1] * 4):(np.shape(preproc_data)[1] * 5)] = tsnr_raw[..., min(sl + 10, 2*sl-1)] - \
                                                                                                 tsnr_preproc[
-                                                                                                    ..., sl + 10]
+                                                                                                    ..., min(sl + 10, 2*sl-1)]
 
                 masked_tsnr_preproc = np.ma.array(tsnr_preproc, mask=1 - mask_preproc)
                 masked_tsnr_raw = np.ma.array(tsnr_raw, mask=1 - mask_raw)
@@ -1076,23 +1076,23 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         sl = np.shape(field_data)[2] // 2
         plot_field = np.zeros((np.shape(field_data)[0], np.shape(field_data)[1] * 5))
-        plot_field[:, 0:np.shape(field_data)[1]] = field_data[..., sl - 10]
-        plot_field[:, np.shape(field_data)[1]:(np.shape(field_data)[1] * 2)] = field_data[..., sl - 5]
+        plot_field[:, 0:np.shape(field_data)[1]] = field_data[..., max(sl - 10, 0)]
+        plot_field[:, np.shape(field_data)[1]:(np.shape(field_data)[1] * 2)] = field_data[..., max(sl - 5, 0)]
         plot_field[:, (np.shape(field_data)[1] * 2):(np.shape(field_data)[1] * 3)] = field_data[..., sl]
-        plot_field[:, (np.shape(field_data)[1] * 3):(np.shape(field_data)[1] * 4)] = field_data[..., sl + 5]
-        plot_field[:, (np.shape(field_data)[1] * 4):(np.shape(field_data)[1] * 5)] = field_data[..., sl + 10]
+        plot_field[:, (np.shape(field_data)[1] * 3):(np.shape(field_data)[1] * 4)] = field_data[..., min(sl + 5, 2*sl-1)]
+        plot_field[:, (np.shape(field_data)[1] * 4):(np.shape(field_data)[1] * 5)] = field_data[..., min(sl + 5, 2*sl-1)]
         axs[0].imshow(plot_field, cmap='gray')
         axs[0].set_axis_off()
 
         sl = np.shape(field_data)[1] // 2
         plot_field = np.zeros((np.shape(field_data)[2], np.shape(field_data)[0] * 5))
-        plot_field[:, 0:np.shape(field_data)[0]] = np.rot90(field_data[..., sl - 10, :])
-        plot_field[:, np.shape(field_data)[0]:(np.shape(field_data)[0] * 2)] = np.rot90(field_data[..., sl - 5, :])
+        plot_field[:, 0:np.shape(field_data)[0]] = np.rot90(field_data[..., max(sl - 10, 0), :])
+        plot_field[:, np.shape(field_data)[0]:(np.shape(field_data)[0] * 2)] = np.rot90(field_data[..., max(sl - 5, 0), :])
         plot_field[:, (np.shape(field_data)[0] * 2):(np.shape(field_data)[0] * 3)] = np.rot90(field_data[..., sl, :])
         plot_field[:, (np.shape(field_data)[0] * 3):(np.shape(field_data)[0] * 4)] = np.rot90(
-            field_data[..., sl + 5, :])
+            field_data[..., min(sl + 5, 2*sl-1), :])
         plot_field[:, (np.shape(field_data)[0] * 4):(np.shape(field_data)[0] * 5)] = np.rot90(
-            field_data[..., sl + 10, :])
+            field_data[..., min(sl + 10, 2*sl-1), :])
         axs[1].imshow(plot_field, cmap='gray')
         axs[1].set_axis_off()
 
@@ -1101,8 +1101,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         plot_field[:, 0:np.shape(field_data)[1]] = np.rot90(field_data[sl - 10, ...])
         plot_field[:, np.shape(field_data)[1]:(np.shape(field_data)[1] * 2)] = np.rot90(field_data[sl - 5, ...])
         plot_field[:, (np.shape(field_data)[1] * 2):(np.shape(field_data)[1] * 3)] = np.rot90(field_data[sl, ...])
-        plot_field[:, (np.shape(field_data)[1] * 3):(np.shape(field_data)[1] * 4)] = np.rot90(field_data[sl + 5, ...])
-        plot_field[:, (np.shape(field_data)[1] * 4):(np.shape(field_data)[1] * 5)] = np.rot90(field_data[sl + 10, ...])
+        plot_field[:, (np.shape(field_data)[1] * 3):(np.shape(field_data)[1] * 4)] = np.rot90(field_data[min(sl + 5, 2*sl-1), ...])
+        plot_field[:, (np.shape(field_data)[1] * 4):(np.shape(field_data)[1] * 5)] = np.rot90(field_data[min(sl + 10, 2*sl-1), ...])
         axs[2].imshow(plot_field, cmap='gray')
         axs[2].set_axis_off()
         plt.tight_layout()
@@ -1370,22 +1370,22 @@ def dti_solo(folder_path, p, use_wm_mask=False, report=True):
         masked_mse = np.ma.array(mse, mask=1 - mask)
         max_plot = masked_mse.mean() + 0.5 * masked_mse.std()
         plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
-        plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
-        plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
+        plot_mse[:, 0:np.shape(mse)[1]] = mse[..., max(sl - 10, 0)]
+        plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., max(sl - 5, 0)]
         plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
-        plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
-        plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
+        plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., min(sl + 5, 2*sl-1)]
+        plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., min(sl + 10, 2*sl-1)]
         im0 = axs[0].imshow(plot_mse, cmap='gray', vmax=max_plot)
         axs[0].set_title('MSE')
         axs[0].set_axis_off()
         fig.colorbar(im0, ax=axs[0], orientation='horizontal')
         sl = np.shape(R2)[2] // 2
         plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
-        plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
-        plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
+        plot_R2[:, 0:np.shape(R2)[1]] = R2[..., max(sl - 10, 0)]
+        plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., max(sl - 5, 0)]
         plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
-        plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
-        plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
+        plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., min(sl + 5, 2*sl-1)]
+        plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., min(sl + 10, 2*sl-1)]
         im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
         axs[1].set_title('R2')
         axs[1].set_axis_off()
@@ -1396,21 +1396,21 @@ def dti_solo(folder_path, p, use_wm_mask=False, report=True):
         fig, axs = plt.subplots(2, 1, figsize=(12, 6))
         sl = np.shape(metric1)[2] // 2
         plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5, 3), dtype=np.int16)
-        plot_metric1[:, 0:np.shape(metric1)[1], :] = metric1[..., sl - 10, :]
-        plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2), :] = metric1[..., sl - 5, :]
+        plot_metric1[:, 0:np.shape(metric1)[1], :] = metric1[..., max(sl - 10, 0), :]
+        plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2), :] = metric1[..., max(sl - 5, 0), :]
         plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3), :] = metric1[..., sl, :]
-        plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4), :] = metric1[..., sl + 5, :]
-        plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5), :] = metric1[..., sl + 10, :]
+        plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4), :] = metric1[..., min(sl + 5, 2*sl-1), :]
+        plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5), :] = metric1[..., min(sl + 10, 2*sl-1), :]
         axs[0].imshow(plot_metric1)
         axs[0].set_title('Fractional anisotropy')
         axs[0].set_axis_off()
         sl = np.shape(metric2)[2] // 2
         plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
-        plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
-        plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
+        plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., max(sl - 10, 0)]
+        plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., max(sl - 5, 0)]
         plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
-        plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
-        plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
+        plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., min(sl + 5, 2*sl-1)]
+        plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., min(sl + 10, 2*sl-1)]
         im1 = axs[1].imshow(plot_metric2, cmap='gray')
         axs[1].set_title('Mean diffusivity')
         axs[1].set_axis_off()
@@ -1742,25 +1742,25 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
     seg_data, seg_affine = load_nifti(seg_path)
     sl = np.shape(seg_data)[2] // 2
     plot_seg = np.zeros((np.shape(seg_data)[0], np.shape(seg_data)[1] * 3))
-    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., sl - 10]
+    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., max(sl - 10, 0)]
     plot_seg[:, np.shape(seg_data)[1]:(np.shape(seg_data)[1] * 2)] = seg_data[..., sl]
-    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., sl + 10]
+    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., min(sl + 10, 2*sl-1)]
     axs[0].imshow(plot_seg)
     axs[0].set_axis_off()
     seg_data, seg_affine = load_nifti(preproc_path)
     sl = np.shape(seg_data)[2] // 2
     plot_seg = np.zeros((np.shape(seg_data)[0], np.shape(seg_data)[1] * 3))
-    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., sl - 10, 0]
+    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., max(sl - 10, 0), 0]
     plot_seg[:, np.shape(seg_data)[1]:(np.shape(seg_data)[1] * 2)] = seg_data[..., sl, 0]
-    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., sl + 10, 0]
+    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., min(sl + 10, 2*sl-1), 0]
     axs[1].imshow(plot_seg, cmap='gray')
     axs[1].set_axis_off()
     seg_data, seg_affine = load_nifti(wm_path)
     sl = np.shape(seg_data)[2] // 2
     plot_seg = np.zeros((np.shape(seg_data)[0], np.shape(seg_data)[1] * 3))
-    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., sl - 10]
+    plot_seg[:, 0:np.shape(seg_data)[1]] = seg_data[..., max(sl - 10, 0)]
     plot_seg[:, np.shape(seg_data)[1]:(np.shape(seg_data)[1] * 2)] = seg_data[..., sl]
-    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., sl + 10]
+    plot_seg[:, (np.shape(seg_data)[1] * 2):(np.shape(seg_data)[1] * 3)] = seg_data[..., min(sl + 10, 2*sl-1)]
     test = np.ma.masked_where(plot_seg < 0.9, plot_seg)
     axs[1].imshow(test, cmap='hsv', interpolation='none')
     axs[1].set_axis_off()
@@ -1772,33 +1772,33 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         anat_data, anat_affine = load_nifti(T1_path)
         sl = np.shape(anat_data)[2] // 2 + 15
         plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
-        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
-        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., max(sl - 10, 0)]
+        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., max(sl - 5, 0)]
         plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
-        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
-        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., min(sl + 5, 2*sl-1)]
+        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., min(sl + 10, 2*sl-1)]
         axs[0].imshow(plot_anat, cmap='gray')
         axs[0].set_title('T1')
         axs[0].set_axis_off()
         anat_data, anat_affine = load_nifti(T1gibbs_path)
         sl = np.shape(anat_data)[2] // 2 + 15
         plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
-        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
-        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., max(sl - 10, 0)]
+        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., max(sl - 5, 0)]
         plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
-        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
-        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., min(sl + 5, 2*sl-1)]
+        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., min(sl + 10, 2*sl-1)]
         axs[1].imshow(plot_anat, cmap='gray')
         axs[1].set_title('T1 gibbs ringing corrected')
         axs[1].set_axis_off()
         anat_data, anat_affine = load_nifti(T1brain_path)
         sl = np.shape(anat_data)[2] // 2 + 15
         plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
-        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
-        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., max(sl - 10, 0)]
+        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., max(sl - 5, 0)]
         plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
-        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
-        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., min(sl + 5, 2*sl-1)]
+        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., min(sl + 10, 2*sl-1)]
         axs[2].imshow(plot_anat, cmap='gray')
         axs[2].set_title('T1 brain extracted')
         axs[2].set_axis_off()
@@ -1809,11 +1809,11 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         anat_data, anat_affine = load_nifti(ap_path)
         sl = np.shape(anat_data)[2] // 2
         plot_anat = np.zeros((np.shape(anat_data)[0], np.shape(anat_data)[1] * 5))
-        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., sl - 10]
-        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., sl - 5]
+        plot_anat[:, 0:np.shape(anat_data)[1]] = anat_data[..., max(sl - 10, 0)]
+        plot_anat[:, np.shape(anat_data)[1]:(np.shape(anat_data)[1] * 2)] = anat_data[..., max(sl - 5, 0)]
         plot_anat[:, (np.shape(anat_data)[1] * 2):(np.shape(anat_data)[1] * 3)] = anat_data[..., sl]
-        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., sl + 5]
-        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., sl + 10]
+        plot_anat[:, (np.shape(anat_data)[1] * 3):(np.shape(anat_data)[1] * 4)] = anat_data[..., min(sl + 5, 2*sl-1)]
+        plot_anat[:, (np.shape(anat_data)[1] * 4):(np.shape(anat_data)[1] * 5)] = anat_data[..., min(sl + 10, 2*sl-1)]
         plt.imshow(plot_anat, cmap='gray')
         plt.title('Anisotropic power map')
         plt.axis('off')
@@ -2007,22 +2007,22 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
     fig, axs = plt.subplots(2, 1, figsize=(12, 8))
     sl = np.shape(mse)[2] // 2
     plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
-    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
-    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
+    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., max(sl - 10, 0)]
+    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., max(sl - 5, 0)]
     plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
-    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
-    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
+    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., min(sl + 5, 2*sl-1)]
+    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., min(sl + 10, 2*sl-1)]
     im0 = axs[0].imshow(plot_mse, cmap='gray')
     axs[0].set_title('MSE')
     axs[0].set_axis_off()
     fig.colorbar(im0, ax=axs[0], orientation='horizontal')
     sl = np.shape(R2)[2] // 2
     plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
-    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
-    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
+    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., max(sl - 10, 0)]
+    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., max(sl - 5, 0)]
     plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
-    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
-    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
+    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., min(sl + 5, 2*sl-1)]
+    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., min(sl + 10, 2*sl-1)]
     im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
     axs[1].set_title('R2')
     axs[1].set_axis_off()
@@ -2033,21 +2033,21 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
     fig, axs = plt.subplots(2, 1, figsize=(12, 6))
     sl = np.shape(metric1)[2] // 2
     plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5))
-    plot_metric1[:, 0:np.shape(metric1)[1]] = metric1[..., sl - 10]
-    plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2)] = metric1[..., sl - 5]
+    plot_metric1[:, 0:np.shape(metric1)[1]] = metric1[..., max(sl - 10, 0)]
+    plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2)] = metric1[..., max(sl - 5, 0)]
     plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3)] = metric1[..., sl]
-    plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4)] = metric1[..., sl + 5]
-    plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5)] = metric1[..., sl + 10]
+    plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4)] = metric1[..., min(sl + 5, 2*sl-1)]
+    plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5)] = metric1[..., min(sl + 10, 2*sl-1)]
     axs[0].imshow(plot_metric1, cmap='gray')
     axs[0].set_title('Orientation dispersion index')
     axs[0].set_axis_off()
     sl = np.shape(metric2)[2] // 2
     plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
-    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
-    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
+    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., max(sl - 10, 0)]
+    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., max(sl - 5, 0)]
     plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
-    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
-    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
+    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., min(sl + 5, 2*sl-1)]
+    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., min(sl + 10, 2*sl-1)]
     axs[1].imshow(plot_metric2, cmap='gray')
     axs[1].set_title('Fraction iso')
     axs[1].set_axis_off()
@@ -2298,22 +2298,22 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
     fig, axs = plt.subplots(2, 1, figsize=(12, 8))
     sl = np.shape(mse)[2] // 2
     plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
-    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
-    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
+    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., max(sl - 10, 0)]
+    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., max(sl - 5, 0)]
     plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
-    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
-    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
+    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., min(sl + 5, 2*sl-1)]
+    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., min(sl + 10, 2*sl-1)]
     im0 = axs[0].imshow(plot_mse, cmap='gray')#, vmin=0, vmax=np.min([np.max(residual),np.max(mse)]))
     axs[0].set_title('MSE')
     axs[0].set_axis_off()
     fig.colorbar(im0, ax=axs[0], orientation='horizontal')
     sl = np.shape(R2)[2] // 2
     plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
-    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
-    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
+    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., max(sl - 10, 0)]
+    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., max(sl - 5, 0)]
     plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
-    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
-    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
+    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., min(sl + 5, 2*sl-1)]
+    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., min(sl + 10, 2*sl-1)]
     im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
     axs[1].set_title('R2')
     axs[1].set_axis_off()
@@ -2324,21 +2324,21 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
     fig, axs = plt.subplots(2, 1, figsize=(12, 6))
     sl = np.shape(metric1)[2] // 2
     plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5))
-    plot_metric1[:, 0:np.shape(metric1)[1]] = metric1[..., sl - 10]
-    plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2)] = metric1[..., sl - 5]
+    plot_metric1[:, 0:np.shape(metric1)[1]] = metric1[..., max(sl - 10, 0)]
+    plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2)] = metric1[..., max(sl - 5, 0)]
     plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3)] = metric1[..., sl]
-    plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4)] = metric1[..., sl + 5]
-    plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5)] = metric1[..., sl + 10]
+    plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4)] = metric1[..., min(sl + 5, 2*sl-1)]
+    plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5)] = metric1[..., min(sl + 10, 2*sl-1)]
     axs[0].imshow(plot_metric1, cmap='gray')
     axs[0].set_title('Mosemap')
     axs[0].set_axis_off()
     sl = np.shape(metric2)[2] // 2
     plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
-    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10, 0]
-    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5, 0]
+    plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., max(sl - 10, 0), 0]
+    plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., max(sl - 5, 0), 0]
     plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl, 0]
-    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5, 0]
-    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10, 0]
+    plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., min(sl + 5, 2*sl-1), 0]
+    plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., min(sl + 10, 2*sl-1), 0]
     axs[1].imshow(plot_metric2, cmap='gray')
     axs[1].set_title('Fraction of the first compartment')
     axs[1].set_axis_off()
@@ -2600,22 +2600,22 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         fig, axs = plt.subplots(2, 1, figsize=(12, 8))
         sl = np.shape(mse)[2] // 2
         plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
-        plot_mse[:, 0:np.shape(mse)[1]] = mse[..., sl - 10]
-        plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., sl - 5]
+        plot_mse[:, 0:np.shape(mse)[1]] = mse[..., max(sl - 10, 0)]
+        plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., max(sl - 5, 0)]
         plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
-        plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., sl + 5]
-        plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., sl + 10]
+        plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., min(sl + 5, 2*sl-1)]
+        plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., min(sl + 10, 2*sl-1)]
         im0 = axs[0].imshow(plot_mse, cmap='gray')
         axs[0].set_title('MSE')
         axs[0].set_axis_off()
         fig.colorbar(im0, ax=axs[0], orientation='horizontal')
         sl = np.shape(R2)[2] // 2
         plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
-        plot_R2[:, 0:np.shape(R2)[1]] = R2[..., sl - 10]
-        plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., sl - 5]
+        plot_R2[:, 0:np.shape(R2)[1]] = R2[..., max(sl - 10, 0)]
+        plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., max(sl - 5, 0)]
         plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
-        plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., sl + 5]
-        plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., sl + 10]
+        plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., min(sl + 5, 2*sl-1)]
+        plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., min(sl + 10, 2*sl-1)]
         im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
         axs[1].set_title('R2')
         axs[1].set_axis_off()
@@ -2626,21 +2626,21 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         fig, axs = plt.subplots(2, 1, figsize=(12, 6))
         sl = np.shape(metric1)[2] // 2
         plot_metric1 = np.zeros((np.shape(metric1)[0], np.shape(metric1)[1] * 5))
-        plot_metric1[:, 0:np.shape(metric1)[1]] = metric1[..., sl - 10]
-        plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2)] = metric1[..., sl - 5]
+        plot_metric1[:, 0:np.shape(metric1)[1]] = metric1[..., max(sl - 10, 0)]
+        plot_metric1[:, np.shape(metric1)[1]:(np.shape(metric1)[1] * 2)] = metric1[..., max(sl - 5, 0)]
         plot_metric1[:, (np.shape(metric1)[1] * 2):(np.shape(metric1)[1] * 3)] = metric1[..., sl]
-        plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4)] = metric1[..., sl + 5]
-        plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5)] = metric1[..., sl + 10]
+        plot_metric1[:, (np.shape(metric1)[1] * 3):(np.shape(metric1)[1] * 4)] = metric1[..., min(sl + 5, 2*sl-1)]
+        plot_metric1[:, (np.shape(metric1)[1] * 4):(np.shape(metric1)[1] * 5)] = metric1[..., min(sl + 10, 2*sl-1)]
         axs[0].imshow(plot_metric1, cmap='gray')
         axs[0].set_title('fvf_tot')
         axs[0].set_axis_off()
         sl = np.shape(metric2)[2] // 2
         plot_metric2 = np.zeros((np.shape(metric2)[0], np.shape(metric2)[1] * 5))
-        plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., sl - 10]
-        plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., sl - 5]
+        plot_metric2[:, 0:np.shape(metric2)[1]] = metric2[..., max(sl - 10, 0)]
+        plot_metric2[:, np.shape(metric2)[1]:(np.shape(metric2)[1] * 2)] = metric2[..., max(sl - 5, 0)]
         plot_metric2[:, (np.shape(metric2)[1] * 2):(np.shape(metric2)[1] * 3)] = metric2[..., sl]
-        plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., sl + 5]
-        plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., sl + 10]
+        plot_metric2[:, (np.shape(metric2)[1] * 3):(np.shape(metric2)[1] * 4)] = metric2[..., min(sl + 5, 2*sl-1)]
+        plot_metric2[:, (np.shape(metric2)[1] * 4):(np.shape(metric2)[1] * 5)] = metric2[..., min(sl + 10, 2*sl-1)]
         axs[1].imshow(plot_metric2, cmap='gray')
         axs[1].set_title('frac_f0')
         axs[1].set_axis_off()
