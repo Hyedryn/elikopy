@@ -600,7 +600,10 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     raw_data, raw_affine = load_nifti(raw_path + patient_path + "_raw_dmri.nii.gz")
     bvals, bvecs = read_bvals_bvecs(raw_path + patient_path + "_raw_dmri.bval",
                                     raw_path + patient_path + "_raw_dmri.bvec")
-    gtab_raw = gradient_table(bvals, bvecs)
+
+    b0_threshold = np.min(bvals) + 10
+    b0_threshold = max(50, b0_threshold)
+    gtab_raw = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
 
     # reslice data
     bool_reslice = isdir(preproc_path + "reslice")
@@ -1677,7 +1680,9 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
         bvals, bvecs = read_bvals_bvecs(
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
-        gtab = gradient_table(bvals, bvecs)
+        b0_threshold = np.min(bvals) + 10
+        b0_threshold = max(50, b0_threshold)
+        gtab = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
         sphere = get_sphere('symmetric724')
         qball_model = shm.QballModel(gtab, 8)
         if core_count > 1:
@@ -1945,7 +1950,9 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
     # transform the bval, bvecs in a form suited for NODDI
     from dipy.core.gradients import gradient_table
     from dmipy.core.acquisition_scheme import gtab_dipy2dmipy
-    gtab_dipy = gradient_table(bvals, bvecs)
+    b0_threshold = np.min(bvals) + 10
+    b0_threshold = max(50, b0_threshold)
+    gtab_dipy = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
     acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy)
 
     if use_amico:
@@ -2504,7 +2511,9 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         #gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
 
         data_CSD = data
-        gtab_CSD = gradient_table(bvals, bvecs, atol=1e-1)
+        b0_threshold = np.min(bvals) + 10
+        b0_threshold = max(50, b0_threshold)
+        gtab_CSD = gradient_table(bvals, bvecs, b0_threshold=b0_threshold,atol=1e-1)
 
         from dipy.reconst.csdeconv import auto_response_ssst
 
