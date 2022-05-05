@@ -560,6 +560,22 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
+
+    #replace windows newline by unix newline:
+    with open(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval", "r+") as f:
+        data = f.read()
+        output = data.replace(r"\r\n", r"\n")
+        f.seek(0)
+        f.write(output)
+        f.truncate()
+
+    with open(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec", "r+") as f:
+        data = f.read()
+        output = data.replace(r"\r\n", r"\n")
+        f.seek(0)
+        f.write(output)
+        f.truncate()
+
     if not report:
         return
 
