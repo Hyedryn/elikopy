@@ -2125,23 +2125,26 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
     pdf.print_page(elem)
     pdf.output(qc_path + '/qc_report.pdf', 'F');
 
-    """Merge with QC of preproc""";
-    from PyPDF2 import PdfFileMerger
-    pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-    merger = PdfFileMerger()
-    for pdf in pdfs:
-        merger.append(pdf)
-    merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_noddi.pdf')
-    merger.close()
-    os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-    os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_noddi.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+    if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
+        shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+    else:
+        """Merge with QC of preproc""";
+        from PyPDF2 import PdfFileMerger
+        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+        merger = PdfFileMerger()
+        for pdf in pdfs:
+            merger.append(pdf)
+        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_noddi.pdf')
+        merger.close()
+        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_noddi.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
 
-    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
-    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f.close()
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/noddi/noddi_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f.close()
 
 
 def noddi_amico_solo(folder_path, p, use_wm_mask=False):
@@ -2416,23 +2419,26 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
     pdf.print_page(elem)
     pdf.output(qc_path + '/qc_report.pdf', 'F');
 
-    """Merge with QC of preproc""";
-    from PyPDF2 import PdfFileMerger
-    pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-    merger = PdfFileMerger()
-    for pdf in pdfs:
-        merger.append(pdf)
-    merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_diamond.pdf')
-    merger.close()
-    os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-    os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_diamond.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+    if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
+        shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+    else:
+        """Merge with QC of preproc""";
+        from PyPDF2 import PdfFileMerger
+        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+        merger = PdfFileMerger()
+        for pdf in pdfs:
+            merger.append(pdf)
+        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_diamond.pdf')
+        merger.close()
+        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_diamond.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
 
-    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
-    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-    f.close()
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f.close()
 
 
 def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False, report=True, csf_mask=True, ear_mask=False, useDIAMOND=False, mfdir=None, usePrecomputedCSD=True):
@@ -2720,23 +2726,27 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         pdf.print_page(elem)
         pdf.output(qc_path + '/qc_report.pdf', 'F');
 
-        """Merge with QC of preproc""";
-        from PyPDF2 import PdfFileMerger
-        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-        merger = PdfFileMerger()
-        for pdf in pdfs:
-            merger.append(pdf)
-        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf')
-        merger.close()
-        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
+            shutil.copyfile(qc_path + '/qc_report.pdf',
+                            folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        else:
+            """Merge with QC of preproc""";
+            from PyPDF2 import PdfFileMerger
+            pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+            merger = PdfFileMerger()
+            for pdf in pdfs:
+                merger.append(pdf)
+            merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf')
+            merger.close()
+            os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+            os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
 
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/"+mfdir+"/mf_logs.txt", "a+")
-        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
-        f.close()
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+            f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/"+mfdir+"/mf_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+            f.close()
 
 
 def report_solo(folder_path,patient_path, slices=None, short=False):
