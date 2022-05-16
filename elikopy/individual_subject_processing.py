@@ -1969,7 +1969,7 @@ def noddi_solo(folder_path, p, use_wm_mask=False, lambda_iso_diff=3.e-9, lambda_
     b0_threshold = np.min(bvals) + 10
     b0_threshold = max(50, b0_threshold)
     gtab_dipy = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
-    acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy, b0_threshold=b0_threshold)
+    acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy, b0_threshold=b0_threshold*1e6)
 
     if use_amico:
         # fit the model to the data using noddi amico
