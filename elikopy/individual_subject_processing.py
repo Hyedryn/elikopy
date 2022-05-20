@@ -2441,7 +2441,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
         f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False, report=True, csf_mask=True, ear_mask=False, useDIAMOND=False, mfdir=None, usePrecomputedCSD=True):
+def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False, report=True, csf_mask=True, ear_mask=False, useDIAMOND=False, mfdir=None, usePrecomputedCSD=True, CSD_FA_treshold=0.7):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2540,7 +2540,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         from dipy.reconst.csdeconv import auto_response_ssst
 
         # response, ratio = auto_response(gtab_CSD, data_CSD, roi_radius=10, fa_thr=0.7)
-        response, ratio = auto_response_ssst(gtab_CSD, data_CSD, roi_radii=10, fa_thr=0.7)
+        response, ratio = auto_response_ssst(gtab_CSD, data_CSD, roi_radii=10, fa_thr=CSD_FA_treshold)
 
         csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
         csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,
