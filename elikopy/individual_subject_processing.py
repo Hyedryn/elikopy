@@ -2749,6 +2749,410 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
             f.close()
 
 
+def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9]):
+    """ Computes the IVIM metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/ivim/.
+
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
+    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
+    :param use_amico: If true, use the amico optimizer. default=FALSE
+    :param core_count: Number of allocated cpu cores. default=1
+    """
+    print("[IVIM SOLO] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual ivim processing for patient %s \n" % p)
+
+    import numpy as np
+    from dipy.io.image import load_nifti, save_nifti
+    from dipy.io.gradients import read_bvals_bvecs
+
+    patient_path = p
+    log_prefix = "IVIM SOLO"
+
+    ivim_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim"
+    makedir(ivim_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim/ivim_logs.txt", log_prefix)
+
+    from dmipy.core.modeling_framework import MultiCompartmentModel
+    from dmipy.signal_models.gaussian_models import G1Ball
+
+
+    # initialize the compartments model and build the ivim model
+    from dmipy.core.modeling_framework import MultiCompartmentModel
+    from dmipy.signal_models.gaussian_models import G1Ball
+    ivim_mod = MultiCompartmentModel([G1Ball(), G1Ball()])
+
+    # fix the isotropic diffusivity
+    ivim_mod.set_fixed_parameter(
+        'G1Ball_2_lambda_iso', G1Ball_2_lambda_iso)  # Following Gurney-Champion 2016
+    ivim_mod.set_parameter_optimization_bounds(
+        'G1Ball_1_lambda_iso', G1Ball_1_lambda_iso)  # Following Gurney-Champion 2016
+
+    # load the data
+    data, affine = load_nifti(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    if os.path.isfile(wm_path):
+        mask, _ = load_nifti(wm_path)
+    else:
+        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
+
+    # transform the bval, bvecs in a form suited for ivim
+    from dipy.core.gradients import gradient_table
+    from dmipy.core.acquisition_scheme import gtab_dipy2dmipy
+    b0_threshold = np.min(bvals) + 10
+    b0_threshold = max(50, b0_threshold)
+    gtab_dipy = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
+    acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy, b0_threshold=b0_threshold*1e6)
+
+    # fit the model to the data
+    ivim_fit_Dfixed = ivim_mod.fit(acquisition_scheme=acq_scheme_dmipy, data=data, mask=mask, use_parallel_processing=True, number_of_processors=core_count)
+
+    from dipy.reconst.ivim import IvimModel
+    ivimmodel_dipy = IvimModel(gtab_dipy)
+    ivim_fit_dipy = ivimmodel_dipy.fit(data)
+
+    # exctract the metrics
+    fitted_parameters = ivim_fit_Dfixed.fitted_parameters
+
+    D_diffBall = fitted_parameters["G1Ball_1_lambda_iso"] # DiffusionBall diffusitivy
+    f_BloodBall = fitted_parameters["partial_volume_0"] # BloodBall fraction
+    f_DiffusionBall = fitted_parameters["partial_volume_1"] # DiffusionBall fraction
+    mse = ivim_fit_Dfixed.mean_squared_error(data)
+    R2 = ivim_fit_Dfixed.R2_coefficient_of_determination(data)
+
+    # save the nifti
+    save_nifti(ivim_path + '/' + patient_path + '_ivim_D_DiffBall.nii.gz', D_diffBall.astype(np.float32), affine)
+    save_nifti(ivim_path + '/' + patient_path + '_ivim_f_BloodBall.nii.gz', f_BloodBall.astype(np.float32), affine)
+    save_nifti(ivim_path + '/' + patient_path + '_ivim_f_DiffusionBall.nii.gz', f_DiffusionBall.astype(np.float32), affine)
+    save_nifti(ivim_path + '/' + patient_path + '_ivim_mse.nii.gz', mse.astype(np.float32), affine)
+    save_nifti(ivim_path + '/' + patient_path + '_ivim_R2.nii.gz', R2.astype(np.float32), affine)
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim/ivim_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+    f.close()
+    # ==================================================================================================================
+
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    qc_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim/quality_control"
+    makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim/ivim_logs.txt", log_prefix)
+
+    fig, axs = plt.subplots(2, 1, figsize=(2, 1))
+    fig.suptitle('Elikopy : Quality control report - IVIM', fontsize=50)
+    axs[0].set_axis_off()
+    axs[1].set_axis_off()
+    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+
+    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+    sl = np.shape(mse)[2] // 2
+    plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
+    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., max(sl - 10, 0)]
+    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., max(sl - 5, 0)]
+    plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
+    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., min(sl + 5, 2*sl-1)]
+    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., min(sl + 10, 2*sl-1)]
+    im0 = axs[0].imshow(plot_mse, cmap='gray')
+    axs[0].set_title('MSE')
+    axs[0].set_axis_off()
+    fig.colorbar(im0, ax=axs[0], orientation='horizontal')
+    sl = np.shape(R2)[2] // 2
+    plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
+    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., max(sl - 10, 0)]
+    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., max(sl - 5, 0)]
+    plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
+    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., min(sl + 5, 2*sl-1)]
+    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., min(sl + 10, 2*sl-1)]
+    im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
+    axs[1].set_title('R2')
+    axs[1].set_axis_off()
+    fig.colorbar(im1, ax=axs[1], orientation='horizontal');
+    plt.tight_layout()
+    plt.savefig(qc_path + "/error.jpg", dpi=300, bbox_inches='tight');
+
+
+    """Save as a pdf"""
+
+    elem = [qc_path + "/title.jpg", qc_path + "/error.jpg"]
+
+    from fpdf import FPDF
+
+    class PDF(FPDF):
+        def __init__(self):
+            super().__init__()
+            self.WIDTH = 210
+            self.HEIGHT = 297
+
+        def header(self):
+            # self.image('assets/logo.png', 10, 8, 33)
+            self.set_font('Arial', 'B', 11)
+            self.cell(self.WIDTH - 80)
+            self.cell(60, 1, 'Quality control report - ivim', 0, 0, 'R')
+            self.ln(20)
+
+        def footer(self):
+            # Page numbers in the footer
+            self.set_y(-15)
+            self.set_font('Arial', 'I', 8)
+            self.set_text_color(128)
+            self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
+
+        def page_body(self, images):
+            # Determine how many plots there are per page and set positions
+            # and margins accordingly
+            if len(images) == 3:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
+                self.image(images[2], 15, self.WIDTH / 2 + 75, self.WIDTH - 30)
+            elif len(images) == 2:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
+            else:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+
+        def print_page(self, images):
+            # Generates the report
+            self.add_page()
+            self.page_body(images)
+
+    pdf = PDF()
+    pdf.print_page(elem)
+    pdf.output(qc_path + '/qc_report.pdf', 'F');
+
+    if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
+        shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+    else:
+        """Merge with QC of preproc""";
+        from PyPDF2 import PdfFileMerger
+        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+        merger = PdfFileMerger()
+        for pdf in pdfs:
+            merger.append(pdf)
+        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_ivim.pdf')
+        merger.close()
+        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_ivim.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim/ivim_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f.close()
+
+
+
+def verdict_solo(folder_path, p, core_count=1, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
+    """ Computes the verdict metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/verdict/.
+
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
+    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
+    :param use_amico: If true, use the amico optimizer. default=FALSE
+    :param core_count: Number of allocated cpu cores. default=1
+    """
+    print("[verdict SOLO] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual verdict processing for patient %s \n" % p)
+
+    import numpy as np
+    from dipy.io.image import load_nifti, save_nifti
+    from dipy.io.gradients import read_bvals_bvecs
+
+    patient_path = p
+    log_prefix = "verdict SOLO"
+
+    verdict_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict"
+    makedir(verdict_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict/verdict_logs.txt", log_prefix)
+
+    from dmipy.core.modeling_framework import MultiCompartmentModel
+    from dmipy.signal_models.gaussian_models import G1Ball
+
+
+    # initialize the compartments model and build the verdict model
+    from dmipy.core.modeling_framework import MultiCompartmentModel
+    from dmipy.signal_models import sphere_models, cylinder_models, gaussian_models
+    from dmipy.signal_models.gaussian_models import G1Ball
+
+    sphere = sphere_models.S4SphereGaussianPhaseApproximation(diffusion_constant=TumorCells_Dconst)
+    ball = gaussian_models.G1Ball()
+    stick = cylinder_models.C1Stick()
+    verdict_mod = MultiCompartmentModel(models=[sphere, ball, stick])
+
+    verdict_mod.set_fixed_parameter('G1Ball_1_lambda_iso', G1Ball_1_lambda_iso)
+    verdict_mod.set_parameter_optimization_bounds('C1Stick_1_lambda_par', C1Stick_1_lambda_par)
+
+    # load the data
+    data, affine = load_nifti(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+    if os.path.isfile(wm_path):
+        mask, _ = load_nifti(wm_path)
+    else:
+        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
+
+    # transform the bval, bvecs in a form suited for verdict
+    from dipy.core.gradients import gradient_table
+    from dmipy.core.acquisition_scheme import gtab_dipy2dmipy
+    b0_threshold = np.min(bvals) + 10
+    b0_threshold = max(50, b0_threshold)
+    gtab_dipy = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
+    acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy, b0_threshold=b0_threshold*1e6)
+
+    # fit the model to the data
+    verdict_fit = verdict_mod.fit(acquisition_scheme=acq_scheme_dmipy, data=data, mask=mask, solver='mix', use_parallel_processing=True, number_of_processors=core_count)
+
+    # extract the metrics
+    fitted_parameters = verdict_fit.fitted_parameters
+
+    diff_stick = fitted_parameters["C1Stick_1_lambda_par"] # Vascular Stick parallel diffusivity
+    mu_vascular = fitted_parameters["C1Stick_1_mu"] #Vascular Stick Angle
+    tumor_cells_diameter = fitted_parameters["S4SphereGaussianPhaseApproximation_1_diameter"] #Tumor Cells diameter
+
+    f_tumor_cells = fitted_parameters["partial_volume_0"]  # Tumor Cells fraction
+    f_hindered_extraCellular = fitted_parameters["partial_volume_1"] # Hindered Extra-Cellular fraction
+    f_vascular = fitted_parameters["partial_volume_2"]  # Vascular fraction
+
+    mse = verdict_fit.mean_squared_error(data)
+    R2 = verdict_fit .R2_coefficient_of_determination(data)
+
+    # save the nifti
+    save_nifti(verdict_path + '/' + patient_path + '_verdict_diff_stick.nii.gz', diff_stick.astype(np.float32), affine)
+    save_nifti(verdict_path + '/' + patient_path + '_verdict_mu_vascular.nii.gz', mu_vascular.astype(np.float32), affine)
+    save_nifti(verdict_path + '/' + patient_path + '_verdict_tumor_cells_diameter.nii.gz', tumor_cells_diameter.astype(np.float32), affine)
+    save_nifti(verdict_path + '/' + patient_path + '_verdict_f_tumor_cells.nii.gz', f_tumor_cells.astype(np.float32), affine)
+    save_nifti(verdict_path + '/' + patient_path + '_verdict_f_hindered_extraCellular.nii.gz', f_hindered_extraCellular.astype(np.float32), affine)
+    save_nifti(verdict_path + '/' + patient_path + '_verdict_f_vascular.nii.gz', f_vascular.astype(np.float32), affine)
+    save_nifti(verdict_path + '/' + patient_path + '_verdict_mse.nii.gz', mse.astype(np.float32), affine)
+    save_nifti(verdict_path + '/' + patient_path + '_verdict_R2.nii.gz', R2.astype(np.float32), affine)
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict/verdict_logs.txt", "a+")
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+    f.close()
+    # ==================================================================================================================
+
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    qc_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict/quality_control"
+    makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict/verdict_logs.txt", log_prefix)
+
+    fig, axs = plt.subplots(2, 1, figsize=(2, 1))
+    fig.suptitle('Elikopy : Quality control report - verdict', fontsize=50)
+    axs[0].set_axis_off()
+    axs[1].set_axis_off()
+    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+
+    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+    sl = np.shape(mse)[2] // 2
+    plot_mse = np.zeros((np.shape(mse)[0], np.shape(mse)[1] * 5))
+    plot_mse[:, 0:np.shape(mse)[1]] = mse[..., max(sl - 10, 0)]
+    plot_mse[:, np.shape(mse)[1]:(np.shape(mse)[1] * 2)] = mse[..., max(sl - 5, 0)]
+    plot_mse[:, (np.shape(mse)[1] * 2):(np.shape(mse)[1] * 3)] = mse[..., sl]
+    plot_mse[:, (np.shape(mse)[1] * 3):(np.shape(mse)[1] * 4)] = mse[..., min(sl + 5, 2*sl-1)]
+    plot_mse[:, (np.shape(mse)[1] * 4):(np.shape(mse)[1] * 5)] = mse[..., min(sl + 10, 2*sl-1)]
+    im0 = axs[0].imshow(plot_mse, cmap='gray')
+    axs[0].set_title('MSE')
+    axs[0].set_axis_off()
+    fig.colorbar(im0, ax=axs[0], orientation='horizontal')
+    sl = np.shape(R2)[2] // 2
+    plot_R2 = np.zeros((np.shape(R2)[0], np.shape(R2)[1] * 5))
+    plot_R2[:, 0:np.shape(R2)[1]] = R2[..., max(sl - 10, 0)]
+    plot_R2[:, np.shape(R2)[1]:(np.shape(R2)[1] * 2)] = R2[..., max(sl - 5, 0)]
+    plot_R2[:, (np.shape(R2)[1] * 2):(np.shape(R2)[1] * 3)] = R2[..., sl]
+    plot_R2[:, (np.shape(R2)[1] * 3):(np.shape(R2)[1] * 4)] = R2[..., min(sl + 5, 2*sl-1)]
+    plot_R2[:, (np.shape(R2)[1] * 4):(np.shape(R2)[1] * 5)] = R2[..., min(sl + 10, 2*sl-1)]
+    im1 = axs[1].imshow(plot_R2, cmap='jet', vmin=0, vmax=1)
+    axs[1].set_title('R2')
+    axs[1].set_axis_off()
+    fig.colorbar(im1, ax=axs[1], orientation='horizontal');
+    plt.tight_layout()
+    plt.savefig(qc_path + "/error.jpg", dpi=300, bbox_inches='tight');
+
+
+    """Save as a pdf"""
+
+    elem = [qc_path + "/title.jpg", qc_path + "/error.jpg"]
+
+    from fpdf import FPDF
+
+    class PDF(FPDF):
+        def __init__(self):
+            super().__init__()
+            self.WIDTH = 210
+            self.HEIGHT = 297
+
+        def header(self):
+            # self.image('assets/logo.png', 10, 8, 33)
+            self.set_font('Arial', 'B', 11)
+            self.cell(self.WIDTH - 80)
+            self.cell(60, 1, 'Quality control report - verdict', 0, 0, 'R')
+            self.ln(20)
+
+        def footer(self):
+            # Page numbers in the footer
+            self.set_y(-15)
+            self.set_font('Arial', 'I', 8)
+            self.set_text_color(128)
+            self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
+
+        def page_body(self, images):
+            # Determine how many plots there are per page and set positions
+            # and margins accordingly
+            if len(images) == 3:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, 25 + 20, self.WIDTH - 30)
+                self.image(images[2], 15, self.WIDTH / 2 + 75, self.WIDTH - 30)
+            elif len(images) == 2:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, self.WIDTH / 2 + 40, self.WIDTH - 30)
+            else:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+
+        def print_page(self, images):
+            # Generates the report
+            self.add_page()
+            self.page_body(images)
+
+    pdf = PDF()
+    pdf.print_page(elem)
+    pdf.output(qc_path + '/qc_report.pdf', 'F');
+
+    if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
+        shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+    else:
+        """Merge with QC of preproc""";
+        from PyPDF2 import PdfFileMerger
+        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+        merger = PdfFileMerger()
+        for pdf in pdfs:
+            merger.append(pdf)
+        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_verdict.pdf')
+        merger.close()
+        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_verdict.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict/verdict_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
+        f.close()
+
+
+
 def report_solo(folder_path,patient_path, slices=None, short=False):
     """ Legacy report function.
 

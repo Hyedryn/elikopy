@@ -15,7 +15,7 @@ import matplotlib
 
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
-    mf_solo, noddi_amico_solo
+    mf_solo, noddi_amico_solo, ivim_solo
 from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall_FA, regall, randomise_all
 
 
@@ -1116,6 +1116,166 @@ class Elikopy:
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DIAMOND\n")
+        f.close()
+
+
+    def ivim(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9]):
+        """Computes the IVIM metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/ivim/.
+
+        example : study.ivim()
+
+        :param folder_path: the path to the root directory. default=study_folder
+        :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
+        :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
+        :param slurm_email: Email adress to send notification if a task fails. default=None
+        :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
+        :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
+        log_prefix="IVIM"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of IVIM with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        dest_success = folder_path + "/subjects/subj_list.json"
+        with open(dest_success, 'r') as f:
+            patient_list = json.load(f)
+
+        if patient_list_m:
+            patient_list = patient_list_m
+
+        core_count = 1 if cpus is None else cpus
+
+        job_list = []
+        f=open(folder_path + "/logs.txt", "a+")
+        for p in patient_list:
+            patient_path = p
+
+            ivim_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim"
+            makedir(ivim_path,folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim/ivim_logs.txt",
+                    log_prefix)
+
+            if slurm:
+                core_count = 1 if cpus is None else cpus
+                p_job = {
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import ivim_solo; ivim_solo(\"" + folder_path + "/\",\"" + p + "\",G1Ball_2_lambda_iso=" + str(G1Ball_2_lambda_iso) + ",core_count="+str(core_count)+ ", G1Ball_1_lambda_iso="+str(G1Ball_1_lambda_iso) + ")'",
+                        "job_name": "ivim_" + p,
+                        "ntasks": 1,
+                        "cpus_per_task": core_count,
+                        "mem_per_cpu": 8096,
+                        "time": "10:00:00",
+                        "mail_user": slurm_email,
+                        "mail_type": "FAIL",
+                        "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/ivim/' + "slurm-%j.out",
+                        "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/ivim/' + "slurm-%j.err",
+                    }
+                #p_job_id = pyslurm.job().submit_batch_job(p_job)
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+
+                p_job_id = {}
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
+                job_list.append(p_job_id)
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+            else:
+                ivim_solo(folder_path + "/",p,core_count=cpus, G1Ball_2_lambda_iso=G1Ball_2_lambda_iso, G1Ball_1_lambda_iso=G1Ball_1_lambda_iso)
+                matplotlib.pyplot.close(fig='all')
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied ivim on patient %s\n" % p)
+                f.flush()
+        f.close()
+
+        #Wait for all jobs to finish
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, log_prefix)
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of ivim\n")
+        f.close()
+
+
+    def verdict(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9], TumorCells_Dconst=0.9e-9):
+        """Computes the verdict metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/verdict/.
+
+        example : study.verdict()
+
+        :param folder_path: the path to the root directory. default=study_folder
+        :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
+        :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
+        :param slurm_email: Email adress to send notification if a task fails. default=None
+        :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
+        :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
+        log_prefix="verdict"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of verdict with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        dest_success = folder_path + "/subjects/subj_list.json"
+        with open(dest_success, 'r') as f:
+            patient_list = json.load(f)
+
+        if patient_list_m:
+            patient_list = patient_list_m
+
+        core_count = 1 if cpus is None else cpus
+
+        job_list = []
+        f=open(folder_path + "/logs.txt", "a+")
+        for p in patient_list:
+            patient_path = p
+
+            verdict_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict"
+            makedir(verdict_path,folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict/verdict_logs.txt",
+                    log_prefix)
+
+            if slurm:
+                core_count = 1 if cpus is None else cpus
+                p_job = {
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import verdict_solo; verdict_solo(\"" + folder_path + "/\",\"" + p + "\",G1Ball_1_lambda_iso=" + str(G1Ball_1_lambda_iso) + ",TumorCells_Dconst=" + str(TumorCells_Dconst) + ",core_count="+str(core_count)+ ", C1Stick_1_lambda_par="+str(C1Stick_1_lambda_par) + ")'",
+                        "job_name": "verdict_" + p,
+                        "ntasks": 1,
+                        "cpus_per_task": core_count,
+                        "mem_per_cpu": 8096,
+                        "time": "10:00:00",
+                        "mail_user": slurm_email,
+                        "mail_type": "FAIL",
+                        "output": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/verdict/' + "slurm-%j.out",
+                        "error": folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/verdict/' + "slurm-%j.err",
+                    }
+                #p_job_id = pyslurm.job().submit_batch_job(p_job)
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+
+                p_job_id = {}
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
+                job_list.append(p_job_id)
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+            else:
+                verdict_solo(folder_path + "/",p,core_count=cpus, G1Ball_1_lambda_iso=G1Ball_1_lambda_iso, C1Stick_1_lambda_par=C1Stick_1_lambda_par, TumorCells_Dconst=TumorCells_Dconst)
+                matplotlib.pyplot.close(fig='all')
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied verdict on patient %s\n" % p)
+                f.flush()
+        f.close()
+
+        #Wait for all jobs to finish
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, log_prefix)
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of verdict\n")
         f.close()
 
     def tbss(self, folder_path=None, grp1=None, grp2=None, starting_state=None, last_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, randomise_numberofpermutation=5000, slurm=None, slurm_email=None, slurm_timeout=None, slurm_tasks=None, slurm_mem=None):
