@@ -2261,7 +2261,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
             core_count) + ' ; crlDCIEstimate --input "' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc ' + str(
             core_count)
         if customDiamond == "" or (customDiamond is None) or (isinstance(customDiamond, str) and len(customDiamond) < 3):
-            bashCommand = bashCommand + ' --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
+            bashCommand = bashCommand + ' --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --verbose 1 --log'
         else:
             bashCommand = bashCommand + customDiamond
 
@@ -2920,6 +2920,7 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             # Generates the report
             self.add_page()
             self.page_body(images)
+
 
     pdf = PDF()
     pdf.print_page(elem)
