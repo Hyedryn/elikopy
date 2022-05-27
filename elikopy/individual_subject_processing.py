@@ -2260,7 +2260,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
         bashCommand = 'export OMP_NUM_THREADS=' + str(
             core_count) + ' ; crlDCIEstimate --input "' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz' + '" --output "' + folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/diamond/' + patient_path + '_diamond.nii.gz' + '" --mask "' + mask + '" --proc ' + str(
             core_count)
-        if customDiamond == "" or customDiamond is None:
+        if customDiamond == "" or (customDiamond is None) or (isinstance(customDiamond, str) and len(customDiamond) < 3):
             bashCommand = bashCommand + ' --ntensors 2 --reg 1.0 --estimb0 1 --automose aicu --mosemodels --fascicle diamondcyl --waterfraction 1 --waterDiff 0.003 --omtm 1 --residuals --fractions_sumto1 0 --verbose 1 --log'
         else:
             bashCommand = bashCommand + customDiamond
