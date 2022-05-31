@@ -2600,7 +2600,45 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
 
     MF_fit.write_nifti(mf_path + '/' + patient_path + '_mf.nii.gz', affine=affine)
 
+    # Export pseudo tensor
+    if os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f0.nii.gz'):
+        import nibabel as nib
+        from elikopy.utils import peak_to_tensor
+        img_mf = nib.load(mf_path + '/' + patient_path + '_mf_peak_f0.nii.gz')
+        t = peak_to_tensor(img_mf.get_fdata())
+        hdr = img_mf.header
+        hdr['dim'][0] = 5
+        hdr['dim'][4] = 1
+        hdr['dim'][5] = 6
+        hdr['regular'] = b'r'
+        hdr['intent_code'] = 1005
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f0_pseudoTensor.nii.gz', t, img_mf.affine, hdr)
 
+    if os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f1.nii.gz'):
+        import nibabel as nib
+        from elikopy.utils import peak_to_tensor
+        img_mf = nib.load(mf_path + '/' + patient_path + '_mf_peak_f1.nii.gz')
+        t = peak_to_tensor(img_mf.get_fdata())
+        hdr = img_mf.header
+        hdr['dim'][0] = 5
+        hdr['dim'][4] = 1
+        hdr['dim'][5] = 6
+        hdr['regular'] = b'r'
+        hdr['intent_code'] = 1005
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f1_pseudoTensor.nii.gz', t, img_mf.affine, hdr)
+
+    if os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f2.nii.gz'):
+        import nibabel as nib
+        from elikopy.utils import peak_to_tensor
+        img_mf = nib.load(mf_path + '/' + patient_path + '_mf_peak_f2.nii.gz')
+        t = peak_to_tensor(img_mf.get_fdata())
+        hdr = img_mf.header
+        hdr['dim'][0] = 5
+        hdr['dim'][4] = 1
+        hdr['dim'][5] = 6
+        hdr['regular'] = b'r'
+        hdr['intent_code'] = 1005
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f2_pseudoTensor.nii.gz', t, img_mf.affine, hdr)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)

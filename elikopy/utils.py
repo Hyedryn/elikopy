@@ -1322,3 +1322,102 @@ def merge_all_specific_reports(folder_path, merge_wm_report=False, merge_legacy_
     if merge_legacy_report:
         with open(folder_path + '/legacy_report_all.pdf', 'wb') as f:
             legacy_writer.write(f)
+
+def deltas_to_D(dx: float, dy: float, dz: float, lamb=np.diag([1, 0, 0]),
+                vec_len: float = 500):
+    """     Function creating a diffusion tensor from three orthogonal components.
+    Can raises np.linalg.LinAlgError
+    @author: DELINTE  Nicolas
+
+    :param dx: float 'x' component.
+    :param dy: float 'y' component.
+    :param dz: float 'z' component.
+    :param lamb: 3x3 array, optional. Diagonal matrix containing the diffusion eigenvalues. The default is np.diag([1, 0, 0]).
+    :param vec_len: float, optional. Value decreasing the diffusion. The default is 500.
+    :return: D : 3x3 array. Matrix containing the diffusion tensor.
+    """
+
+    e = np.array([[dx, -dz-dy, dy*dx-dx*dz],
+                  [dy, dx, -dx**2-(dz+dy)*dz],
+                  [dz, dx, dx**2+(dy+dz)*dy]])
+
+    try:
+        e_1 = np.linalg.inv(e)
+    except np.linalg.LinAlgError:
+        raise np.linalg.LinAlgError
+
+    D = (e.dot(lamb)).dot(e_1)/vec_len
+
+    return D
+
+def peak_to_tensor(peaks):
+    """ Takes peaks, such as the ones obtained with Microstructure Fingerprinting,
+    and return the corresponding tensor, in the format used in DIAMOND.
+    @author: DELINTE  Nicolas
+
+    :param peaks: 4-D array containing the peaks of shape (x,y,z,3)
+    :return: t, a 5-D array Tensor array of shape (x,y,z,1,6).
+    """
+
+    t = np.zeros(peaks.shape[:3]+(1, 6))
+
+    for xyz in np.ndindex(peaks.shape[:3]):
+
+        if peaks[xyz].all() == 0:
+            continue
+
+        dx, dy, dz = peaks[xyz]
+
+        try:
+            D = deltas_to_D(dx, dy, dz)
+        except np.linalg.LinAlgError:
+            continue
+
+        t[xyz+(0, 0)] = D[0, 0]
+        t[xyz+(0, 1)] = D[0, 1]
+        t[xyz+(0, 2)] = D[1, 1]
+        t[xyz+(0, 3)] = D[0, 2]
+        t[xyz+(0, 4)] = D[1, 2]
+        t[xyz+(0, 5)] = D[2, 2]
+
+    return t
+
+def tensor_to_peak(t):
+    """ Takes peaks, such as the ones obtained with DIAMOND, and return the
+    corresponding tensor, in the format used in Microstructure Fingerprinting.
+    @author: DELINTE  Nicolas
+
+    :param t: 5-D array. Tensor array of shape (x,y,z,1,6).
+    :return: peaks, a 4-D Array containing the peaks of shape (x,y,z,3)
+    """
+
+
+    if len(t.shape) == 4:
+        t = t[..., np.newaxis]
+        t = np.transpose(t, (1, 2, 3, 4, 0))
+
+        D_t = np.array([[t[:, :, :, 0, 0], t[:, :, :, 0, 1], t[:, :, :, 0, 2]],
+                        [t[:, :, :, 0, 1], t[:, :, :, 0, 3], t[:, :, :, 0, 4]],
+                        [t[:, :, :, 0, 2], t[:, :, :, 0, 4], t[:, :, :, 0, 5]]]
+                       )
+
+    else:
+
+        D_t = np.array([[t[:, :, :, 0, 0], t[:, :, :, 0, 1], t[:, :, :, 0, 3]],
+                        [t[:, :, :, 0, 1], t[:, :, :, 0, 2], t[:, :, :, 0, 4]],
+                        [t[:, :, :, 0, 3], t[:, :, :, 0, 4], t[:, :, :, 0, 5]]]
+                       )
+
+    D_t = np.transpose(D_t, (2, 3, 4, 0, 1))
+
+    val_t, vec_t = np.linalg.eig(D_t)
+
+    vol_shape = t.shape[0]*t.shape[1]*t.shape[2]
+
+    vec_t = vec_t.reshape((vol_shape, 3, 3))
+    vec_t = np.transpose(vec_t, (0, 2, 1))
+    idx = np.argmax(val_t.reshape((vol_shape, 3)), axis=1)
+
+    peaks = vec_t[range(vol_shape), idx].reshape(t.shape[:3]+(3,)).real
+
+    return peaks
