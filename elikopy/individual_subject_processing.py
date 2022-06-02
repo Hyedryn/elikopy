@@ -2601,44 +2601,26 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
     MF_fit.write_nifti(mf_path + '/' + patient_path + '_mf.nii.gz', affine=affine)
 
     # Export pseudo tensor
-    if os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f0.nii.gz'):
-        import nibabel as nib
-        from elikopy.utils import peak_to_tensor
-        img_mf = nib.load(mf_path + '/' + patient_path + '_mf_peak_f0.nii.gz')
-        t = peak_to_tensor(img_mf.get_fdata())
-        hdr = img_mf.header
-        hdr['dim'][0] = 5
-        hdr['dim'][4] = 1
-        hdr['dim'][5] = 6
+    frac = 0
+    import nibabel as nib
+    from elikopy.utils import peak_to_tensor
+    while os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f'+str(frac)+'.nii.gz') and os.path.exists(mf_path + '/' + patient_path + '_mf_frac_f' + str(frac) + '.nii.gz'):
+        peaks_path = mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '.nii.gz'
+        frac_path = mf_path + '/' + patient_path + '_mf_frac_f' + str(frac) + '.nii.gz'
+        img_mf_peaks = nib.load(peaks_path)
+        img_mf_frac = nib.load(frac_path)
+        hdr = img_mf_peaks.header
+        pixdim = hdr['pixdim'][1:4]
+        t = peak_to_tensor(img_mf_peaks.get_fdata(),norm=None,pixdim=pixdim)
+        t_normed = peak_to_tensor(img_mf_peaks.get_fdata(), norm=img_mf_frac.get_fdata(),pixdim=pixdim)
+        hdr['dim'][0] = 5 # 4 scalar, 5 vector
+        hdr['dim'][4] = 1 # 3
+        hdr['dim'][5] = 6 # 1
         hdr['regular'] = b'r'
         hdr['intent_code'] = 1005
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f0_pseudoTensor.nii.gz', t, img_mf.affine, hdr)
-
-    if os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f1.nii.gz'):
-        import nibabel as nib
-        from elikopy.utils import peak_to_tensor
-        img_mf = nib.load(mf_path + '/' + patient_path + '_mf_peak_f1.nii.gz')
-        t = peak_to_tensor(img_mf.get_fdata())
-        hdr = img_mf.header
-        hdr['dim'][0] = 5
-        hdr['dim'][4] = 1
-        hdr['dim'][5] = 6
-        hdr['regular'] = b'r'
-        hdr['intent_code'] = 1005
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f1_pseudoTensor.nii.gz', t, img_mf.affine, hdr)
-
-    if os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f2.nii.gz'):
-        import nibabel as nib
-        from elikopy.utils import peak_to_tensor
-        img_mf = nib.load(mf_path + '/' + patient_path + '_mf_peak_f2.nii.gz')
-        t = peak_to_tensor(img_mf.get_fdata())
-        hdr = img_mf.header
-        hdr['dim'][0] = 5
-        hdr['dim'][4] = 1
-        hdr['dim'][5] = 6
-        hdr['regular'] = b'r'
-        hdr['intent_code'] = 1005
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f2_pseudoTensor.nii.gz', t, img_mf.affine, hdr)
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor.nii.gz', t, img_mf_peaks.affine, hdr)
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
+        frac = frac + 1
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
