@@ -2,6 +2,8 @@ import datetime
 import os
 import shutil
 import json
+
+import TIME.utils
 import numpy as np
 import math
 
@@ -2602,11 +2604,15 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
 
     # Export pseudo tensor
     frac = 0
+    frac_list = []
+    peaks_list = []
+    fvf_list = []
     import nibabel as nib
     from elikopy.utils import peak_to_tensor
     while os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f'+str(frac)+'.nii.gz') and os.path.exists(mf_path + '/' + patient_path + '_mf_frac_f' + str(frac) + '.nii.gz'):
         peaks_path = mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '.nii.gz'
         frac_path = mf_path + '/' + patient_path + '_mf_frac_f' + str(frac) + '.nii.gz'
+        fvf_path = mf_path + '/' + patient_path + '_mf_fvf_f' + str(frac) + '.nii.gz'
         img_mf_peaks = nib.load(peaks_path)
         img_mf_frac = nib.load(frac_path)
         hdr = img_mf_peaks.header
@@ -2621,6 +2627,28 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor.nii.gz', t, img_mf_peaks.affine, hdr)
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
         frac = frac + 1
+
+        RGB_peak = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()])
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB.nii.gz', RGB_peak, img_mf_frac.affine)
+        peaks_list.append(img_mf_peaks.get_fdata())
+
+        RGB_peak_frac = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], [img_mf_frac.get_fdata()])
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB_frac.nii.gz', RGB_peak_frac, img_mf_frac.affine)
+        frac_list.append(img_mf_frac.get_fdata())
+
+        if os.path.exists(fvf_path):
+            img_mf_fvf = nib.load(fvf_path)
+            fvf_list.append(img_mf_fvf.get_fdata())
+            RGB_peak_frac_fvf = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], [img_mf_frac.get_fdata()], [img_mf_fvf.get_fdata()])
+            save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB_frac_fvf.nii.gz', RGB_peak_frac_fvf, img_mf_frac.affine)
+
+    if len(frac_list) > 0 and len(peaks_list) > 0:
+        RGB_peaks_frac = TIME.utils.peaks_to_RGB(peaks_list, frac_list)
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, img_mf_frac.affine)
+
+    if len(frac_list) > 0 and len(peaks_list) > 0 and len(fvf_list)>0:
+        RGB_peaks_frac_fvf = TIME.utils.peaks_to_RGB(peaks_list, frac_list, fvf_list)
+        save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
