@@ -2995,7 +2995,46 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
+def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15):
+    """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
+    :param streamline_number: Number of streamlines in the final tractogram. default=100000
+    :param max_angle: Maximum angle between two tractography steps. default=15
+    """
+    
+    from dipy.io.streamline import load_tractogram, save_trk
+    
+    patient_path = p
+
+    # TODO : change fod path  
+    fod_path = folder_path + '/subjects/' + patient_path + "/dMRI/fod/"
+    tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
+    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz"
+    dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
+    
+    output_file = tracking_path+patient_path+'_tractogram.tck'
+    
+    if not os.path.isdir(tracking_path):
+        os.mkdir(tracking_path)
+    
+    bashCommand=('tckgen ' + fod_path+patient_path+'_wmfod.mif ' + output_file+
+                 ' -seed_image ' +mask_path+
+                 ' -select ' +str(streamline_number)+
+                 ' -angle ' +str(max_angle)+
+                 ' -force')
+    
+    tracking_log = open(tracking_path+"tractography_logs.txt", "a+")
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tracking_log,
+                               stderr=subprocess.STDOUT)
+    tracking_log.close()
+    
+    tract = load_tractogram(tracking_path+patient_path+'_track_msmt.tck',
+                            dwi_path)
+
+    save_trk(tract, output_file[:-3]+'trk')
+    
 
 def verdict_solo(folder_path, p, core_count=1, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
     """ Computes the verdict metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/verdict/.
