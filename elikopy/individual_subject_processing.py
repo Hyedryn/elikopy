@@ -2947,8 +2947,8 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     odf_msmtcsd_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD"
     makedir(odf_msmtcsd_path, folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/MSMT-CSD_logs.txt", log_prefix)
 
-    dwi2response_cmd = 'dwi2response dhollander -info -fslgrad ' + \
-                       '-nthreads ' + str(core_count) + ' ' + \
+    dwi2response_cmd = 'dwi2response dhollander -info ' + \
+                       '-nthreads ' + str(core_count) + '  -fslgrad ' + \
                        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec " + \
                        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval " + \
                        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz " + \
@@ -2970,17 +2970,9 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
                   odf_msmtcsd_path + '/' + patient_path + '_dhollander_CSF_response.txt ' + \
                   odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_CSF.nii.gz -force ; '
 
-
-    shconv_cmd = 'shconv -info -force ' + \
-                 '-nthreads ' + str(core_count) + ' ' + \
-                 odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' + \
-                 odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_response.txt ' + \
-                 odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_SH_ODF.nii.gz ; '
-
     bashCommand = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + \
                   dwi2response_cmd + \
-                  dwi2fod_cmd + \
-                  shconv_cmd
+                  dwi2fod_cmd
 
 
     import subprocess
