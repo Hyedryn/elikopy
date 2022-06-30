@@ -28,7 +28,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     install_requires=[
         'numpy',
         'dipy',
@@ -37,6 +37,8 @@ setuptools.setup(
         'PyPDF2',
         'fpdf',
         'matplotlib',
-        'cvxpy'
+        'cvxpy',
+        'future',
+        'TIME-python'
     ],
 )
