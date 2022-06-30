@@ -2852,12 +2852,14 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = 0.25, CSD_bvalue
         data_CSD = data
         gtab_CSD = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
 
-    response, ratio = auto_response(gtab_CSD, data_CSD, roi_radii=10, fa_thr=CSD_FA_treshold)
+    from dipy.reconst.csdeconv import auto_response_ssst
+    response, ratio = auto_response_ssst(gtab_CSD, data_CSD, roi_radii=10, fa_thr=CSD_FA_treshold)
 
     csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
     csd_peaks = peaks_from_model(npeaks=num_peaks, model=csd_model, data=data_CSD, sphere=default_sphere,
                                  relative_peak_threshold=peaks_threshold, min_separation_angle=25, parallel=False, mask=mask,
                                  normalize_peaks=True,return_odf=True,return_sh=True)
+    
     save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peaks.nii.gz', csd_peaks.peak_dirs, affine)
     save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_values.nii.gz', csd_peaks.peak_values, affine)
     save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_ODF.nii.gz', csd_peaks.odf, affine)
@@ -2956,8 +2958,8 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
                        odf_msmtcsd_path + '/' + patient_path + '_dhollander_GM_response.txt ' + \
                        odf_msmtcsd_path + '/' + patient_path + '_dhollander_CSF_response.txt -force ; '
 
-    dwi2fod_cmd = 'dwi2fod msmt_csd -info -mask ' + folder_path + \
-                  '-nthreads ' + str(core_count) + ' ' + \
+    dwi2fod_cmd = 'dwi2fod msmt_csd -info ' + \
+                  '-nthreads ' + str(core_count) + ' -mask ' + \
                   '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz " + \
                   folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz " + \
                   '-fslgrad ' + \
@@ -2977,7 +2979,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
     import subprocess
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": mrtrix odf msmt-csd launched for patient %s \n" % p + " with bash command " + bashCommand)
+        "%d.%b %Y %H:%M:%S") + ": mrtrix ODF MSMT-CSD launched for patient %s \n" % p + " with bash command " + bashCommand)
 
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=f,
                                stderr=subprocess.STDOUT)
@@ -2990,12 +2992,12 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
                     odf_msmtcsd_path + '/' + "fixel ; "
 
     fixel2peak_cmd = "fixel2peaks -info -force -nthreads " + str(core_count) + " " + \
-                     odf_msmtcsd_path + '/' + "fixel " + odf_msmtcsd_path + '/' + "peaks.nii.gz " +\
+                     odf_msmtcsd_path + '/' + "fixel " + odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz " +\
                      " -number " + str(num_peaks) + " ; "
 
     fixel2voxel_cmd = "fixel2voxel -info -force -nthreads " + str(core_count) + " " + \
                       odf_msmtcsd_path + '/' + "fixel/peak_amp.mif " + odf_msmtcsd_path + \
-                      '/' + "peaks_amp.nii.gz" + \
+                      '/' + patient_path + "_MSMT-CSD_peaks_amp.nii.gz" + \
                       " -number " + str(num_peaks) + " ; "
 
     bashCommand = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + fod2fixel_cmd + fixel2peak_cmd + fixel2voxel_cmd
@@ -3010,8 +3012,8 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     # Export pseudo tensor
     from elikopy.utils import peak_to_tensor
 
-    peaks_1_2, affine = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_wmfod.nii.gz ')
-    frac_1_2, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_wmfod.nii.gz ')
+    peaks_1_2, affine = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz ')
+    frac_1_2, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz ')
 
 
     t = peak_to_tensor(peaks_1_2[:,:,:,0:3],norm=None)
