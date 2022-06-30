@@ -38,6 +38,7 @@ setuptools.setup(
         'fpdf',
         'matplotlib',
         'cvxpy',
-        'future'
+        'future',
+        'TIME-python'
     ],
 )
