@@ -37,6 +37,7 @@ setuptools.setup(
         'PyPDF2',
         'fpdf',
         'matplotlib',
-        'cvxpy'
+        'cvxpy',
+        'TIME-python'
     ],
 )

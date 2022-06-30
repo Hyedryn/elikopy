@@ -918,7 +918,7 @@ class Elikopy:
             patient_path = p
 
             mf_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD"
-            makedir(mf_path,folder_path + '/subjects/' + patient_path+"/dMRI/ODF/MSMT-CSD/odf_msmtcsd_logs.txt",log_prefix)
+            makedir(mf_path,folder_path + '/subjects/' + patient_path+"/dMRI/ODF/MSMT-CSD/MSMT-CSD_logs.txt",log_prefix)
 
             if slurm:
                 p_job = {
