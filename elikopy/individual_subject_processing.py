@@ -2796,6 +2796,295 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
                 "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
             f.close()
 
+def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=None, core_count=1, use_wm_mask=False, report=True, CSD_FA_treshold=0.7, return_odf=False):
+    """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
+
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
+    :param dictionary_path: Path to the dictionary of fingerprints (mandatory).
+    :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
+    :param core_count: Define the number of available core. default=1
+    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
+    """
+    log_prefix = "ODF CSD SOLO"
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual ODF CSD for patient %s \n" % p, flush = True)
+    patient_path = p
+
+    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/CSD_logs.txt", "a+")
+
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual ODF CSD processing for patient %s \n" % p)
+
+    odf_csd_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD"
+    makedir(odf_csd_path, folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/CSD_logs.txt", log_prefix)
+
+    # imports
+    from dipy.io.image import load_nifti, save_nifti
+    from dipy.io import read_bvals_bvecs
+    from dipy.core.gradients import gradient_table
+    from dipy.reconst.csdeconv import ConstrainedSphericalDeconvModel
+    from dipy.direction import peaks_from_model
+    from dipy.data import default_sphere
+
+    # load the data
+    data, affine = load_nifti(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
+
+    if use_wm_mask and os.path.isfile(wm_path):
+        mask, _ = load_nifti(wm_path)
+    else:
+        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
+
+    b0_threshold = np.min(bvals) + 10
+    b0_threshold = max(50, b0_threshold)
+
+    if CSD_bvalue is not None:
+        print("Max CSD bvalue is", CSD_bvalue)
+        sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue - 5) <= bvals, bvals <= (CSD_bvalue + 5)))
+        data_CSD = data[..., sel_b]
+        gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b], b0_threshold=b0_threshold)
+    else:
+        data_CSD = data
+        gtab_CSD = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
+
+    from dipy.reconst.csdeconv import auto_response_ssst
+    response, ratio = auto_response_ssst(gtab_CSD, data_CSD, roi_radii=10, fa_thr=CSD_FA_treshold)
+
+    csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
+    csd_peaks = peaks_from_model(npeaks=num_peaks, model=csd_model, data=data_CSD, sphere=default_sphere,
+                                 relative_peak_threshold=peaks_threshold, min_separation_angle=25, parallel=False, mask=mask,
+                                 normalize_peaks=True,return_odf=return_odf,return_sh=True)
+
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz', csd_peaks.peak_dirs, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz', csd_peaks.peak_values, affine)
+    if return_odf:
+        save_nifti(odf_csd_path + '/' + patient_path + '_CSD_ODF.nii.gz', csd_peaks.odf, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_SH_ODF.nii.gz', csd_peaks.shm_coeff, affine)
+
+    normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
+    normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
+    for i in range(np.shape(csd_peaks.peak_dirs)[0]):
+        for j in range(np.shape(csd_peaks.peak_dirs)[1]):
+            for k in range(np.shape(csd_peaks.peak_dirs)[2]):
+                norm = np.sqrt(np.sum(normPeaks0[i, j, k, :] ** 2))
+                normPeaks0[i, j, k, :] = normPeaks0[i, j, k, :] / norm
+                norm = np.sqrt(np.sum(normPeaks1[i, j, k, :] ** 2))
+                normPeaks1[i, j, k, :] = normPeaks1[i, j, k, :] / norm
+    mu1 = normPeaks0
+    mu2 = normPeaks1
+    peaks1 = csd_peaks.peak_dirs[..., 0, :]
+    peaks2 = csd_peaks.peak_dirs[..., 1, :]
+    frac1 = csd_peaks.peak_values[..., 0]
+    frac2 = csd_peaks.peak_values[..., 1]
+
+
+    # Export pseudo tensor
+    frac = 0
+    frac_list = []
+    peaks_list = []
+    fvf_list = []
+    import nibabel as nib
+    from elikopy.utils import peak_to_tensor
+
+    peaks_1_2 = np.concatenate((peaks1,peaks2))
+    frac_1_2 = np.concatenate((frac1,frac2))
+
+
+    img_mf_peaks = nib.load(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
+    img_mf_frac = nib.load(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
+    hdr = img_mf_peaks.header
+    pixdim = hdr['pixdim'][1:4]
+
+    t_p1 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 0, :], norm=None, pixdim=pixdim)
+    t_normed_p1 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 0, :], norm=img_mf_frac.get_fdata()[..., 0], pixdim=pixdim)
+    t_p2 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 1, :], norm=None, pixdim=pixdim)
+    t_normed_p2 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 1, :], norm=img_mf_frac.get_fdata()[..., 1], pixdim=pixdim)
+
+    hdr['dim'][0] = 5  # 4 scalar, 5 vector
+    hdr['dim'][4] = 1  # 3
+    hdr['dim'][5] = 6  # 1
+    hdr['regular'] = b'r'
+    hdr['intent_code'] = 1005
+
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_pseudoTensor.nii.gz', t_p1, affine, hdr)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_pseudoTensor_normed.nii.gz', t_normed_p1, affine, hdr)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine, hdr)
+
+
+    RGB_peak = TIME.utils.peaks_to_RGB([peaks1])
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
+    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks1], [frac1])
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
+
+    RGB_peak = TIME.utils.peaks_to_RGB([peaks2])
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
+    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks2], [frac2])
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
+
+
+    RGB_peaks = TIME.utils.peaks_to_RGB([peaks1, peaks2])
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
+    RGB_peaks_frac = TIME.utils.peaks_to_RGB([peaks1, peaks2], [frac1, frac2])
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
+
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+    f.close()
+
+
+def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True):
+    """Perform MSMT CSD odf computation and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
+
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
+    :param core_count: Define the number of available core. default=1
+    """
+    log_prefix = "ODF MSMT-CSD SOLO"
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual ODF MSMT-CSD for patient %s \n" % p, flush = True)
+    patient_path = p
+
+    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/MSMT-CSD_logs.txt", "a+")
+
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual ODF MSMT-CSD processing for patient %s \n" % p)
+
+    odf_msmtcsd_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD"
+    makedir(odf_msmtcsd_path, folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/MSMT-CSD_logs.txt", log_prefix)
+
+    dwi2response_cmd = 'dwi2response dhollander -info ' + \
+                       '-nthreads ' + str(core_count) + '  -fslgrad ' + \
+                       folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec " + \
+                       folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval " + \
+                       folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz " + \
+                       odf_msmtcsd_path + '/' + patient_path + '_dhollander_WM_response.txt ' + \
+                       odf_msmtcsd_path + '/' + patient_path + '_dhollander_GM_response.txt ' + \
+                       odf_msmtcsd_path + '/' + patient_path + '_dhollander_CSF_response.txt -force ; '
+
+    dwi2fod_cmd = 'dwi2fod msmt_csd -info ' + \
+                  '-nthreads ' + str(core_count) + ' -mask ' + \
+                  folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz " + \
+                  folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz " + \
+                  '-fslgrad ' + \
+                  folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec " + \
+                  folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval " + \
+                  odf_msmtcsd_path + '/' + patient_path + '_dhollander_WM_response.txt ' + \
+                  odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' + \
+                  odf_msmtcsd_path + '/' + patient_path + '_dhollander_GM_response.txt ' + \
+                  odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_GM.nii.gz ' + \
+                  odf_msmtcsd_path + '/' + patient_path + '_dhollander_CSF_response.txt ' + \
+                  odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_CSF.nii.gz -force ; '
+
+    bashCommand = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + \
+                  dwi2response_cmd + \
+                  dwi2fod_cmd
+
+
+    import subprocess
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": mrtrix ODF MSMT-CSD launched for patient %s \n" % p + " with bash command " + bashCommand)
+
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=f,
+                               stderr=subprocess.STDOUT)
+
+    output, error = process.communicate()
+
+    fod2fixel_cmd = "fod2fixel -nthreads " + str(core_count) + " -peak peaks.mif" + \
+                    " -maxnum " + str(num_peaks) + " " + \
+                    odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' + \
+                    odf_msmtcsd_path + '/' + "fixel ; "
+
+    fixel2peak_cmd = "fixel2peaks -info -force -nthreads " + str(core_count) + " " + \
+                     odf_msmtcsd_path + '/' + "fixel " + odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz " +\
+                     " -number " + str(num_peaks) + " ; "
+
+    fixel2voxel_cmd = "fixel2voxel -info -force -nthreads " + str(core_count) + " " + \
+                      odf_msmtcsd_path + '/' + "fixel/peaks.mif None " + odf_msmtcsd_path + \
+                      '/' + patient_path + "_MSMT-CSD_peaks_amp.nii.gz" + \
+                      " -number " + str(num_peaks) + " ; "
+
+    bashCommand = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + fod2fixel_cmd + fixel2peak_cmd + fixel2voxel_cmd
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": mrtrix ODF MSMT-CSD postprocessing launched for patient %s \n" % p + " with bash command " + bashCommand)
+
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=f,
+                               stderr=subprocess.STDOUT)
+
+    output, error = process.communicate()
+
+    from dipy.io.image import load_nifti, save_nifti
+
+    # Export pseudo tensor
+    from elikopy.utils import peak_to_tensor
+
+    peaks_1_2, affine = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+    frac_1_2, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
+
+    import nibabel as nib
+
+    img_mf_peaks = nib.load(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+    img_mf_frac = nib.load(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
+    hdr = img_mf_peaks.header
+    pixdim = hdr['pixdim'][1:4]
+
+    t_p1 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 0:3], norm=None, pixdim=pixdim)
+    t_normed_p1 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 0:3], norm=img_mf_frac.get_fdata()[..., 0],
+                                 pixdim=pixdim)
+    t_p2 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 3:6], norm=None, pixdim=pixdim)
+    t_normed_p2 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 3:6], norm=img_mf_frac.get_fdata()[..., 1],
+                                 pixdim=pixdim)
+
+    hdr['dim'][0] = 5  # 4 scalar, 5 vector
+    hdr['dim'][4] = 1  # 3
+    hdr['dim'][5] = 6  # 1
+    hdr['regular'] = b'r'
+    hdr['intent_code'] = 1005
+
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_pseudoTensor.nii.gz', t_p1, affine, hdr)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT_peak_f1_pseudoTensor_normed.nii.gz', t_normed_p1, affine,
+               hdr)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine,
+               hdr)
+
+
+    RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]])
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
+    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]], [frac_1_2[:, :, :, 0]])
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
+
+    RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]])
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
+    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 1]])
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
+
+
+    RGB_peaks = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]])
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
+    RGB_peaks_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 0], frac_1_2[:, :, :, 1]])
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
+
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+
+    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+
+    f.close()
+
+
 
 def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9]):
     """ Computes the IVIM metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/ivim/.

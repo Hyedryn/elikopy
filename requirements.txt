@@ -19,3 +19,4 @@ scikit-image
 PyPDF2
 lxml
 TIME-python
+scikit-learn
