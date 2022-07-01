@@ -15,7 +15,7 @@ import matplotlib
 
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
-    mf_solo, noddi_amico_solo, ivim_solo, odf_csd_solo, odf_msmtcsd_solo
+    mf_solo, noddi_amico_solo, ivim_solo, odf_csd_solo, odf_msmtcsd_solo, tracking_solo
 from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall_FA, regall, randomise_all
 
 
@@ -956,6 +956,86 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of ODF MSMT-CSD\n")
         f.close()
+
+
+    def tracking(self, folder_path=None, streamline_number:int=100000, max_angle:int=15, msmtCSD:bool=True, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+        """Computes the odf using MSMT-CSD for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/tractography/.
+
+        example : study.tracking_solo()
+
+        :param folder_path: the path to the root directory. default=study_folder
+        :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
+        :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
+        :param slurm_email: Email adress to send notification if a task fails. default=None
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
+        log_prefix="TRACTOGRAPHY"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        import os.path
+
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of tractography with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        dest_success = folder_path + "/subjects/subj_list.json"
+        with open(dest_success, 'r') as f:
+            patient_list = json.load(f)
+
+        if patient_list_m:
+            patient_list = patient_list_m
+
+        core_count = 4 if cpus is None else cpus
+
+        job_list = []
+        f=open(folder_path + "/logs.txt", "a+")
+        for p in patient_list:
+            patient_path = p
+
+            mf_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography"
+            makedir(mf_path,folder_path + '/subjects/' + patient_path+"/dMRI/tractography/tractography_logs.txt",log_prefix)
+
+            if slurm:
+                p_job = {
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import tracking_solo; tracking_solo(\"" + folder_path + "/\", streamline_number =" + str(streamline_number) + ", msmtCSD=" + str(msmtCSD) + ", core_count=" + str(core_count) + ", max_angle="+ str(max_angle) + ")'",
+                        "job_name": "TRACKING_" + p,
+                        "ntasks": 1,
+                        "cpus_per_task": core_count,
+                        "mem_per_cpu": 2048,
+                        "time": "00:25:00",
+                        "mail_user": slurm_email,
+                        "mail_type": "FAIL",
+                        "output": folder_path + '/subjects/' + patient_path + "/dMRI/tractography/slurm-%j.out",
+                        "error": folder_path + '/subjects/' + patient_path + "/dMRI/tractography/slurm-%j.err",
+                    }
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+                p_job_id = {}
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
+                job_list.append(p_job_id)
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+            else:
+                tracking_solo(folder_path + "/", p,  streamline_number=streamline_number, max_angle=max_angle, msmtCSD=msmtCSD, core_count=core_count)
+                matplotlib.pyplot.close(fig='all')
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied tracking_solo on patient %s\n" % p)
+                f.flush()
+        f.close()
+
+        #Wait for all jobs to finish
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, log_prefix)
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of tractography\n")
+        f.close()
+
 
     def white_mask(self, folder_path=None, patient_list_m=None, corr_gibbs=True, forceUsePowerMap=False, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Computes a white matter mask for each subject based on the T1 structural images or on the anisotropic power maps
