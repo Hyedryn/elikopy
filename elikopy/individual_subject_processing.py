@@ -3324,6 +3324,9 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     tracking_log = open(tracking_path+"tractography_logs.txt", "a+")
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tracking_log,
                                stderr=subprocess.STDOUT)
+
+    process.communicate()
+
     tracking_log.close()
     
     tract = load_tractogram(tracking_path+patient_path+'_tractogram.tck',
