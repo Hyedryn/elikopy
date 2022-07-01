@@ -3284,21 +3284,28 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
-def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15):
+def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15, msmtCSD:bool=True):
     """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
     :param streamline_number: Number of streamlines in the final tractogram. default=100000
     :param max_angle: Maximum angle between two tractography steps. default=15
+    :param msmtCSD: boolean. If True then uses ODF from msmt-CSD, if False from CSD. default=True
     """
     
     from dipy.io.streamline import load_tractogram, save_trk
     
     patient_path = p
 
-    # TODO : change fod path  
-    fod_path = folder_path + '/subjects/' + patient_path + "/dMRI/fod/"
+    if msmtCSD:
+        if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/"):
+            odf_msmtcsd_solo(folder_path, p)
+        odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/"+patient_path + "_MSMT-CSD_WM_ODF.nii.gz"
+    else:
+        if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"):
+            odf_csd_solo(folder_path, p)
+        odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF.nii.gz"
     tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
     mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz"
     dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
@@ -3308,7 +3315,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     if not os.path.isdir(tracking_path):
         os.mkdir(tracking_path)
     
-    bashCommand=('tckgen ' + fod_path+patient_path+'_wmfod.mif ' + output_file+
+    bashCommand=('tckgen ' + odf_file_path +' '+ output_file+
                  ' -seed_image ' +mask_path+
                  ' -select ' +str(streamline_number)+
                  ' -angle ' +str(max_angle)+
