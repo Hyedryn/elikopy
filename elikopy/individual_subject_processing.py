@@ -2796,7 +2796,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
                 "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
             f.close()
 
-def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = 0.25, CSD_bvalue=None, core_count=1, use_wm_mask=False, report=True, CSD_FA_treshold=0.7):
+def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=None, core_count=1, use_wm_mask=False, report=True, CSD_FA_treshold=0.7):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2823,7 +2823,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = 0.25, CSD_bvalue
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io import read_bvals_bvecs
     from dipy.core.gradients import gradient_table
-    from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel, auto_response)
+    from dipy.reconst.csdeconv import ConstrainedSphericalDeconvModel
     from dipy.direction import peaks_from_model
     from dipy.data import default_sphere
 
@@ -2859,11 +2859,10 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = 0.25, CSD_bvalue
     csd_peaks = peaks_from_model(npeaks=num_peaks, model=csd_model, data=data_CSD, sphere=default_sphere,
                                  relative_peak_threshold=peaks_threshold, min_separation_angle=25, parallel=False, mask=mask,
                                  normalize_peaks=True,return_odf=True,return_sh=True)
-    
+
     save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peaks.nii.gz', csd_peaks.peak_dirs, affine)
     save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_values.nii.gz', csd_peaks.peak_values, affine)
     save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_ODF.nii.gz', csd_peaks.odf, affine)
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_SH_ODF.nii.gz', csd_peaks.shm_coeffs, affine)
 
     normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
     normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
@@ -2960,7 +2959,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
     dwi2fod_cmd = 'dwi2fod msmt_csd -info ' + \
                   '-nthreads ' + str(core_count) + ' -mask ' + \
-                  '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz " + \
+                  folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz " + \
                   folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz " + \
                   '-fslgrad ' + \
                   folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec " + \
