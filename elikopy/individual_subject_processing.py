@@ -2860,11 +2860,11 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
                                  relative_peak_threshold=peaks_threshold, min_separation_angle=25, parallel=False, mask=mask,
                                  normalize_peaks=True,return_odf=return_odf,return_sh=True)
 
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peaks.nii.gz', csd_peaks.peak_dirs, affine)
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_values.nii.gz', csd_peaks.peak_values, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz', csd_peaks.peak_dirs, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz', csd_peaks.peak_values, affine)
     if return_odf:
-        save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_ODF.nii.gz', csd_peaks.odf, affine)
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_SH_ODF.nii.gz', csd_peaks.shm_coeff, affine)
+        save_nifti(odf_csd_path + '/' + patient_path + '_CSD_ODF.nii.gz', csd_peaks.odf, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_SH_ODF.nii.gz', csd_peaks.shm_coeff, affine)
 
     normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
     normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
@@ -2894,32 +2894,44 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     peaks_1_2 = np.concatenate((peaks1,peaks2))
     frac_1_2 = np.concatenate((frac1,frac2))
 
-    t = peak_to_tensor(mu1,norm=None)
-    t_normed = peak_to_tensor(peaks1, norm=frac1)
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_f1_pseudoTensor.nii.gz', t, affine)
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_f1_pseudoTensor_normed.nii.gz', t_normed, affine)
 
-    t = peak_to_tensor(mu2,norm=None)
-    t_normed = peak_to_tensor(peaks2, norm=frac2)
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_f2_pseudoTensor.nii.gz', t, affine)
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed, affine)
+    img_mf_peaks = nib.load(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
+    img_mf_frac = nib.load(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
+    hdr = img_mf_peaks.header
+    pixdim = hdr['pixdim'][1:4]
+
+    t_p1 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 0, :], norm=None, pixdim=pixdim)
+    t_normed_p1 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 0, :], norm=img_mf_frac.get_fdata()[..., 0], pixdim=pixdim)
+    t_p2 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 1, :], norm=None, pixdim=pixdim)
+    t_normed_p2 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 1, :], norm=img_mf_frac.get_fdata()[..., 1], pixdim=pixdim)
+
+    hdr['dim'][0] = 5  # 4 scalar, 5 vector
+    hdr['dim'][4] = 1  # 3
+    hdr['dim'][5] = 6  # 1
+    hdr['regular'] = b'r'
+    hdr['intent_code'] = 1005
+
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_pseudoTensor.nii.gz', t_p1, affine, hdr)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_pseudoTensor_normed.nii.gz', t_normed_p1, affine, hdr)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine, hdr)
 
 
     RGB_peak = TIME.utils.peaks_to_RGB([peaks1])
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
     RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks1], [frac1])
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
     RGB_peak = TIME.utils.peaks_to_RGB([peaks2])
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
     RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks2], [frac2])
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
 
     RGB_peaks = TIME.utils.peaks_to_RGB([peaks1, peaks2])
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
     RGB_peaks_frac = TIME.utils.peaks_to_RGB([peaks1, peaks2], [frac1, frac2])
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
 
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -3019,33 +3031,49 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     peaks_1_2, affine = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
     frac_1_2, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
 
+    import nibabel as nib
 
-    t = peak_to_tensor(peaks_1_2[:,:,:,0:3],norm=None)
-    t_normed = peak_to_tensor(peaks_1_2[:,:,:,0:3], norm=frac_1_2[:, :, :, 0])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_f1_pseudoTensor.nii.gz', t, affine)
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_f1_pseudoTensor_normed.nii.gz', t_normed, affine)
+    img_mf_peaks = nib.load(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+    img_mf_frac = nib.load(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
+    hdr = img_mf_peaks.header
+    pixdim = hdr['pixdim'][1:4]
 
-    t = peak_to_tensor(peaks_1_2[:,:,:,3:6],norm=None)
-    t_normed = peak_to_tensor(peaks_1_2[:,:,:,3:6], norm=frac_1_2[:, :, :, 1])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_f2_pseudoTensor.nii.gz', t, affine)
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed, affine)
+    t_p1 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 0:3], norm=None, pixdim=pixdim)
+    t_normed_p1 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 0:3], norm=img_mf_frac.get_fdata()[..., 0],
+                                 pixdim=pixdim)
+    t_p2 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 3:6], norm=None, pixdim=pixdim)
+    t_normed_p2 = peak_to_tensor(img_mf_peaks.get_fdata()[..., 3:6], norm=img_mf_frac.get_fdata()[..., 1],
+                                 pixdim=pixdim)
+
+    hdr['dim'][0] = 5  # 4 scalar, 5 vector
+    hdr['dim'][4] = 1  # 3
+    hdr['dim'][5] = 6  # 1
+    hdr['regular'] = b'r'
+    hdr['intent_code'] = 1005
+
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_pseudoTensor.nii.gz', t_p1, affine, hdr)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT_peak_f1_pseudoTensor_normed.nii.gz', t_normed_p1, affine,
+               hdr)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine,
+               hdr)
 
 
     RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
     RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]], [frac_1_2[:, :, :, 0]])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
     RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
     RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 1]])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
 
     RGB_peaks = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
     RGB_peaks_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 0], frac_1_2[:, :, :, 1]])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_ODF_MSMT-CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
 
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
