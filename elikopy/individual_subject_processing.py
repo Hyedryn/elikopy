@@ -2987,7 +2987,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
     output, error = process.communicate()
 
-    fod2fixel_cmd = "fod2fixel -nthreads " + str(core_count) + " -peak_amp peak_amp.mif -peak peaks.mif" + \
+    fod2fixel_cmd = "fod2fixel -nthreads " + str(core_count) + " -peak peaks.mif" + \
                     " -maxnum " + str(num_peaks) + " " + \
                     odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' + \
                     odf_msmtcsd_path + '/' + "fixel ; "
@@ -2997,11 +2997,14 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
                      " -number " + str(num_peaks) + " ; "
 
     fixel2voxel_cmd = "fixel2voxel -info -force -nthreads " + str(core_count) + " " + \
-                      odf_msmtcsd_path + '/' + "fixel/peak_amp.mif " + odf_msmtcsd_path + \
+                      odf_msmtcsd_path + '/' + "fixel/peaks.mif " + odf_msmtcsd_path + \
                       '/' + patient_path + "_MSMT-CSD_peaks_amp.nii.gz" + \
                       " -number " + str(num_peaks) + " ; "
 
     bashCommand = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + fod2fixel_cmd + fixel2peak_cmd + fixel2voxel_cmd
+
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": mrtrix ODF MSMT-CSD postprocessing launched for patient %s \n" % p + " with bash command " + bashCommand)
 
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=f,
                                stderr=subprocess.STDOUT)
