@@ -2855,7 +2855,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     from dipy.reconst.csdeconv import auto_response_ssst
     response, ratio = auto_response_ssst(gtab_CSD, data_CSD, roi_radii=10, fa_thr=CSD_FA_treshold)
 
-    csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
+    csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=8)
     csd_peaks = peaks_from_model(npeaks=num_peaks, model=csd_model, data=data_CSD, sphere=default_sphere,
                                  relative_peak_threshold=peaks_threshold, min_separation_angle=25, parallel=False, mask=mask,
                                  normalize_peaks=True,return_odf=return_odf,return_sh=True)
@@ -3284,7 +3284,7 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
-def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15, msmtCSD:bool=True):
+def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15, msmtCSD:bool=True, core_count:int=1):
     """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
     :param folder_path: the path to the root directory.
@@ -3315,7 +3315,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     if not os.path.isdir(tracking_path):
         os.mkdir(tracking_path)
     
-    bashCommand=('tckgen ' + odf_file_path +' '+ output_file+
+    bashCommand=('tckgen -nthreads ' + str(core_count) + ' ' + odf_file_path +' '+ output_file+
                  ' -seed_image ' +mask_path+
                  ' -select ' +str(streamline_number)+
                  ' -angle ' +str(max_angle)+
@@ -3326,7 +3326,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
                                stderr=subprocess.STDOUT)
     tracking_log.close()
     
-    tract = load_tractogram(tracking_path+patient_path+'_track_msmt.tck',
+    tract = load_tractogram(tracking_path+patient_path+'_tractogram.tck',
                             dwi_path)
 
     save_trk(tract, output_file[:-3]+'trk')
