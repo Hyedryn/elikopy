@@ -2796,7 +2796,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
                 "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
             f.close()
 
-def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=None, core_count=1, use_wm_mask=False, report=True, CSD_FA_treshold=0.7):
+def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=None, core_count=1, use_wm_mask=False, report=True, CSD_FA_treshold=0.7, return_odf=False):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2858,11 +2858,13 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
     csd_peaks = peaks_from_model(npeaks=num_peaks, model=csd_model, data=data_CSD, sphere=default_sphere,
                                  relative_peak_threshold=peaks_threshold, min_separation_angle=25, parallel=False, mask=mask,
-                                 normalize_peaks=True,return_odf=True,return_sh=True)
+                                 normalize_peaks=True,return_odf=return_odf,return_sh=True)
 
     save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_peaks.nii.gz', csd_peaks.peak_dirs, affine)
     save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_values.nii.gz', csd_peaks.peak_values, affine)
-    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_ODF.nii.gz', csd_peaks.odf, affine)
+    if return_odf:
+        save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_ODF.nii.gz', csd_peaks.odf, affine)
+    save_nifti(odf_csd_path + '/' + patient_path + '_ODF_CSD_SH_ODF.nii.gz', csd_peaks.shm_coeff, affine)
 
     normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
     normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
@@ -2986,7 +2988,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     output, error = process.communicate()
 
     fod2fixel_cmd = "fod2fixel -nthreads " + str(core_count) + " -peak_amp peak_amp.mif -peak peaks.mif" + \
-                    "-maxnum " + str(num_peaks) + " " + \
+                    " -maxnum " + str(num_peaks) + " " + \
                     odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' + \
                     odf_msmtcsd_path + '/' + "fixel ; "
 

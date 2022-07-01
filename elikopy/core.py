@@ -798,7 +798,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def odf_csd(self, folder_path=None, CSD_bvalue = None, use_wm_mask=False, CSD_FA_treshold=0.7,  num_peaks = 2, peaks_threshold=0.25, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def odf_csd(self, folder_path=None, CSD_bvalue = None, use_wm_mask=False, CSD_FA_treshold=0.7,  num_peaks = 2, peaks_threshold=.25, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the odf using CSD for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/ODF/CSD/.
 
         example : study.odf_csd()
@@ -864,7 +864,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                odf_csd_solo(folder_path + "/", p, CSD_bvalue = CSD_bvalue, num_peaks = num_peaks, peaks_threshold=num_peaks , core_count=core_count, use_wm_mask=use_wm_mask, CSD_FA_treshold=CSD_FA_treshold)
+                odf_csd_solo(folder_path + "/", p, CSD_bvalue = CSD_bvalue, num_peaks = num_peaks, peaks_threshold=peaks_threshold, core_count=core_count, use_wm_mask=use_wm_mask, CSD_FA_treshold=CSD_FA_treshold)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied ODF CSD on patient %s\n" % p)
                 f.flush()
