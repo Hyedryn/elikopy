@@ -2997,7 +2997,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
                      " -number " + str(num_peaks) + " ; "
 
     fixel2voxel_cmd = "fixel2voxel -info -force -nthreads " + str(core_count) + " " + \
-                      odf_msmtcsd_path + '/' + "fixel/peaks.mif " + odf_msmtcsd_path + \
+                      odf_msmtcsd_path + '/' + "fixel/peaks.mif None " + odf_msmtcsd_path + \
                       '/' + patient_path + "_MSMT-CSD_peaks_amp.nii.gz" + \
                       " -number " + str(num_peaks) + " ; "
 
