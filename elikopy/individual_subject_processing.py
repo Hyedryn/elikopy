@@ -3016,8 +3016,8 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     # Export pseudo tensor
     from elikopy.utils import peak_to_tensor
 
-    peaks_1_2, affine = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz ')
-    frac_1_2, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz ')
+    peaks_1_2, affine = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+    frac_1_2, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
 
 
     t = peak_to_tensor(peaks_1_2[:,:,:,0:3],norm=None)
