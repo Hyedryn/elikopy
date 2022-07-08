@@ -165,7 +165,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                                        stderr=subprocess.STDOUT)
 
             output, error = process.communicate()
-
+            
         elif denoising_algorithm == "mppca_dipy":
             pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
             denoised, sigma = mppca(b0_mask, patch_radius=pr, return_sigma=True, mask = mask)

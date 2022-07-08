@@ -763,7 +763,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", peaksType =" + str(peaksType) + ", core_count=" + str(core_count) + ", use_wm_mask=" + str(use_wm_mask) + ", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", peaksType=\"" + str(peaksType) + "\", core_count=" + str(core_count) + ", use_wm_mask=" + str(use_wm_mask) + ", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
                         "job_name": "mf_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
