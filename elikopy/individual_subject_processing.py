@@ -157,7 +157,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         if denoising_algorithm == "mppca_mrtrix":
             import subprocess
             bet_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
-            bashCommand = "dwidenoise " + bet_path + \
+            bashCommand = "dwidenoise -nthreads " + str(core_count) + " " + bet_path + \
                   " " + denoising_path + '/' + patient_path + '_mppca.nii.gz' +\
                   " -noise " + denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz'
 
@@ -165,7 +165,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                                        stderr=subprocess.STDOUT)
 
             output, error = process.communicate()
-            
+
         elif denoising_algorithm == "mppca_dipy":
             pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
             denoised, sigma = mppca(b0_mask, patch_radius=pr, return_sigma=True, mask = mask)
