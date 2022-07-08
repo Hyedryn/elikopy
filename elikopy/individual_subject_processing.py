@@ -3337,7 +3337,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
 
     save_trk(tract, output_file[:-3]+'trk')
     
-    with open(output_file[:-3]+'txt', 'w') as outfile:
+    with open(output_file[:-3]+'json', 'w') as outfile:
         json.dump(params, outfile)
     
 
