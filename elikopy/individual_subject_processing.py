@@ -3297,15 +3297,19 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     from dipy.io.streamline import load_tractogram, save_trk
     
     patient_path = p
+    
+    params={'Number of streamlines':streamline_number, 'Maximum angle':max_angle}
 
     if msmtCSD:
         if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/"):
             odf_msmtcsd_solo(folder_path, p)
         odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/"+patient_path + "_MSMT-CSD_WM_ODF.nii.gz"
+        params['Local modeling']='msmt-CSD'
     else:
         if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"):
             odf_csd_solo(folder_path, p)
         odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF.nii.gz"
+        params['Local modeling']='CSD'
     tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
     mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz"
     dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
@@ -3329,10 +3333,12 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
 
     tracking_log.close()
     
-    tract = load_tractogram(tracking_path+patient_path+'_tractogram.tck',
-                            dwi_path)
+    tract = load_tractogram(output_file, dwi_path)
 
     save_trk(tract, output_file[:-3]+'trk')
+    
+    with open(output_file[:-3]+'txt', 'w') as outfile:
+        json.dump(params, outfile)
     
 
 def verdict_solo(folder_path, p, core_count=1, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
