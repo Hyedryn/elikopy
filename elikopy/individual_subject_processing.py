@@ -14,7 +14,7 @@ from dipy.denoise.gibbs import gibbs_removal
 from dipy.denoise.patch2self import patch2self
 
 
-def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, mppca_legacy_denoising=False, gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
+def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """ Performs data preprocessing on a single subject. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
     denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
     The results are stored in the preprocessing subfolder of the study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -53,6 +53,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"), 'invalid starting state!'
     if starting_state == "denoising":
         assert denoising == True, 'if starting_state is denoising, denoising must be True!'
+        assert denoising_algorithm in ["patch2self", "mppca_mrtrix", "mppca_dipy"], 'invalid denoising algorithm!'
     if starting_state == "gibbs":
         assert gibbs == True, 'if starting_state is gibbs, gibbs must be True!'
     if starting_state in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"):
@@ -129,19 +130,23 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if (mppca_legacy_denoising):
+    if denoising_algorithm in ['mppca', 'mppca_dipy']:
         denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/mppca'
         denoising_ext = '_mppca.nii.gz'
-    else:
+    elif denoising_algorithm == "patch2self":
         denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/patch2self'
         denoising_ext = '_patch2self.nii.gz'
+
     if denoising and starting_state!="gibbs" and starting_state!="eddy" and (starting_state not in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup")) and starting_state!="biasfield" and starting_state!="report":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
+
+        makedir(denoising_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt",
+                log_prefix)
+
         f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Denoising launched for patient %s \n" % p)
-        f.close()
 
         if (starting_state == "denoising"):
             mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz'
@@ -149,16 +154,24 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             b0_mask, affine, voxel_size = load_nifti(b0_mask_path, return_voxsize=True)
             mask, _ = load_nifti(mask_path)
 
-        if mppca_legacy_denoising:
-            makedir(denoising_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt",
-                    log_prefix)
+        if denoising_algorithm == "mppca_mrtrix":
+            import subprocess
+            bet_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
+            bashCommand = "dwidenoise " + bet_path + \
+                  " " + denoising_path + '/' + patient_path + '_mppca.nii.gz' +\
+                  " -noise " + denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz'
+
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=f,
+                                       stderr=subprocess.STDOUT)
+
+            output, error = process.communicate()
+
+        elif denoising_algorithm == "mppca_dipy":
             pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
             denoised, sigma = mppca(b0_mask, patch_radius=pr, return_sigma=True, mask = mask)
             save_nifti(denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz', sigma.astype(np.float32), affine)
             save_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz', denoised.astype(np.float32), affine)
         else:
-            makedir(denoising_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt",
-                    log_prefix)
             bvals_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval'
             bvals = np.loadtxt(bvals_path)
             denoised = patch2self(b0_mask, bvals)
@@ -168,7 +181,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             rms_diff = np.sqrt((data - denoised) ** 2)
             save_nifti(denoising_path + '/' + patient_path + '_patch2self_residuals.nii.gz', rms_diff.astype(np.float32), affine)
 
-        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
         f.close()
