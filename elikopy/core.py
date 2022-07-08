@@ -713,7 +713,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
         f.close()
 
-    def fingerprinting(self, dictionary_path=None, folder_path=None, CSD_bvalue = None, use_wm_mask=False, csf_mask=True, ear_mask=False, CSD_FA_treshold=0.7, mfdir=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def fingerprinting(self, dictionary_path=None, folder_path=None, peaksType="MSMT-CSD", use_wm_mask=False, csf_mask=True, ear_mask=False, mfdir=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the Microstructure Fingerprinting metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
         example : study.fingerprinting(dictionary_path='my_dictionary')
@@ -763,7 +763,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ", CSD_FA_treshold="+ str(CSD_FA_treshold) + ", use_wm_mask=" + str(use_wm_mask) + ", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", peaksType =" + str(peaksType) + ", core_count=" + str(core_count) + ", use_wm_mask=" + str(use_wm_mask) + ", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
                         "job_name": "mf_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -784,7 +784,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                mf_solo(folder_path + "/", p, dictionary_path, CSD_bvalue = CSD_bvalue, core_count=core_count, use_wm_mask=use_wm_mask, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir, CSD_FA_treshold=CSD_FA_treshold)
+                mf_solo(folder_path + "/", p, dictionary_path, peaksType=peaksType, core_count=core_count, use_wm_mask=use_wm_mask, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
                 f.flush()

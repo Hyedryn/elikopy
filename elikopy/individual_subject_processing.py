@@ -2443,7 +2443,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
         f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False, report=True, csf_mask=True, ear_mask=False, useDIAMOND=False, mfdir=None, usePrecomputedCSD=True, CSD_FA_treshold=0.7):
+def mf_solo(folder_path, p, dictionary_path, core_count=1, use_wm_mask=False, report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD", mfdir=None):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2466,6 +2466,19 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
 
     mf_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir
     makedir(mf_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir + "/mf_logs.txt", log_prefix)
+
+    diamond_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
+    odf_msmtcsd_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD"
+    odf_csd_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD"
+
+    if peaksType == "DIAMOND":
+        assert os.path.exists(diamond_path), "DIAMOND path does not exist"
+    if peaksType == "MSMT-CSD":
+        assert os.path.exists(odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz") and os.path.exists(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz'), "MSMT-CSD path does not exist"
+    if peaksType == "CSD":
+        assert os.path.exists(odf_csd_path + '/' + patient_path + "_CSD_peaks.nii.gz") and os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz'), "CSD path does not exist"
+
+    assert peaksType in ["MSMT-CSD", "CSD", "DIAMOND"], "peaksType must be one of the following: MSMT-CSD, CSD, DIAMOND"
 
     # imports
     import microstructure_fingerprinting as mf
@@ -2490,8 +2503,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     # compute numfasc and peaks
-    diamond_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
-    if os.path.exists(diamond_path) and useDIAMOND:
+    if os.path.exists(diamond_path) and peaksType=="DIAMOND":
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Diamond Path found! MF will be based on diamond \n")
         tensor_files0 = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t0.nii.gz'
@@ -2499,14 +2511,18 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         fracs_file = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nii.gz'
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,
                                                  peakmode='tensor', mask=mask, frac12=fracs_file)
-    elif usePrecomputedCSD and os.path.exists(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz') and os.path.exists(
-            mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz'):
-        csd_peaks_peak_dirs, _ = load_nifti(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz')
-        csd_peaks_peak_values, _ = load_nifti(mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz')
+    elif peaksType == "CSD":
+        if os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz') and os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz'):
+            csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
+            csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
+        else:
+            odf_csd_solo(folder_path, patient_path, core_count=core_count)
+            csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
+            csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
         # peaks=csd_peaks_peak_dirs
-        numfasc = np.sum(np.sum(np.abs(csd_peaks_peak_dirs), axis=4) > 0, axis=3)
-        numfasc_2 = (csd_peaks_peak_values[:, :, :, 0] > 0.15).astype(int) + (
-                    csd_peaks_peak_values[:, :, :, 1] > 0.15).astype(int)
+        numfasc_2 = np.sum(csd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
+            csd_peaks_peak_values[:, :, :, 1] > 0.15)
+        print("Approximate number of non empty voxel: ", numfasc_2)
 
         # peaks = csd_peaks.peak_dirs
         # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
@@ -2526,43 +2542,35 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         frac2 = csd_peaks_peak_values[..., 1]
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
                                                  mask=mask, frac12=None)
-    else:
-        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Diamond Path not found! MF will be based on CSD \n")
-        #assert CSD_bvalue, 'CSD_bvalues must be defined when diamond is not used!'
-        #sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue - 5) <= bvals, bvals <= (CSD_bvalue + 5)))
-        #data_CSD = data[..., sel_b]
-        #gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
+    elif peaksType=="MSMT-CSD":
+        if os.path.exists(odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz") and os.path.exists(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz'):
+            msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+            msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
+        else:
+            odf_msmtcsd_solo(folder_path, patient_path, core_count=core_count)
+            msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+            msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
 
-        data_CSD = data
-        b0_threshold = np.min(bvals) + 10
-        b0_threshold = max(50, b0_threshold)
-        gtab_CSD = gradient_table(bvals, bvecs, b0_threshold=b0_threshold,atol=1e-1)
+        numfasc_2 = np.sum(msmtcsd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
+                    msmtcsd_peaks_peak_values[:, :, :, 1] > 0.15)
+        print("Approximate number of non empty voxel: ", numfasc_2)
 
-        from dipy.reconst.csdeconv import auto_response_ssst
+        # peaks = csd_peaks.peak_dirs
+        # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
 
-        # response, ratio = auto_response(gtab_CSD, data_CSD, roi_radius=10, fa_thr=0.7)
-        response, ratio = auto_response_ssst(gtab_CSD, data_CSD, roi_radii=10, fa_thr=CSD_FA_treshold)
-
-        csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
-        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,
-                                     relative_peak_threshold=.25, min_separation_angle=25, parallel=False, mask=mask,
-                                     normalize_peaks=True)
-        save_nifti(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz', csd_peaks.peak_dirs, affine)
-        save_nifti(mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz', csd_peaks.peak_values, affine)
-        normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
-        normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
-        for i in range(np.shape(csd_peaks.peak_dirs)[0]):
-            for j in range(np.shape(csd_peaks.peak_dirs)[1]):
-                for k in range(np.shape(csd_peaks.peak_dirs)[2]):
+        normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
+        normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
+        for i in range(np.shape(msmtcsd_peaks_peak_dirs)[0]):
+            for j in range(np.shape(msmtcsd_peaks_peak_dirs)[1]):
+                for k in range(np.shape(msmtcsd_peaks_peak_dirs)[2]):
                     norm = np.sqrt(np.sum(normPeaks0[i, j, k, :] ** 2))
                     normPeaks0[i, j, k, :] = normPeaks0[i, j, k, :] / norm
                     norm = np.sqrt(np.sum(normPeaks1[i, j, k, :] ** 2))
                     normPeaks1[i, j, k, :] = normPeaks1[i, j, k, :] / norm
         mu1 = normPeaks0
         mu2 = normPeaks1
-        frac1 = csd_peaks.peak_values[..., 0]
-        frac2 = csd_peaks.peak_values[..., 1]
+        frac1 = msmtcsd_peaks_peak_values[..., 0]
+        frac2 = msmtcsd_peaks_peak_values[..., 1]
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
                                                  mask=mask, frac12=None)
 
@@ -2572,6 +2580,8 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
     mf_model = mf.MFModel(dictionary_path)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
 
     import time
