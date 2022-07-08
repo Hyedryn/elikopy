@@ -15,7 +15,7 @@ import matplotlib
 
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
-    mf_solo, noddi_amico_solo, ivim_solo, odf_csd_solo, odf_msmtcsd_solo
+    mf_solo, noddi_amico_solo, ivim_solo, odf_csd_solo, odf_msmtcsd_solo, verdict_solo
 from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall_FA, regall, randomise_all
 
 
@@ -483,8 +483,8 @@ class Elikopy:
         """
 
         assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "post_report", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"), 'invalid starting state!'
-        if mppca_legacy_denoising==True:
-            assert denoising == True, 'if mppca_legacy_denoising is True, denoising must be True!'
+        if denoising==True:
+            assert denoising_algorithm in ["patch2self", "mppca_mrtrix", "mppca_dipy"], 'invalid denoising algorithm!'
         if starting_state=="denoising":
             assert denoising == True, 'if starting_state is denoising, denoising must be True!'
         if starting_state=="gibbs":
