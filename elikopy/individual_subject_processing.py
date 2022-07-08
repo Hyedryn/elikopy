@@ -1901,15 +1901,18 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
 
     """Merge with QC of preproc""";
 
-    pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-    merger = PdfFileMerger()
-    for pdf in pdfs:
-        merger.append(pdf)
-    merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf')
-    merger.close()
+    if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
+        shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+    else:
+        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+        merger = PdfFileMerger()
+        for pdf in pdfs:
+            merger.append(pdf)
+        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf')
+        merger.close()
 
-    os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-    os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
 
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
