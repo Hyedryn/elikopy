@@ -130,7 +130,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if denoising_algorithm in ['mppca', 'mppca_dipy']:
+    if denoising_algorithm in ['mppca_mrtrix', 'mppca_dipy']:
         denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/mppca'
         denoising_ext = '_mppca.nii.gz'
     elif denoising_algorithm == "patch2self":
