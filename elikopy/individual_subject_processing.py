@@ -2882,7 +2882,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     from dipy.reconst.csdeconv import auto_response_ssst
     response, ratio = auto_response_ssst(gtab_CSD, data_CSD, roi_radii=10, fa_thr=CSD_FA_treshold)
 
-    csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
+    csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=8)
     csd_peaks = peaks_from_model(npeaks=num_peaks, model=csd_model, data=data_CSD, sphere=default_sphere,
                                  relative_peak_threshold=peaks_threshold, min_separation_angle=25, parallel=False, mask=mask,
                                  normalize_peaks=True,return_odf=return_odf,return_sh=True)
@@ -3311,7 +3311,62 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
+def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15, msmtCSD:bool=True, core_count:int=1):
+    """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
+    :param streamline_number: Number of streamlines in the final tractogram. default=100000
+    :param max_angle: Maximum angle between two tractography steps. default=15
+    :param msmtCSD: boolean. If True then uses ODF from msmt-CSD, if False from CSD. default=True
+    """
+    
+    from dipy.io.streamline import load_tractogram, save_trk
+    
+    patient_path = p
+    
+    params={'Number of streamlines':streamline_number, 'Maximum angle':max_angle}
+
+    if msmtCSD:
+        if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/"):
+            odf_msmtcsd_solo(folder_path, p)
+        odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/"+patient_path + "_MSMT-CSD_WM_ODF.nii.gz"
+        params['Local modeling']='msmt-CSD'
+    else:
+        if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"):
+            odf_csd_solo(folder_path, p)
+        odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF.nii.gz"
+        params['Local modeling']='CSD'
+    tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
+    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz"
+    dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
+    
+    output_file = tracking_path+patient_path+'_tractogram.tck'
+    
+    if not os.path.isdir(tracking_path):
+        os.mkdir(tracking_path)
+    
+    bashCommand=('tckgen -nthreads ' + str(core_count) + ' ' + odf_file_path +' '+ output_file+
+                 ' -seed_image ' +mask_path+
+                 ' -select ' +str(streamline_number)+
+                 ' -angle ' +str(max_angle)+
+                 ' -force')
+    
+    tracking_log = open(tracking_path+"tractography_logs.txt", "a+")
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tracking_log,
+                               stderr=subprocess.STDOUT)
+
+    process.communicate()
+
+    tracking_log.close()
+    
+    tract = load_tractogram(output_file, dwi_path)
+
+    save_trk(tract, output_file[:-3]+'trk')
+    
+    with open(output_file[:-3]+'json', 'w') as outfile:
+        json.dump(params, outfile)
+    
 
 def verdict_solo(folder_path, p, core_count=1, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
     """ Computes the verdict metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/verdict/.
