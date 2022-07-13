@@ -15,7 +15,8 @@ import matplotlib
 
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
-    mf_solo, noddi_amico_solo, ivim_solo, odf_csd_solo, odf_msmtcsd_solo, tracking_solo
+    mf_solo, noddi_amico_solo, ivim_solo, odf_csd_solo, odf_msmtcsd_solo, tracking_solo, verdict_solo
+
 from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall_FA, regall, randomise_all
 
 
@@ -443,7 +444,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, mppca_legacy_denoising=False, gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
+    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
         """ Performs data preprocessing. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
         denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
         The results are stored in the preprocessing subfolder of each study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -483,8 +484,8 @@ class Elikopy:
         """
 
         assert starting_state in (None, "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "post_report", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"), 'invalid starting state!'
-        if mppca_legacy_denoising==True:
-            assert denoising == True, 'if mppca_legacy_denoising is True, denoising must be True!'
+        if denoising==True:
+            assert denoising_algorithm in ["patch2self", "mppca_mrtrix", "mppca_dipy"], 'invalid denoising algorithm!'
         if starting_state=="denoising":
             assert denoising == True, 'if starting_state is denoising, denoising must be True!'
         if starting_state=="gibbs":
@@ -531,7 +532,7 @@ class Elikopy:
                     p_job = {
                         "wrap": "export OMP_NUM_THREADS="+str(tot_cpu)+" ; export FSLPARALLEL="+str(tot_cpu)+" ; python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/\",\"" + p + "\",eddy=" + str(
                             eddy) + ",biasfield=" + str(biasfield)  + ",biasfield_convergence=[" + str(biasfield_convergence[0]) + "," + str(biasfield_convergence[1]) + "],biasfield_bsplineFitting=[" + str(biasfield_bsplineFitting[0]) + "," + str(biasfield_bsplineFitting[1]) + "],denoising=" + str(
-                            denoising) + ",mppca_legacy_denoising=" + str(mppca_legacy_denoising) +",reslice=" + str(reslice) + ",reslice_addSlice=" + str(reslice_addSlice) + ",gibbs=" + str(
+                            denoising) + ",denoising_algorithm=\"" + str(denoising_algorithm) +"\",reslice=" + str(reslice) + ",reslice_addSlice=" + str(reslice_addSlice) + ",gibbs=" + str(
                             gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
                             bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", report=" + str(report) + ", slspec_gc_path=" + str(slspec_gc_path) + ", core_count=" + str(core_count)+ ", niter=" + str(niter)+",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
                         "job_name": "preproc_" + p,
@@ -577,7 +578,7 @@ class Elikopy:
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
                 else:
                     core_count = 1 if cpus is None else cpus
-                    preproc_solo(folder_path + "/",p,reslice=reslice,reslice_addSlice=reslice_addSlice,denoising=denoising, mppca_legacy_denoising=mppca_legacy_denoising, gibbs=gibbs,
+                    preproc_solo(folder_path + "/",p,reslice=reslice,reslice_addSlice=reslice_addSlice,denoising=denoising, denoising_algorithm=denoising_algorithm, gibbs=gibbs,
                                  topup=topup, topupConfig=topupConfig, forceSynb0DisCo=forceSynb0DisCo, useGPUsynb0DisCo=useGPUsynb0DisCo,
                                  eddy=eddy,biasfield=biasfield, biasfield_bsplineFitting=biasfield_bsplineFitting, biasfield_convergence=biasfield_convergence,
                                  starting_state=starting_state,
@@ -713,7 +714,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
         f.close()
 
-    def fingerprinting(self, dictionary_path=None, folder_path=None, CSD_bvalue = None, use_wm_mask=False, csf_mask=True, ear_mask=False, CSD_FA_treshold=0.7, mfdir=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def fingerprinting(self, dictionary_path=None, folder_path=None, peaksType="MSMT-CSD", use_wm_mask=False, csf_mask=True, ear_mask=False, mfdir=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the Microstructure Fingerprinting metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
         example : study.fingerprinting(dictionary_path='my_dictionary')
@@ -763,7 +764,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ", CSD_FA_treshold="+ str(CSD_FA_treshold) + ", use_wm_mask=" + str(use_wm_mask) + ", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", peaksType=\"" + str(peaksType) + "\", core_count=" + str(core_count) + ", use_wm_mask=" + str(use_wm_mask) + ", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
                         "job_name": "mf_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -784,7 +785,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                mf_solo(folder_path + "/", p, dictionary_path, CSD_bvalue = CSD_bvalue, core_count=core_count, use_wm_mask=use_wm_mask, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir, CSD_FA_treshold=CSD_FA_treshold)
+                mf_solo(folder_path + "/", p, dictionary_path, peaksType=peaksType, core_count=core_count, use_wm_mask=use_wm_mask, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
                 f.flush()
@@ -843,7 +844,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_csd_solo; odf_csd_solo(\"" + folder_path + "/\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ", CSD_FA_treshold="+ str(CSD_FA_treshold) + ", num_peaks="+ str(num_peaks) + ", peaks_threshold="+ str(peaks_threshold) + ", use_wm_mask=" + str(use_wm_mask) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_csd_solo; odf_csd_solo(\"" + folder_path + "/\",\"" + p + "\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ", CSD_FA_treshold="+ str(CSD_FA_treshold) + ", num_peaks="+ str(num_peaks) + ", peaks_threshold="+ str(peaks_threshold) + ", use_wm_mask=" + str(use_wm_mask) + ")'",
                         "job_name": "CSD_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -922,7 +923,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_csd_solo; odf_csd_solo(\"" + folder_path + "/\", num_peaks =" + str(num_peaks) + ", core_count=" + str(core_count) + ", peaks_threshold="+ str(peaks_threshold) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_csd_solo; odf_csd_solo(\"" + folder_path + "/\",\"" + p + "\", num_peaks =" + str(num_peaks) + ", core_count=" + str(core_count) + ", peaks_threshold="+ str(peaks_threshold) + ")'",
                         "job_name": "CSD_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,

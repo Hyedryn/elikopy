@@ -14,7 +14,7 @@ from dipy.denoise.gibbs import gibbs_removal
 from dipy.denoise.patch2self import patch2self
 
 
-def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, mppca_legacy_denoising=False, gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
+def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """ Performs data preprocessing on a single subject. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
     denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
     The results are stored in the preprocessing subfolder of the study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -53,6 +53,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"), 'invalid starting state!'
     if starting_state == "denoising":
         assert denoising == True, 'if starting_state is denoising, denoising must be True!'
+        assert denoising_algorithm in ["patch2self", "mppca_mrtrix", "mppca_dipy"], 'invalid denoising algorithm!'
     if starting_state == "gibbs":
         assert gibbs == True, 'if starting_state is gibbs, gibbs must be True!'
     if starting_state in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"):
@@ -129,19 +130,23 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-    if (mppca_legacy_denoising):
+    if denoising_algorithm in ['mppca_mrtrix', 'mppca_dipy']:
         denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/mppca'
         denoising_ext = '_mppca.nii.gz'
-    else:
+    elif denoising_algorithm == "patch2self":
         denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/patch2self'
         denoising_ext = '_patch2self.nii.gz'
+
     if denoising and starting_state!="gibbs" and starting_state!="eddy" and (starting_state not in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup")) and starting_state!="biasfield" and starting_state!="report":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
+
+        makedir(denoising_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt",
+                log_prefix)
+
         f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Denoising launched for patient %s \n" % p)
-        f.close()
 
         if (starting_state == "denoising"):
             mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz'
@@ -149,16 +154,26 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             b0_mask, affine, voxel_size = load_nifti(b0_mask_path, return_voxsize=True)
             mask, _ = load_nifti(mask_path)
 
-        if mppca_legacy_denoising:
-            makedir(denoising_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt",
-                    log_prefix)
+        if denoising_algorithm == "mppca_mrtrix":
+            import subprocess
+            bet_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
+            bashCommand = "dwidenoise -nthreads " + str(core_count) + " " + bet_path + \
+                  " " + denoising_path + '/' + patient_path + '_mppca.nii.gz' +\
+                  " -noise " + denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz'
+
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=f,
+                                       stderr=subprocess.STDOUT)
+
+            output, error = process.communicate()
+
+            denoised, _ = load_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz')
+
+        elif denoising_algorithm == "mppca_dipy":
             pr = math.ceil((np.shape(b0_mask)[3] ** (1 / 3) - 1) / 2)
             denoised, sigma = mppca(b0_mask, patch_radius=pr, return_sigma=True, mask = mask)
             save_nifti(denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz', sigma.astype(np.float32), affine)
             save_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz', denoised.astype(np.float32), affine)
         else:
-            makedir(denoising_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt",
-                    log_prefix)
             bvals_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval'
             bvals = np.loadtxt(bvals_path)
             denoised = patch2self(b0_mask, bvals)
@@ -168,7 +183,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             rms_diff = np.sqrt((data - denoised) ** 2)
             save_nifti(denoising_path + '/' + patient_path + '_patch2self_residuals.nii.gz', rms_diff.astype(np.float32), affine)
 
-        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
         f.close()
@@ -1889,15 +1903,18 @@ def white_mask_solo(folder_path, p, corr_gibbs=True, core_count=1, forceUsePower
 
     """Merge with QC of preproc""";
 
-    pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-    merger = PdfFileMerger()
-    for pdf in pdfs:
-        merger.append(pdf)
-    merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf')
-    merger.close()
+    if not os.path.exists(folder_path + '/subjects/' + patient_path + '/quality_control.pdf'):
+        shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+    else:
+        pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
+        merger = PdfFileMerger()
+        for pdf in pdfs:
+            merger.append(pdf)
+        merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf')
+        merger.close()
 
-    os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
-    os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
+        os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
 
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2443,7 +2460,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, use_wm_mask=Fal
         f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_wm_mask=False, report=True, csf_mask=True, ear_mask=False, useDIAMOND=False, mfdir=None, usePrecomputedCSD=True, CSD_FA_treshold=0.7):
+def mf_solo(folder_path, p, dictionary_path, core_count=1, use_wm_mask=False, report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD", mfdir=None):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2466,6 +2483,19 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
 
     mf_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir
     makedir(mf_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/" + mfdir + "/mf_logs.txt", log_prefix)
+
+    diamond_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
+    odf_msmtcsd_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD"
+    odf_csd_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD"
+
+    if peaksType == "DIAMOND":
+        assert os.path.exists(diamond_path), "DIAMOND path does not exist"
+    if peaksType == "MSMT-CSD":
+        assert os.path.exists(odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz") and os.path.exists(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz'), "MSMT-CSD path does not exist"
+    if peaksType == "CSD":
+        assert os.path.exists(odf_csd_path + '/' + patient_path + "_CSD_peaks.nii.gz") and os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz'), "CSD path does not exist"
+
+    assert peaksType in ["MSMT-CSD", "CSD", "DIAMOND"], "peaksType must be one of the following: MSMT-CSD, CSD, DIAMOND"
 
     # imports
     import microstructure_fingerprinting as mf
@@ -2490,8 +2520,7 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     # compute numfasc and peaks
-    diamond_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
-    if os.path.exists(diamond_path) and useDIAMOND:
+    if os.path.exists(diamond_path) and peaksType=="DIAMOND":
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Diamond Path found! MF will be based on diamond \n")
         tensor_files0 = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t0.nii.gz'
@@ -2499,14 +2528,18 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         fracs_file = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nii.gz'
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,
                                                  peakmode='tensor', mask=mask, frac12=fracs_file)
-    elif usePrecomputedCSD and os.path.exists(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz') and os.path.exists(
-            mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz'):
-        csd_peaks_peak_dirs, _ = load_nifti(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz')
-        csd_peaks_peak_values, _ = load_nifti(mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz')
+    elif peaksType == "CSD":
+        if os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz') and os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz'):
+            csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
+            csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
+        else:
+            odf_csd_solo(folder_path, patient_path, core_count=core_count)
+            csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
+            csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
         # peaks=csd_peaks_peak_dirs
-        numfasc = np.sum(np.sum(np.abs(csd_peaks_peak_dirs), axis=4) > 0, axis=3)
-        numfasc_2 = (csd_peaks_peak_values[:, :, :, 0] > 0.15).astype(int) + (
-                    csd_peaks_peak_values[:, :, :, 1] > 0.15).astype(int)
+        numfasc_2 = np.sum(csd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
+            csd_peaks_peak_values[:, :, :, 1] > 0.15)
+        print("Approximate number of non empty voxel: ", numfasc_2)
 
         # peaks = csd_peaks.peak_dirs
         # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
@@ -2526,43 +2559,35 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
         frac2 = csd_peaks_peak_values[..., 1]
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
                                                  mask=mask, frac12=None)
-    else:
-        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Diamond Path not found! MF will be based on CSD \n")
-        #assert CSD_bvalue, 'CSD_bvalues must be defined when diamond is not used!'
-        #sel_b = np.logical_or(bvals == 0, np.logical_and((CSD_bvalue - 5) <= bvals, bvals <= (CSD_bvalue + 5)))
-        #data_CSD = data[..., sel_b]
-        #gtab_CSD = gradient_table(bvals[sel_b], bvecs[sel_b])
+    elif peaksType=="MSMT-CSD":
+        if os.path.exists(odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz") and os.path.exists(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz'):
+            msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+            msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
+        else:
+            odf_msmtcsd_solo(folder_path, patient_path, core_count=core_count)
+            msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+            msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
 
-        data_CSD = data
-        b0_threshold = np.min(bvals) + 10
-        b0_threshold = max(50, b0_threshold)
-        gtab_CSD = gradient_table(bvals, bvecs, b0_threshold=b0_threshold,atol=1e-1)
+        numfasc_2 = np.sum(msmtcsd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
+                    msmtcsd_peaks_peak_values[:, :, :, 1] > 0.15)
+        print("Approximate number of non empty voxel: ", numfasc_2)
 
-        from dipy.reconst.csdeconv import auto_response_ssst
+        # peaks = csd_peaks.peak_dirs
+        # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
 
-        # response, ratio = auto_response(gtab_CSD, data_CSD, roi_radius=10, fa_thr=0.7)
-        response, ratio = auto_response_ssst(gtab_CSD, data_CSD, roi_radii=10, fa_thr=CSD_FA_treshold)
-
-        csd_model = ConstrainedSphericalDeconvModel(gtab_CSD, response, sh_order=6)
-        csd_peaks = peaks_from_model(npeaks=2, model=csd_model, data=data_CSD, sphere=default_sphere,
-                                     relative_peak_threshold=.25, min_separation_angle=25, parallel=False, mask=mask,
-                                     normalize_peaks=True)
-        save_nifti(mf_path + '/' + patient_path + '_mf_CSDpeaks.nii.gz', csd_peaks.peak_dirs, affine)
-        save_nifti(mf_path + '/' + patient_path + '_mf_CSDvalues.nii.gz', csd_peaks.peak_values, affine)
-        normPeaks0 = csd_peaks.peak_dirs[..., 0, :]
-        normPeaks1 = csd_peaks.peak_dirs[..., 1, :]
-        for i in range(np.shape(csd_peaks.peak_dirs)[0]):
-            for j in range(np.shape(csd_peaks.peak_dirs)[1]):
-                for k in range(np.shape(csd_peaks.peak_dirs)[2]):
+        normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
+        normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
+        for i in range(np.shape(msmtcsd_peaks_peak_dirs)[0]):
+            for j in range(np.shape(msmtcsd_peaks_peak_dirs)[1]):
+                for k in range(np.shape(msmtcsd_peaks_peak_dirs)[2]):
                     norm = np.sqrt(np.sum(normPeaks0[i, j, k, :] ** 2))
                     normPeaks0[i, j, k, :] = normPeaks0[i, j, k, :] / norm
                     norm = np.sqrt(np.sum(normPeaks1[i, j, k, :] ** 2))
                     normPeaks1[i, j, k, :] = normPeaks1[i, j, k, :] / norm
         mu1 = normPeaks0
         mu2 = normPeaks1
-        frac1 = csd_peaks.peak_values[..., 0]
-        frac2 = csd_peaks.peak_values[..., 1]
+        frac1 = msmtcsd_peaks_peak_values[..., 0]
+        frac2 = msmtcsd_peaks_peak_values[..., 1]
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
                                                  mask=mask, frac12=None)
 
@@ -2572,6 +2597,8 @@ def mf_solo(folder_path, p, dictionary_path, CSD_bvalue=None,core_count=1, use_w
     mf_model = mf.MFModel(dictionary_path)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
 
     import time
