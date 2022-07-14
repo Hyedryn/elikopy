@@ -637,14 +637,14 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
         f.close()
 
-    def dti(self,folder_path=None, patient_list_m=None, use_wm_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def dti(self,folder_path=None, patient_list_m=None, maskType="brain_mask_dilated", slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Computes the DTI metrics for each subject using Weighted Least-Squares. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
         example : study.dti()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
-        :param use_wm: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 1h by a custom timeout.
@@ -655,6 +655,9 @@ class Elikopy:
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                            "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DTI with slurm:" + str(slurm) + "\n")
@@ -678,7 +681,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/\",\"" + p + "\",use_wm_mask=" + str(use_wm_mask) + ")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/\",\"" + p + "\",maskType=\"" + str(maskType) + "\")'",
                         "job_name": "dti_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -700,7 +703,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                dti_solo(folder_path + "/",p,use_wm_mask=use_wm_mask)
+                dti_solo(folder_path + "/",p,maskType=maskType)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied DTI on patient %s\n" % p)
                 f.flush()
@@ -714,13 +717,14 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
         f.close()
 
-    def fingerprinting(self, dictionary_path=None, folder_path=None, peaksType="MSMT-CSD", use_wm_mask=False, csf_mask=True, ear_mask=False, mfdir=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def fingerprinting(self, dictionary_path=None, folder_path=None, peaksType="MSMT-CSD", maskType="brain_mask_dilated", csf_mask=True, ear_mask=False, mfdir=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the Microstructure Fingerprinting metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
         example : study.fingerprinting(dictionary_path='my_dictionary')
 
         :param folder_path: the path to the root directory. default=study_folder
         :param dictionary_path: Path to the dictionary of fingerprints (mandatory).
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
@@ -740,6 +744,8 @@ class Elikopy:
         import os.path
         assert os.path.isfile(dictionary_path), 'Invalid path to the MF dictionary'
 
+        assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                            "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Microstructure Fingerprinting with slurm:" + str(slurm) + "\n")
@@ -764,7 +770,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", peaksType=\"" + str(peaksType) + "\", core_count=" + str(core_count) + ", use_wm_mask=" + str(use_wm_mask) + ", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", peaksType=\"" + str(peaksType) + "\", core_count=" + str(core_count) + ", maskType=\"" + str(maskType) + "\", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
                         "job_name": "mf_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -785,7 +791,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                mf_solo(folder_path + "/", p, dictionary_path, peaksType=peaksType, core_count=core_count, use_wm_mask=use_wm_mask, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir)
+                mf_solo(folder_path + "/", p, dictionary_path, peaksType=peaksType, core_count=core_count, maskType=maskType, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
                 f.flush()
@@ -799,13 +805,14 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def odf_csd(self, folder_path=None, CSD_bvalue = None, use_wm_mask=False, CSD_FA_treshold=0.7,  num_peaks = 2, peaks_threshold=.25, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def odf_csd(self, folder_path=None, CSD_bvalue = None, maskType="brain_mask_dilated", CSD_FA_treshold=0.7,  num_peaks = 2, peaks_threshold=.25, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the odf using CSD for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/ODF/CSD/.
 
         example : study.odf_csd()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
@@ -820,6 +827,8 @@ class Elikopy:
 
         import os.path
 
+        assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                            "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of ODF CSD with slurm:" + str(slurm) + "\n")
@@ -844,7 +853,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_csd_solo; odf_csd_solo(\"" + folder_path + "/\",\"" + p + "\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ", CSD_FA_treshold="+ str(CSD_FA_treshold) + ", num_peaks="+ str(num_peaks) + ", peaks_threshold="+ str(peaks_threshold) + ", use_wm_mask=" + str(use_wm_mask) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_csd_solo; odf_csd_solo(\"" + folder_path + "/\",\"" + p + "\", CSD_bvalue =" + str(CSD_bvalue) + ", core_count=" + str(core_count) + ", CSD_FA_treshold="+ str(CSD_FA_treshold) + ", num_peaks="+ str(num_peaks) + ", peaks_threshold="+ str(peaks_threshold) + ", maskType=\"" + str(maskType) + "\")'",
                         "job_name": "CSD_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -865,7 +874,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                odf_csd_solo(folder_path + "/", p, CSD_bvalue = CSD_bvalue, num_peaks = num_peaks, peaks_threshold=peaks_threshold, core_count=core_count, use_wm_mask=use_wm_mask, CSD_FA_treshold=CSD_FA_treshold)
+                odf_csd_solo(folder_path + "/", p, CSD_bvalue = CSD_bvalue, num_peaks = num_peaks, peaks_threshold=peaks_threshold, core_count=core_count, maskType=maskType, CSD_FA_treshold=CSD_FA_treshold)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied ODF CSD on patient %s\n" % p)
                 f.flush()
@@ -1038,7 +1047,7 @@ class Elikopy:
         f.close()
 
 
-    def white_mask(self, folder_path=None, patient_list_m=None, corr_gibbs=True, forceUsePowerMap=False, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def white_mask(self, maskType, folder_path=None, patient_list_m=None, corr_gibbs=True, forceUsePowerMap=False, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Computes a white matter mask for each subject based on the T1 structural images or on the anisotropic power maps
         (obtained from the diffusion images) if the T1 images are not available. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/masks/.
         The T1 images can be gibbs ringing corrected.
@@ -1061,6 +1070,8 @@ class Elikopy:
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
 
+        assert maskType in ["wm_mask_AP", "wm_mask_FSL_T1"], "The mask parameter must be one of the following : wm_mask_AP, wm_mask_FSL_T1"
+
         f=open(folder_path + "/logs.txt", "a+")
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of white with slurm:" + str(slurm) + "\n")
         f.close()
@@ -1081,7 +1092,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\"" + ",corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + maskType + "\" ,corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1103,7 +1114,7 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                white_mask_solo(folder_path + "/", p, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug)
+                white_mask_solo(folder_path + "/", p, maskType, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug)
                 matplotlib.pyplot.close(fig='all')
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
@@ -1117,14 +1128,14 @@ class Elikopy:
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of White mask\n")
         f.close()
 
-    def noddi(self, folder_path=None, patient_list_m=None, use_wm_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9):
+    def noddi(self, folder_path=None, patient_list_m=None, maskType="brain_mask_dilated", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9):
         """Computes the NODDI metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
         example : study.noddi()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
-        :param force_brain_mask: Force the use of a brain mask even if a whitematter mask exist. default=False
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
@@ -1141,6 +1152,9 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of Noddi with slurm:" + str(slurm) + "\n")
         f.close()
+
+        assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                            "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
 
         dest_success = folder_path + "/subjects/subj_list.json"
         with open(dest_success, 'r') as f:
@@ -1163,7 +1177,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/\",\"" + p + "\",use_wm_mask=" + str(use_wm_mask) + ",core_count="+str(core_count)+ ",lambda_iso_diff="+str(lambda_iso_diff) +", lambda_par_diff="+str(lambda_par_diff) + ")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import noddi_solo; noddi_solo(\"" + folder_path + "/\",\"" + p + "\", maskType=\"" + str(maskType) + "\",core_count="+str(core_count)+ ",lambda_iso_diff="+str(lambda_iso_diff) +", lambda_par_diff="+str(lambda_par_diff) + ")'",
                         "job_name": "noddi_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1185,7 +1199,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                noddi_solo(folder_path + "/",p,core_count=cpus,lambda_iso_diff=lambda_iso_diff, lambda_par_diff=lambda_par_diff,use_wm_mask=use_wm_mask)
+                noddi_solo(folder_path + "/",p,core_count=cpus,lambda_iso_diff=lambda_iso_diff, lambda_par_diff=lambda_par_diff,maskType=maskType)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI on patient %s\n" % p)
                 f.flush()
@@ -1199,14 +1213,14 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI\n")
         f.close()
 
-    def noddi_amico(self, folder_path=None, patient_list_m=None, force_brain_mask=False, use_wm_mask=False, slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def noddi_amico(self, folder_path=None, patient_list_m=None, maskType="brain_mask_dilated", slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Computes the NODDI amico metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
         example : study.noddi_amico()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
-        :param force_brain_mask: Force the use of a brain mask even if a whitematter mask exist. default=False
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
@@ -1242,7 +1256,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_amico_solo; noddi_amico_solo(\"" + folder_path + "/\",\"" + p + "\"" + ", use_wm_mask=" + str(use_wm_mask) + ")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import noddi_amico_solo; noddi_amico_solo(\"" + folder_path + "/\",\"" + p + "\"" + ", maskType=\"" + str(maskType) + "\")'",
                         "job_name": "noddi_amico_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -1265,7 +1279,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                noddi_amico_solo(folder_path + "/",p,use_wm_mask=use_wm_mask)
+                noddi_amico_solo(folder_path + "/",p,maskType=maskType)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied NODDI AMICO on patient %s\n" % p)
                 f.flush()
@@ -1279,13 +1293,14 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
         f.close()
 
-    def diamond(self, folder_path=None, patient_list_m=None, reportOnly=False, use_wm_mask=False, customDiamond="", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def diamond(self, folder_path=None, patient_list_m=None, reportOnly=False, maskType="brain_mask_dilated", customDiamond="", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the DIAMOND metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
         example : study.diamond()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 14h by a custom timeout.
@@ -1300,6 +1315,9 @@ class Elikopy:
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of DIAMOND with slurm:" + str(slurm) + "\n")
         f.close()
+
+        assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                            "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
 
         dest_success = folder_path + "/subjects/subj_list.json"
         with open(dest_success, 'r') as f:
@@ -1322,7 +1340,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/\",\"" + p + "\", reportOnly="+str(reportOnly) + ", core_count="+str(core_count) + ", use_wm_mask=" + str(use_wm_mask) + ", customDiamond=\"" + customDiamond + "\")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import diamond_solo; diamond_solo(\"" + folder_path + "/\",\"" + p + "\", reportOnly="+str(reportOnly) + ", core_count="+str(core_count) + ", maskType=\"" + str(maskType) + "\", customDiamond=\"" + customDiamond + "\")'",
                         "job_name": "diamond_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1344,7 +1362,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                diamond_solo(folder_path + "/",p,core_count=core_count,reportOnly=reportOnly,use_wm_mask=use_wm_mask,customDiamond=customDiamond)
+                diamond_solo(folder_path + "/",p,core_count=core_count,reportOnly=reportOnly,maskType=maskType,customDiamond=customDiamond)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied diamond on patient %s\n" % p)
                 f.flush()
@@ -1996,15 +2014,14 @@ class Elikopy:
         f.close()
 
     def noddi_fix_icvf_thresholding(self, folder_path=None, patient_list_m=None, fintra_threshold=0.99, fbundle_threshold=0.05,
-                 use_brain_mask=False, use_wm_mask=False):
+                 maskType="brain_mask_dilated"):
         """ A function to quickly change the treshold value applied on the icvf metric of noddi without the needs of executing again the full noddi core function.
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param fintra_threshold: Threshold applied on the fintra. default=0.99
         :param fbundle_threshold: Threshold applied on the fbundle. default=0.05
-        :param use_brain_mask: Set to 0 values outside the brain mask. default=False
-        :param use_wm_mask: Set to 0 values outside the white matter mask. default=False
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         """
         import numpy as np
         from dipy.io.image import load_nifti, save_nifti
@@ -2013,6 +2030,9 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         f.write("[Fix icvf] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of fix icvf \n")
         f.close()
+
+        assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                            "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
 
         dest_success = folder_path + "/subjects/subj_list.json"
         with open(dest_success, 'r') as f:
@@ -2029,8 +2049,8 @@ class Elikopy:
             fintra_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_fintra.nii.gz"
             fbundle_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_fbundle.nii.gz"
 
-            brain_mask_path = folder_path + "/subjects/" + p + "/masks/" + p + "_brain_mask.nii.gz"
-            wm_mask_path = folder_path + "/subjects/" + p + "/masks/" + p + "_wm_mask.nii.gz"
+            brain_mask_path = folder_path + "/subjects/" + p + "/masks/" + p + "_brain_mask_dilated.nii.gz"
+            mask_path = folder_path + "/subjects/" + p + "/masks/" + p + '_' + maskType + '.nii.gz'
 
             icvf_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_icvf.nii.gz"
 
@@ -2040,13 +2060,14 @@ class Elikopy:
 
                 data_icvf_new = data_fintra * (data_fintra < fintra_threshold) * (data_fbundle > fbundle_threshold)
 
-                if use_brain_mask and os.path.exists(brain_mask_path):
-                    data_brain_mask, affine_brain_mask, voxel_size_brain_mask = load_nifti(brain_mask_path, return_voxsize=True)
-                    data_icvf_new = data_icvf_new * (data_brain_mask > 0.95)
 
-                if use_wm_mask and os.path.exists(wm_mask_path):
-                    data_wm_mask, affine_wm_mask, voxel_size_wm_mask = load_nifti(wm_mask_path, return_voxsize=True)
+                if os.path.exists(mask_path):
+                    data_wm_mask, affine_wm_mask, voxel_size_wm_mask = load_nifti(mask_path, return_voxsize=True)
                     data_icvf_new = data_icvf_new * (data_wm_mask > 0.95)
+                else:
+                    data_brain_mask, affine_brain_mask, voxel_size_brain_mask = load_nifti(brain_mask_path,
+                                                                                           return_voxsize=True)
+                    data_icvf_new = data_icvf_new * (data_brain_mask > 0.95)
 
                 save_nifti(icvf_path, data_icvf_new.astype(np.float32), affine_fintra)
 
