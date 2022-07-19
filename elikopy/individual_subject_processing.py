@@ -165,7 +165,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             bet_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz'
             bashCommand = "dwidenoise -nthreads " + str(core_count) + " " + bet_path + \
                   " " + denoising_path + '/' + patient_path + '_mppca.nii.gz' +\
-                  " -noise " + denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz'
+                  " -noise " + denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz -force'
 
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=f,
                                        stderr=subprocess.STDOUT)
