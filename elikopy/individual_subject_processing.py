@@ -644,7 +644,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     gtab_raw = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
 
     # reslice data
-    bool_reslice = isdir(preproc_path + "reslice")
+    bool_reslice = isdir(os.path.join(preproc_path, "reslice"))
     if bool_reslice:
         reslice_data, reslice_affine = load_nifti(preproc_path + "reslice/" + patient_path + "_reslice.nii.gz")
 
@@ -653,23 +653,23 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     mask_raw, mask_raw_affine = load_nifti(preproc_path + "bet/" + patient_path + "_binary_mask.nii.gz")
 
     # mppca data
-    bool_mppca = isdir(preproc_path + "mppca")
+    bool_mppca = isdir(os.path.join(preproc_path, "mppca"))
     if bool_mppca:
         mppca_data, mppca_affine = load_nifti(preproc_path + "mppca/" + patient_path + "_mppca.nii.gz")
         sigma, sigma_affine = load_nifti(preproc_path + "mppca/" + patient_path + "_sigmaNoise.nii.gz")
 
     # patch2self data
-    bool_patch2self = isdir(preproc_path + "patch2self")
+    bool_patch2self = isdir(os.path.join(preproc_path, "patch2self"))
     if bool_patch2self:
         patch2self_data, patch2self_affine = load_nifti(preproc_path + "patch2self/" + patient_path + "_patch2self.nii.gz")
 
     # gibbs data
-    bool_gibbs = isdir(preproc_path + "gibbs")
+    bool_gibbs = isdir(os.path.join(preproc_path, "gibbs"))
     if bool_gibbs:
         gibbs_data, gibbs_affine = load_nifti(preproc_path + "gibbs/" + patient_path + "_gibbscorrected.nii.gz")
 
     # topup data
-    bool_topup = isdir(preproc_path + "topup")
+    bool_topup = isdir(os.path.join(preproc_path, "topup"))
     if bool_topup:
         if not eddy:
             topup_data, topup_affine = load_nifti(preproc_path + "topup/" + patient_path + "_topup_corr.nii.gz")
@@ -677,7 +677,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             preproc_path + "topup/" + patient_path + "_topup_estimate_fieldcoef.nii.gz")
 
     # eddy data (=preproc total)
-    bool_eddy = isdir(preproc_path + "eddy")
+    bool_eddy = isdir(os.path.join(preproc_path, "eddy"))
     preproc_data, preproc_affine = load_nifti(preproc_path + patient_path + "_dmri_preproc.nii.gz")
     mask_preproc, mask_preproc_affine = load_nifti(mask_path)
     bvals, bvecs = read_bvals_bvecs(preproc_path + patient_path + "_dmri_preproc.bval",
@@ -1269,12 +1269,12 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         # Do Eddy quad for the subject
         slspec_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'slspec.txt'
         if os.path.isfile(slspec_path):
-            if topup:
+            if topup and multiple_encoding and not forceSynb0DisCo:
                 bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" -s "' + slspec_path + '" -f "' + preproc_path + 'topup/' + patient_path + '_topup_estimate_fieldcoef.nii.gz"'
             else:
                 bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" -s "' + slspec_path + '"'
         else:
-            if topup:
+            if topup and multiple_encoding and not forceSynb0DisCo:
                 bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" -f "' + preproc_path + 'topup/' + patient_path + '_topup_estimate_fieldcoef.nii.gz"'
             else:
                 bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval"'
@@ -1537,15 +1537,15 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
     (obtained from the diffusion images) if the T1 image is not available. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/masks/.
     The T1 images can be gibbs ringing corrected.
 
+    :param maskType: maskType must be either 'wm_mask_FSL_T1' or 'wm_mask_AP'.
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
     :param corr_gibbs: If true, Gibbs ringing correction is performed on the T1 image. default=True
     :param core_count: Number of allocated cpu cores. default=1
-    :param forceUsePowerMap: Force the use of an AnisotropicPower map for the white matter mask generation. default=False
     :param debug: If true, additional intermediate output will be saved. default=False
     """
 
-    assert maskType in ['wm_mask_FSL_T1', 'wm_mask_AP'], "maskType must be either 'T1' or 'AnisotropicPower'"
+    assert maskType in ['wm_mask_FSL_T1', 'wm_mask_AP'], "maskType must be either 'wm_mask_FSL_T1' or 'wm_mask_AP'"
 
     log_prefix = "White mask solo"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(

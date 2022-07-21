@@ -1057,7 +1057,7 @@ class Elikopy:
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param corr_gibbs: If true, Gibbs ringing correction is performed on the T1 images. default=True
-        :param forceUsePowerMap: Force the use of an AnisotropicPower map for the white matter mask generation. default=False
+        :param maskType: maskType must be either 'wm_mask_FSL_T1' or 'wm_mask_AP'.
         :param debug: If true, additional intermediate output will be saved. default=False
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
@@ -1092,7 +1092,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + maskType + "\" ,corr_gibbs=" + str(corr_gibbs) + ",forceUsePowerMap=" + str(forceUsePowerMap) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import white_mask_solo; white_mask_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + maskType + "\" ,corr_gibbs=" + str(corr_gibbs) + ",debug=" + str(debug) + ",core_count=" + str(core_count) + " )'",
                         "job_name": "whitemask_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1114,7 +1114,7 @@ class Elikopy:
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                white_mask_solo(folder_path + "/", p, maskType, corr_gibbs=corr_gibbs, core_count=core_count, forceUsePowerMap=forceUsePowerMap, debug=debug)
+                white_mask_solo(folder_path + "/", p, maskType, corr_gibbs=corr_gibbs, core_count=core_count, debug=debug)
                 matplotlib.pyplot.close(fig='all')
                 f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied white mask on patient %s\n" % p)
                 f.flush()
