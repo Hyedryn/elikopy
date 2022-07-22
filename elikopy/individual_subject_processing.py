@@ -1168,27 +1168,50 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         volume = []
         motion_raw = []
         motion_proc = []
-        for i in range(np.shape(preproc_data)[3]):
-            #print('current iteration : ', i, end="\r")
-            volume.append(i)
 
-            rigid = affreg.optimize(np.copy(S0s_raw[..., 0]), np.copy(bet_data[..., i]), transform, params0, bet_affine,
-                                    bet_affine, ret_metric=True)
-            motion_raw.append(rigid[1])
+        result = []
 
-            rigid = affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_data[..., i]), transform, params0,
-                                    preproc_affine, preproc_affine, ret_metric=True)
-            motion_proc.append(rigid[1])
+        if core_count > 2:
+            from concurrent.futures import ProcessPoolExecutor
+            for i in range(np.shape(preproc_data)[3]):
+                #print('current iteration : ', i, end="\r")
+                volume.append(i)
+
+            def motion_raw_transform(i):
+                return affreg.optimize(np.copy(S0s_raw[..., 0]), np.copy(bet_data[..., i]), transform, params0, bet_affine,
+                                        bet_affine, ret_metric=True)[1]
+            with ProcessPoolExecutor(max_workers=int(core_count*0.8)) as executor:
+                for r in executor.map(motion_raw_transform, range(np.shape(preproc_data)[3])):
+                    motion_raw.append(r)
+
+            def motion_preproc_transform(i):
+                return affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_data[..., i]), transform, params0,
+                                        preproc_affine, preproc_affine, ret_metric=True)[1]
+            with ProcessPoolExecutor(max_workers=int(core_count*0.8)) as executor:
+                for r in executor.map(motion_preproc_transform, range(np.shape(preproc_data)[3])):
+                    motion_proc.append(r)
+        else:
+            for i in range(np.shape(preproc_data)[3]):
+                #print('current iteration : ', i, end="\r")
+                volume.append(i)
+
+                rigid = affreg.optimize(np.copy(S0s_raw[..., 0]), np.copy(bet_data[..., i]), transform, params0, bet_affine,
+                                        bet_affine, ret_metric=True)
+                motion_raw.append(rigid[1])
+
+                rigid = affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_data[..., i]), transform, params0,
+                                        preproc_affine, preproc_affine, ret_metric=True)
+                motion_proc.append(rigid[1])
         # ============================================================
 
-        motion_unproc = np.array(motion_raw)
+        motion_raw = np.array(motion_raw)
         motion_proc = np.array(motion_proc)
 
         fig, (ax1, ax2) = plt.subplots(2, sharey=True, figsize=(10, 6))
-        ax1.bar(volume, np.abs(motion_unproc[:, 3]) + np.abs(motion_unproc[:, 4]) + np.abs(motion_unproc[:, 5]),
+        ax1.bar(volume, np.abs(motion_raw[:, 3]) + np.abs(motion_raw[:, 4]) + np.abs(motion_raw[:, 5]),
                 label='z')
-        ax1.bar(volume, np.abs(motion_unproc[:, 3]) + np.abs(motion_unproc[:, 4]), label='y')
-        ax1.bar(volume, np.abs(motion_unproc[:, 3]), label='x')
+        ax1.bar(volume, np.abs(motion_raw[:, 3]) + np.abs(motion_raw[:, 4]), label='y')
+        ax1.bar(volume, np.abs(motion_raw[:, 3]), label='x')
         ax1.legend(title='Translation', bbox_to_anchor=(1.05, 1), loc='upper left')
         ax1.set_title('raw data translation')
         ax2.bar(volume, np.abs(motion_proc[:, 3]) + np.abs(motion_proc[:, 4]) + np.abs(motion_proc[:, 5]),
@@ -1199,10 +1222,10 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         plt.savefig(qc_path + "/motion1.jpg", dpi=300, bbox_inches='tight')
 
         fig, (ax1, ax2) = plt.subplots(2, sharey=True, figsize=(10, 6))
-        ax1.bar(volume, np.abs(motion_unproc[:, 0]) + np.abs(motion_unproc[:, 1]) + np.abs(motion_unproc[:, 2]),
+        ax1.bar(volume, np.abs(motion_raw[:, 0]) + np.abs(motion_raw[:, 1]) + np.abs(motion_raw[:, 2]),
                 label='z')
-        ax1.bar(volume, np.abs(motion_unproc[:, 0]) + np.abs(motion_unproc[:, 1]), label='y')
-        ax1.bar(volume, np.abs(motion_unproc[:, 0]), label='x')
+        ax1.bar(volume, np.abs(motion_raw[:, 0]) + np.abs(motion_raw[:, 1]), label='y')
+        ax1.bar(volume, np.abs(motion_raw[:, 0]), label='x')
         ax1.legend(title='Rotation', bbox_to_anchor=(1.05, 1), loc='upper left')
         ax1.set_title('raw data rotation')
         ax2.bar(volume, np.abs(motion_proc[:, 0]) + np.abs(motion_proc[:, 1]) + np.abs(motion_proc[:, 2]),
