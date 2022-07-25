@@ -3,7 +3,7 @@ import os
 import shutil
 import json
 
-import TIME.utils
+
 import numpy as np
 import math
 
@@ -2720,6 +2720,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
         frac = frac + 1
 
+        import TIME.utils
         RGB_peak = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()])
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB.nii.gz', RGB_peak, img_mf_frac.affine)
         peaks_list.append(img_mf_peaks.get_fdata())
@@ -3012,7 +3013,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine, hdr)
 
-
+    import TIME.utils
     RGB_peak = TIME.utils.peaks_to_RGB([peaks1])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
     RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks1], [frac1])
@@ -3154,6 +3155,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine,
                hdr)
 
+    import TIME.utils
 
     RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
