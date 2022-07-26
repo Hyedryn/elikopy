@@ -10,8 +10,6 @@ import math
 import subprocess
 from elikopy.utils import makedir
 
-from dipy.denoise.gibbs import gibbs_removal
-from dipy.denoise.patch2self import patch2self
 
 
 def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
@@ -140,6 +138,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/mppca'
         denoising_ext = '_mppca.nii.gz'
     elif denoising_algorithm == "patch2self":
+        from dipy.denoise.patch2self import patch2self
+
         denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/patch2self'
         denoising_ext = '_patch2self.nii.gz'
 
@@ -210,6 +210,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
     if gibbs and starting_state!="eddy" and (starting_state not in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"))  and starting_state!="biasfield" and starting_state!="report":
+        from dipy.denoise.gibbs import gibbs_removal
         gibbs_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs'
         makedir(gibbs_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
