@@ -1,10 +1,9 @@
-
+import torch
+import torch.nn as nn
 
 
 class UNet3D(nn.Module):
     def __init__(self, n_in, n_out):
-        import torch
-        import torch.nn as nn
         super(UNet3D, self).__init__()
         # Encoder
         self.ec0 = self.encoder_block(      n_in,    32, kernel_size=3, stride=1, padding=1)
