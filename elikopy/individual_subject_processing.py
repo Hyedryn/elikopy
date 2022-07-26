@@ -1152,6 +1152,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
     """Motion registration""";
     if bool_eddy and qc_reg:
+
+
         nbins = 32
         sampling_prop = None
         metric = MutualInformationMetric(nbins, sampling_prop)
@@ -1172,6 +1174,12 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         result = []
 
         if core_count > 2:
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Starting Eddy QC_REG for patient %s with multicore enabled\n" % p)
+            f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Starting Eddy QC_REG for patient %s with multicore enabled \n" % p)
+            f.close()
             from concurrent.futures import ProcessPoolExecutor
             for i in range(np.shape(preproc_data)[3]):
                 #print('current iteration : ', i, end="\r")
@@ -1184,13 +1192,33 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 for r in executor.map(motion_raw_transform, range(np.shape(preproc_data)[3])):
                     motion_raw.append(r)
 
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_raw for patient %s" % p)
+            f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_raw for patient %s \n" % p)
+            f.close()
+
             def motion_preproc_transform(i):
                 return affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_data[..., i]), transform, params0,
                                         preproc_affine, preproc_affine, ret_metric=True)[1]
             with ProcessPoolExecutor(max_workers=int(core_count*0.8)) as executor:
                 for r in executor.map(motion_preproc_transform, range(np.shape(preproc_data)[3])):
                     motion_proc.append(r)
+
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_preproc for patient %s" % p)
+            f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_preproc for patient %s \n" % p)
+            f.close()
         else:
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Starting Eddy QC_REG for patient %s with multicore disabled\n" % p)
+            f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Starting Eddy QC_REG for patient %s with multicore disabled \n" % p)
+            f.close()
             for i in range(np.shape(preproc_data)[3]):
                 #print('current iteration : ', i, end="\r")
                 volume.append(i)
@@ -1202,6 +1230,14 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 rigid = affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_data[..., i]), transform, params0,
                                         preproc_affine, preproc_affine, ret_metric=True)
                 motion_proc.append(rigid[1])
+
+                if int(i/np.shape(preproc_data)[3])%5==0:
+                    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                        "%d.%b %Y %H:%M:%S") + ": Eddy QC_REG : Volume " + str(i) + "/" + str(np.shape(preproc_data)[3]) + " \n")
+                    f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+                    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                        "%d.%b %Y %H:%M:%S") + ": Eddy QC_REG : Volume " + str(i) + "/" + str(np.shape(preproc_data)[3]) + " \n")
+                    f.close()
         # ============================================================
 
         motion_raw = np.array(motion_raw)

@@ -932,8 +932,8 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_csd_solo; odf_csd_solo(\"" + folder_path + "/\",\"" + p + "\", num_peaks =" + str(num_peaks) + ", core_count=" + str(core_count) + ", peaks_threshold="+ str(peaks_threshold) + ")'",
-                        "job_name": "CSD_" + p,
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_msmtcsd_solo; odf_msmtcsd_solo(\"" + folder_path + "/\",\"" + p + "\", num_peaks =" + str(num_peaks) + ", core_count=" + str(core_count) + ", peaks_threshold="+ str(peaks_threshold) + ")'",
+                        "job_name": "MSMTCSD_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
                         "mem_per_cpu": 2048,
