@@ -63,7 +63,7 @@ class Elikopy:
     Main class containing all the necessary function to process and preprocess a specific study.
     '''
 
-    def __init__(self, folder_path, cuda=False, slurm=False, slurm_email='example@example.com'):
+    def __init__(self, folder_path, cuda=False, slurm=False, slurm_email=None):
         """ Creates the study class
             example : study = Elikopy(my_floder, slurm=True, slurm_email='my_email_address')
 
@@ -74,6 +74,8 @@ class Elikopy:
         """
         self._folder_path = folder_path
         self._slurm = slurm
+        if slurm:
+            assert slurm_email is not None, "The email adress must be defined with slurm"
         self._slurm_email = slurm_email
         self._cuda = cuda
 
@@ -1963,6 +1965,9 @@ class Elikopy:
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
 
+        if slurm:
+            assert slurm_email is not None, "The email adress must be defined with slurm"
+
         f = open(folder_path + "/logs.txt", "a+")
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of randomise_all with slurm:" + str(slurm) + "\n")
@@ -2079,7 +2084,7 @@ class Elikopy:
         f.close()
 
 
-    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=False, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, slurm_path=None):
+    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, slurm_path=None):
         """ A wrapper function that apply a function given as an argument to every subject of the study. The wrapped function must takes two arguments as input, the patient\_name and the path to the root of the study.
 
         :param folder_path: the path to the root directory. default=study_folder
@@ -2098,6 +2103,11 @@ class Elikopy:
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
         slurm_path = folder_path + '/' + "slurm-%j" if slurm_path is None else slurm_path
+
+        if slurm:
+            assert function_name is not None, "The function name must be defined with slurm"
+            assert filename is not None, "The filename must be defined with slurm"
+            assert slurm_email is not None, "The email adress must be defined with slurm"
 
         log_prefix = "wrapper_elikopy"
 
@@ -2125,7 +2135,7 @@ class Elikopy:
                     "wrap": "export OMP_NUM_THREADS=" + str(core_count) + " ; export FSLPARALLEL=" + str(
                         core_count) + " ; python -c 'from " + filename + " import "+function_name+"; "+function_name+"(\"" + str(
                         folder_path) + "\",\"" + str(
-                        patient_path) + "\")'",
+                        patient_path) + "\"",
                     "job_name": "wrapper_elikopy",
                     "ntasks": 1,
                     "cpus_per_task": core_count,
@@ -2136,6 +2146,16 @@ class Elikopy:
                     "output": slurm_path + ".out",
                     "error": slurm_path + ".err",
                 }
+
+                if len(func_args) > 0:
+                    for k, v in func_args.items():
+                        print(k, v)
+                        if isinstance(v, str):
+                            job["wrap"] = job["wrap"] + " , " + str(k) + "=\"" + str(v) + "\""
+                        else:
+                            job["wrap"] = job["wrap"] + " , " + str(k) + "=" + str(v)
+                job["wrap"] = job["wrap"] + " )'"
+
                 job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
                 job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
                 p_job_id = {}
@@ -2157,7 +2177,7 @@ class Elikopy:
         f.close()
 
         if slurm:
-            elikopy.utils.getJobsState(folder_path, job_list, "randomise_all")
+            elikopy.utils.getJobsState(folder_path, job_list, "wrapper_elikopy")
 
         f = open(folder_path + "/logs.txt", "a+")
         print("[PatientList Wrapper] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of wrap function on patient list\n")
