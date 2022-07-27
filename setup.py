@@ -32,6 +32,7 @@ setuptools.setup(
     install_requires=[
         'numpy',
         'dipy',
+        'torch',
         #'dmipy',
         'lxml',
         'PyPDF2',
