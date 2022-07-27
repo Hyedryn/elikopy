@@ -2675,6 +2675,11 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
 
         # peaks = csd_peaks.peak_dirs
         # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
+        msmtcsd_peaks_peak_dirs[..., 1] = -msmtcsd_peaks_peak_dirs[..., 1]
+        msmtcsd_peaks_peak_dirs[..., 2] = -msmtcsd_peaks_peak_dirs[..., 2]
+
+        msmtcsd_peaks_peak_dirs[..., 4] = -msmtcsd_peaks_peak_dirs[..., 4]
+        msmtcsd_peaks_peak_dirs[..., 5] = -msmtcsd_peaks_peak_dirs[..., 5]
 
         normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
         normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
