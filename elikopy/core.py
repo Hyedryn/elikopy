@@ -1049,7 +1049,7 @@ class Elikopy:
         f.close()
 
 
-    def white_mask(self, maskType, folder_path=None, patient_list_m=None, corr_gibbs=True, forceUsePowerMap=False, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def white_mask(self, maskType, folder_path=None, patient_list_m=None, corr_gibbs=True, debug=False, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Computes a white matter mask for each subject based on the T1 structural images or on the anisotropic power maps
         (obtained from the diffusion images) if the T1 images are not available. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/masks/.
         The T1 images can be gibbs ringing corrected.
