@@ -2250,7 +2250,7 @@ class Elikopy:
                         core_count) + " ; python -c 'from " + filename + " import "+function_name+"; "+function_name+"(\"" + str(
                         folder_path) + "\",\"" + str(
                         patient_path) + "\"",
-                    "job_name": "wrapper_elikopy",
+                    "job_name": "wrapper_elikopy_" + str(patient_path) + "_" + str(function_name),
                     "ntasks": 1,
                     "cpus_per_task": core_count,
                     "mem_per_cpu": 8096,
