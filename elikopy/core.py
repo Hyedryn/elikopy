@@ -63,7 +63,7 @@ class Elikopy:
     Main class containing all the necessary function to process and preprocess a specific study.
     '''
 
-    def __init__(self, folder_path, cuda=False, slurm=False, slurm_email=None):
+    def __init__(self, folder_path, cuda=False, slurm=False, slurm_email=None, static_files_path=None):
         """ Creates the study class
             example : study = Elikopy(my_floder, slurm=True, slurm_email='my_email_address')
 
@@ -78,6 +78,16 @@ class Elikopy:
             assert slurm_email is not None, "The email adress must be defined with slurm"
         self._slurm_email = slurm_email
         self._cuda = cuda
+
+        if static_files_path is not None:
+            self._static_files_path = static_files_path
+        elif os.environ.get('ELIKOPY_STATIC_FILES') is not None:
+            self._static_files_path = os.environ.get('ELIKOPY_STATIC_FILES')
+        elif os.path.exists(folder_path + "/static_files"):
+            self._static_files_path = folder_path + "/static_files"
+        else:
+            print("Warning : static_files folder not found. Please create it in the root folder of the study.")
+            self._static_files_path = None
 
     def patient_list(self, folder_path=None, bids_path=None, reverseEncoding=True):
         """ From the root folder containing data_1, data_2, ... data_n folders with nifti files (and their corresponding
@@ -446,7 +456,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
+    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, static_files_path=None, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
         """ Performs data preprocessing. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
         denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
         The results are stored in the preprocessing subfolder of each study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -504,6 +514,7 @@ class Elikopy:
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
         cuda = self._cuda if cuda not in (True,False) else cuda
+        static_files_path = self._static_files_path if static_files_path is None else static_files_path
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ":  Beginning preprocessing with eddy:" + str(eddy) + ", denoising:" + str(denoising) + ", slurm:" + str(slurm) + ", reslice:" + str(reslice) + ", gibbs:" + str(gibbs) + ", starting_state:" + str(starting_state) +"\n")
@@ -535,8 +546,9 @@ class Elikopy:
                         "wrap": "export OMP_NUM_THREADS="+str(tot_cpu)+" ; export FSLPARALLEL="+str(tot_cpu)+" ; python -c 'from elikopy.individual_subject_processing import preproc_solo; preproc_solo(\"" + folder_path + "/\",\"" + p + "\",eddy=" + str(
                             eddy) + ",biasfield=" + str(biasfield)  + ",biasfield_convergence=[" + str(biasfield_convergence[0]) + "," + str(biasfield_convergence[1]) + "],biasfield_bsplineFitting=[" + str(biasfield_bsplineFitting[0]) + "," + str(biasfield_bsplineFitting[1]) + "],denoising=" + str(
                             denoising) + ",denoising_algorithm=\"" + str(denoising_algorithm) +"\",reslice=" + str(reslice) + ",reslice_addSlice=" + str(reslice_addSlice) + ",gibbs=" + str(
-                            gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"" + str(starting_state) + "\",bet_median_radius=" + str(
-                            bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", report=" + str(report) + ", slspec_gc_path=" + str(slspec_gc_path) + ", core_count=" + str(core_count)+ ", niter=" + str(niter)+",bet_numpass=" + str(bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
+                            gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"" + str(starting_state) + "\",static_files_path=\""+ static_files_path +"\" ,bet_median_radius=" + str(
+                            bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", report=" + str(report) + ", slspec_gc_path=" + str(slspec_gc_path) + ", core_count=" + str(core_count)+ ", niter=" + str(niter)+",bet_numpass=" + str(
+                            bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
                         "job_name": "preproc_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 8,
@@ -585,7 +597,7 @@ class Elikopy:
                                  eddy=eddy,biasfield=biasfield, biasfield_bsplineFitting=biasfield_bsplineFitting, biasfield_convergence=biasfield_convergence,
                                  starting_state=starting_state,
                                  bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda, qc_reg=qc_reg, core_count=core_count,
-                                 cuda_name=cuda_name, s2v=s2v, olrep=olrep, niter=niter, slspec_gc_path=slspec_gc_path, report=report)
+                                 cuda_name=cuda_name, s2v=s2v, olrep=olrep, niter=niter, slspec_gc_path=slspec_gc_path, report=report, static_files_path=static_files_path)
                     matplotlib.pyplot.close(fig='all')
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preprocessed patient %s\n" % p)
                     f.flush()
@@ -741,7 +753,7 @@ class Elikopy:
         mfdir = "mf" if mfdir is None else mfdir
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
 
-        dictionary_path = folder_path + "/static_files/mf_dic/fixed_rad_dist.mat" if dictionary_path is None else dictionary_path
+        dictionary_path = self._static_files_path + "/mf_dic/fixed_rad_dist.mat" if dictionary_path is None else dictionary_path
 
         import os.path
         assert os.path.isfile(dictionary_path), 'Invalid path to the MF dictionary'

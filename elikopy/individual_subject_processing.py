@@ -12,7 +12,7 @@ from elikopy.utils import makedir
 
 
 
-def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
+def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], static_files_path=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """ Performs data preprocessing on a single subject. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
     denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
     The results are stored in the preprocessing subfolder of the study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -65,6 +65,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
     if topupConfig == "None":
         topupConfig = None
+
+    if static_files_path == "None":
+        static_files_path = None
 
     log_prefix = "PREPROC SOLO"
     patient_path = p
@@ -382,7 +385,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 synb0DisCo_starting_step = "Apply"
             elif starting_state =="topup_synb0DisCo_topup":
                 synb0DisCo_starting_step = "topup"
-            synb0DisCo(folder_path,topup_path,patient_path,starting_step=synb0DisCo_starting_step,topup=True,gpu=useGPUsynb0DisCo)
+            synb0DisCo(folder_path,topup_path,patient_path,starting_step=synb0DisCo_starting_step,topup=True,gpu=useGPUsynb0DisCo, static_files_path=static_files_path)
 
             if not eddy:
                 bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'

@@ -558,7 +558,7 @@ def tbss_utils(folder_path, grp1, grp2, starting_state=None, last_state=None, re
     tbss_log.close()
 
 
-def synb0DisCo(folder_path,topuppath,patient_path,starting_step=None,topup=True,gpu=True):
+def synb0DisCo(folder_path,topuppath,patient_path,static_files_path=None,starting_step=None,topup=True,gpu=True):
     """
     synb0DISCO adapted from https://github.com/MASILab/Synb0-DISCO
 
@@ -576,6 +576,8 @@ def synb0DisCo(folder_path,topuppath,patient_path,starting_step=None,topup=True,
     import torch.optim as optim
 
     assert starting_step in (None, "Registration", "Inference", "Apply", "topup")
+
+    static_files_path = folder_path + "/static_files" if static_files_path is None else static_files_path
 
     synb0path = topuppath + "/synb0-DisCo"
 
@@ -623,19 +625,19 @@ def synb0DisCo(folder_path,topuppath,patient_path,starting_step=None,topup=True,
         c3d_affine_tool = "c3d_affine_tool -ref " + synb0path + "/T1.nii.gz -src " + synb0path + "/b0.nii.gz " + synb0path + "/epi_reg_d.mat -fsl2ras -oitk " + synb0path + "/epi_reg_d_ANTS.txt"
 
         # ANTs register T1 to atla
-        antsRegistrationSyNQuick = "antsRegistrationSyNQuick.sh -d 3 -f " + folder_path + "/static_files/atlases/mni_icbm152_t1_tal_nlin_asym_09c.nii.gz -m " + synb0path + "/T1.nii.gz -o " + synb0path + "/ANTS"
+        antsRegistrationSyNQuick = "antsRegistrationSyNQuick.sh -d 3 -f " + static_files_path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c.nii.gz -m " + synb0path + "/T1.nii.gz -o " + synb0path + "/ANTS"
 
         # Apply linear transform to normalized T1 to get it into atlas space
-        antsApplyTransforms_lin_T1 = "antsApplyTransforms -d 3 -i " + synb0path + "/T1_norm.nii.gz -r " + folder_path + "/static_files/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS0GenericAffine.mat -o " + synb0path + "/T1_norm_lin_atlas_2_5.nii.gz"
+        antsApplyTransforms_lin_T1 = "antsApplyTransforms -d 3 -i " + synb0path + "/T1_norm.nii.gz -r " + static_files_path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS0GenericAffine.mat -o " + synb0path + "/T1_norm_lin_atlas_2_5.nii.gz"
 
         # Apply linear transform to distorted b0 to get it into atlas space
-        antsApplyTransforms_lin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + folder_path + "/static_files/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_lin_atlas_2_5.nii.gz"
+        antsApplyTransforms_lin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + static_files_path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_lin_atlas_2_5.nii.gz"
 
         # Apply nonlinear transform to normalized T1 to get it into atlas space
-        antsApplyTransforms_nonlin_T1 = "antsApplyTransforms -d 3 -i " + synb0path + "/T1_norm.nii.gz -r " + folder_path + "/static_files/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -o " + synb0path + "/T1_norm_nonlin_atlas_2_5.nii.gz"
+        antsApplyTransforms_nonlin_T1 = "antsApplyTransforms -d 3 -i " + synb0path + "/T1_norm.nii.gz -r " + static_files_path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -o " + synb0path + "/T1_norm_nonlin_atlas_2_5.nii.gz"
 
         # Apply nonlinear transform to distorted b0 to get it into atlas space
-        antsApplyTransforms_nonlin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + folder_path + "/static_files/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_nonlin_atlas_2_5.nii.gz"
+        antsApplyTransforms_nonlin_b0 = "antsApplyTransforms -d 3 -i " + synb0path + "/b0.nii.gz -r " + static_files_path + "/atlases/mni_icbm152_t1_tal_nlin_asym_09c_2_5.nii.gz -n BSpline -t " + synb0path + "/ANTS1Warp.nii.gz -t " + synb0path + "/ANTS0GenericAffine.mat -t " + synb0path + "/epi_reg_d_ANTS.txt -o " + synb0path + "/b0_d_nonlin_atlas_2_5.nii.gz"
 
         bashCommand_step2 = bet + "; " + epi_reg_b0_dist + "; " + c3d_affine_tool + "; " + antsRegistrationSyNQuick + "; " + antsApplyTransforms_lin_T1 + "; " + antsApplyTransforms_lin_b0 + "; " + antsApplyTransforms_nonlin_T1 + "; " + antsApplyTransforms_nonlin_b0
         step2_log = open(synb0path + "/step2_logs.txt", "a+")
@@ -674,7 +676,7 @@ def synb0DisCo(folder_path,topuppath,patient_path,starting_step=None,topup=True,
         for i in range(1,numfold+1):
             torch.cuda.empty_cache()
             b0_output_path = synb0path + "/b0_u_lin_atlas_2_5_FOLD_" + str(i) + ".nii.gz"
-            model_path = folder_path + "/static_files/dual_channel_unet/num_fold_" + str(i) + "_total_folds_" + str(numfold) + "_seed_1_num_epochs_100_lr_0.0001_betas_(0.9, 0.999)_weight_decay_1e-05_num_epoch_*.pth"
+            model_path = static_files_path + "/dual_channel_unet/num_fold_" + str(i) + "_total_folds_" + str(numfold) + "_seed_1_num_epochs_100_lr_0.0001_betas_(0.9, 0.999)_weight_decay_1e-05_num_epoch_*.pth"
             model_path = glob.glob(model_path)[0]
             # Get model
             model = UNet3D(2, 1).to(device)
