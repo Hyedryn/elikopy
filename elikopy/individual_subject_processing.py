@@ -3798,3 +3798,143 @@ def report_solo(folder_path,patient_path, slices=None, short=False):
 
     pdf.output(folder_path + '/subjects/' + patient_path + "/report/report_"+patient_path+".pdf", 'F')
 
+
+
+def clean_study_solo(folder_path, p):
+    """Clean a study folder for a specific patient p.
+    """
+    import glob
+    log_prefix = "CLEAN-STUDY SOLO"
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Beginning of individual CLEAN-STUDY for patient %s \n" % p, flush = True)
+    patient_path = p
+
+    subject_main_path = os.path.join(folder_path, "subjects", p)
+
+    # Delete all the space consuming intermediate files and folders of the preproc folder
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "preproc", "bet")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "preproc", "bet"))
+
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "preproc", "eddy")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "preproc", "eddy"))
+
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "preproc", "mppca")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "preproc", "mppca"))
+
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "preproc", "topup")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "preproc", "topup"))
+
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "preproc", "patch2self")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "preproc", "patch2self"))
+
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "preproc", "gibbs")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "preproc", "gibbs"))
+
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "preproc", "reslice")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "preproc", "reslice"))
+
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "preproc", "biasfield")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "preproc", "biasfield"))
+
+    # delete slurm files in preproc folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "preproc") + '/slurm-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")
+
+
+    # Delete all the intermediate files of the T1 folder
+    if os.path.exists(os.path.join(subject_main_path, "T1")):
+        shutil.rmtree(os.path.join(subject_main_path, "T1", patient_path + "_T1_gibbscorrected.nii.gz"))
+        shutil.rmtree(os.path.join(subject_main_path, "T1", patient_path + "_T1_corr_projected.nii.gz"))
+        shutil.rmtree(os.path.join(subject_main_path, "T1", patient_path + "_T1_brain.nii.gz"))
+
+
+    # delete slurm files in masks folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "masks") + '/slurm-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")
+
+
+    # delete slurm files in CSD folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "ODF", "CSD") + '/slurm-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")
+
+
+    # delete slurm files in MSMT-CSD folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "ODF", "MSMT-CSD") + '/slurm-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")
+
+    # delete slurm files in MSMT-CSD folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "ODF", "MSMT-CSD") + '/' + patient_path + '_CSD_peak_-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")
+
+
+    # Delete all the intermediate files of the diamond folder
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "microstructure", "diamond")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "microstructure", "diamond", patient_path + "_diamond_residuals.nii.gz"))
+
+
+    # Delete all the intermediate files of the dti folder
+    if os.path.exists(os.path.join(subject_main_path, "dMRI", "microstructure", "dti")):
+        shutil.rmtree(os.path.join(subject_main_path, "dMRI", "microstructure", "dti", patient_path + "_residual.nii.gz"))
+
+
+
+    # delete slurm files in dti folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "microstructure", "dti") + '/slurm-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")
+
+    # delete slurm files in noddi folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "microstructure", "noddi") + '/slurm-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")
+
+    # delete slurm files in mf folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "microstructure", "mf") + '/slurm-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")
+
+    # delete slurm files in diamond folder
+    slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "microstructure", "diamond") + '/slurm-*', recursive=True)
+    # Iterate over the list of filepaths & remove each file.
+    for slurmfilePath in slurmList:
+        try:
+            os.remove(slurmfilePath)
+        except OSError:
+            print("Error while deleting file")

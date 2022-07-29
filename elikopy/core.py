@@ -15,7 +15,7 @@ import matplotlib
 
 import elikopy.utils
 from elikopy.individual_subject_processing import preproc_solo, dti_solo, white_mask_solo, noddi_solo, diamond_solo, \
-    mf_solo, noddi_amico_solo, ivim_solo, odf_csd_solo, odf_msmtcsd_solo, tracking_solo, verdict_solo
+    mf_solo, noddi_amico_solo, ivim_solo, odf_csd_solo, odf_msmtcsd_solo, tracking_solo, verdict_solo, clean_study_solo
 
 from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall_FA, regall, randomise_all
 
@@ -2095,6 +2095,94 @@ class Elikopy:
         f.write("[Fix icvf] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of fix icvf\n")
         f.close()
 
+    def clean_study(self, folder_path=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, slurm_mem=None):
+        """Clean the study folder for eahc patient.
+
+        example : study.clean_study()
+
+        :param folder_path: the path to the root directory. default=study_folder
+        :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
+        :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
+        :param slurm_email: Email adress to send notification if a task fails. default=None
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
+        log_prefix="CLEAN-STUDY"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        import os.path
+
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of CLEAN-STUDY with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        dest_success = folder_path + "/subjects/subj_list.json"
+        with open(dest_success, 'r') as f:
+            patient_list = json.load(f)
+
+        if patient_list_m:
+            patient_list = patient_list_m
+
+        core_count = 1
+
+        import glob
+
+        # delete slurm files in folder_path
+        slurmList = glob.glob(folder_path + '/slurm-*',
+                              recursive=True)
+        # Iterate over the list of filepaths & remove each file.
+        for slurmfilePath in slurmList:
+            try:
+                os.remove(slurmfilePath)
+            except OSError:
+                print("Error while deleting file")
+
+        job_list = []
+        f=open(folder_path + "/logs.txt", "a+")
+        for p in patient_list:
+            patient_path = p
+
+
+            if slurm:
+                p_job = {
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import clean_study_solo; clean_study_solo(\"" + folder_path + "/\",\"" + p + "\")'",
+                        "job_name": "CLEAN-STUDY_" + p,
+                        "ntasks": 1,
+                        "cpus_per_task": 1,
+                        "mem_per_cpu": 4096,
+                        "time": "00:25:00",
+                        "mail_user": slurm_email,
+                        "mail_type": "FAIL",
+                        "output": folder_path + '/subjects/' + patient_path + "/slurm-%j.out",
+                        "error": folder_path + '/subjects/' + patient_path + "/slurm-%j.err",
+                    }
+                #p_job_id = pyslurm.job().submit_batch_job(p_job)
+                p_job["time"] = p_job["time"] if slurm_timeout is None else slurm_timeout
+                p_job["mem_per_cpu"] = p_job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+                p_job_id = {}
+                p_job_id["id"] = submit_job(p_job)
+                p_job_id["name"] = p
+                job_list.append(p_job_id)
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+            else:
+                clean_study_solo(folder_path + "/", p)
+                matplotlib.pyplot.close(fig='all')
+                f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied CLEAN-STUDY on patient %s\n" % p)
+                f.flush()
+        f.close()
+
+        #Wait for all jobs to finish
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, log_prefix)
+
+        f=open(folder_path + "/logs.txt", "a+")
+        f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of CLEAN-STUDY\n")
+        f.close()
+
 
     def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, slurm_path=None):
         """ A wrapper function that apply a function given as an argument to every subject of the study. The wrapped function must takes two arguments as input, the patient\_name and the path to the root of the study.
@@ -2111,6 +2199,18 @@ class Elikopy:
         :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
+
+        confirmation = input("Do you really want to clean the study folder? True or False? Warning: this action is irreversible!")
+        
+        if confirmation == "False":
+            print("Cleaning cancelled")
+            return
+        elif confirmation == "True":
+            pass
+        else:
+            print("Invalid response, cleaning cancelled")
+            return
+
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
