@@ -2112,6 +2112,18 @@ class Elikopy:
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
 
+        confirmation = input(
+            "Do you really want to clean the study folder? True or False? Warning: this action is irreversible!")
+
+        if confirmation == "False":
+            print("Cleaning cancelled")
+            return
+        elif confirmation == "True":
+            pass
+        else:
+            print("Invalid response, cleaning cancelled")
+            return
+
         import os.path
 
 
@@ -2200,16 +2212,6 @@ class Elikopy:
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
 
-        confirmation = input("Do you really want to clean the study folder? True or False? Warning: this action is irreversible!")
-        
-        if confirmation == "False":
-            print("Cleaning cancelled")
-            return
-        elif confirmation == "True":
-            pass
-        else:
-            print("Invalid response, cleaning cancelled")
-            return
 
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
