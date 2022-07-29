@@ -3141,7 +3141,10 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
     output, error = process.communicate()
 
-    fod2fixel_cmd = "fod2fixel -nthreads " + str(core_count) + " -peak peaks.mif" + \
+    if os.path.exists(odf_msmtcsd_path + '/' + "fixel):
+        shutil.rmtree(odf_msmtcsd_path + '/' + "fixel")
+
+    fod2fixel_cmd = "fod2fixel -force -nthreads " + str(core_count) + " -peak peaks.mif" + \
                     " -maxnum " + str(num_peaks) + " " + \
                     odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' + \
                     odf_msmtcsd_path + '/' + "fixel ; "
