@@ -875,14 +875,14 @@ def regall_FA(folder_path, starting_state=None, registration_type="-T", postreg_
                 folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
                 outputdir + "/origdata/" + patient_path + "_FA.nii.gz")
 
-            x_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim1", shell=True));
+            x_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + patient_path + "_FA dim1", shell=True));
             x = x_val - 2
-            y_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim2", shell=True));
+            y_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + patient_path + "_FA dim2", shell=True));
             y = y_val - 2
-            z_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim3", shell=True));
+            z_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + patient_path + "_FA dim3", shell=True));
             z = z_val - 2
 
-            cmd1="fslmaths origdata/" + pref + patient_path + "_FA -min 1 -dilD -ero -ero -roi 1 "+str(x)+" 1 "+str(y)+" 1 "+str(z)+" 0 1 FA/" + pref + patient_path + "_FA"
+            cmd1="fslmaths origdata/" + patient_path + "_FA -min 1 -dilD -ero -ero -roi 1 "+str(x)+" 1 "+str(y)+" 1 "+str(z)+" 0 1 FA/" + patient_path + "_FA"
 
             # create mask (for use in FLIRT & FNIRT)
             cmd2="fslmaths FA/" + patient_path + "_FA -bin FA/" + patient_path + "_FA_mask"
