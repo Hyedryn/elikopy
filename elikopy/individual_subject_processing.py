@@ -1329,6 +1329,25 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     """Eddy quad + SNR/CNR""";
 
     if bool_eddy:
+        if 'multiple_encoding' not in locals():
+            with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
+                topup_acq = [[float(x) for x in line2.split()] for line2 in f]
+            # Check if multiple or single encoding direction
+            multiple_encoding = False
+            curr_x = 0.0
+            curr_y = 0.0
+            curr_z = 0.0
+            first = True
+            print("Topup acq parameters:")
+            print(topup_acq)
+            for acq in topup_acq:
+                if not first and (curr_x != acq[1] or curr_y != acq[2] or curr_z != acq[3]):
+                    multiple_encoding = True
+                first = False
+                curr_x = acq[1]
+                curr_y = acq[2]
+                curr_z = acq[3]
+
         # Do Eddy quad for the subject
         slspec_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'slspec.txt'
         if os.path.isfile(slspec_path):
