@@ -824,13 +824,11 @@ def inference(T1_path, b0_d_path, model, device):
     return img_model
 
 
-def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, core_count=1):
+def regall_FA(folder_path, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, core_count=1):
     """ Register all the subjects Fractional Anisotropy into a common space, skeletonisedd and non skeletonised. This is performed based on TBSS of FSL.
     It is mandatory to have performed DTI prior to regall_FA.
 
     :param folder_path: path to the root directory.
-    :param grp1: List of number corresponding to the type of the subjects to put in the first group.
-    :param grp2: List of number corresponding to the type of the subjects to put in the second group.
     :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise. default=None
     :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
     :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
@@ -867,46 +865,28 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
         makedir(folder_path + "/registration/origdata", folder_path + "/logs.txt", log_prefix)
 
         # transfer the FA files to the TBSS directory
-        numpatient = 0
-        numcontrol = 0
         registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of registration\n")
         registration_log.flush()
-        type_dict = {}
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
-            control_info = subj_type[patient_path]
 
-            if control_info not in grp1 and control_info not in grp2:
-                continue
+            shutil.copyfile(
+                folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
+                outputdir + "/origdata/" + patient_path + "_FA.nii.gz")
 
-            if control_info in grp1:
-                shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/origdata/control" + str(numcontrol) + "_" + patient_path + "_FA.nii.gz")
-                pref = "control" + str(numcontrol) + "_"
-                numcontrol += 1
-                type_dict[pref] = patient_path
-            if control_info in grp2:
-                shutil.copyfile(
-                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/dti/' + patient_path + "_FA.nii.gz",
-                    outputdir + "/origdata/case" + str(numpatient) + "_" + patient_path + "_FA.nii.gz")
-                pref = "case" + str(numpatient) + "_"
-                numpatient += 1
-                type_dict[pref] = patient_path
-
-            x_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim1", shell=True));
+            x_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + patient_path + "_FA dim1", shell=True));
             x = x_val - 2
-            y_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim2", shell=True));
+            y_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + patient_path + "_FA dim2", shell=True));
             y = y_val - 2
-            z_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + pref + patient_path + "_FA dim3", shell=True));
+            z_val = int(subprocess.check_output("cd " + outputdir + "; fslval origdata/" + patient_path + "_FA dim3", shell=True));
             z = z_val - 2
 
-            cmd1="fslmaths origdata/" + pref + patient_path + "_FA -min 1 -dilD -ero -ero -roi 1 "+str(x)+" 1 "+str(y)+" 1 "+str(z)+" 0 1 FA/" + pref + patient_path + "_FA"
+            cmd1="fslmaths origdata/" + patient_path + "_FA -min 1 -dilD -ero -ero -roi 1 "+str(x)+" 1 "+str(y)+" 1 "+str(z)+" 0 1 FA/" + patient_path + "_FA"
 
             # create mask (for use in FLIRT & FNIRT)
-            cmd2="fslmaths FA/" + pref + patient_path + "_FA -bin FA/" + pref + patient_path + "_FA_mask"
-            cmd3="fslmaths FA/" + pref + patient_path + "_FA_mask -dilD -dilD -sub 1 -abs -add FA/" + pref + patient_path + "_FA_mask FA/" + pref + patient_path + "_FA_mask -odt char"
+            cmd2="fslmaths FA/" + patient_path + "_FA -bin FA/" + patient_path + "_FA_mask"
+            cmd3="fslmaths FA/" + patient_path + "_FA_mask -dilD -dilD -sub 1 -abs -add FA/" + patient_path + "_FA_mask FA/" + patient_path + "_FA_mask -odt char"
             bashCommand = 'cd ' + outputdir + '; ' + cmd1 + '; ' + cmd2 + '; ' + cmd3
             bashcmd = bashCommand.split()
             print("Bash command is:\n{}\n".format(bashcmd))
@@ -914,9 +894,6 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
             registration_log.flush()
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=registration_log,stderr=subprocess.STDOUT)
             output, error = process.communicate()
-
-        with open(folder_path + "/registration/"+"tbss_id.json", "w") as write_file:
-            json.dump(type_dict, write_file)
 
         registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of step 1\n")
@@ -961,7 +938,7 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
             "%d.%b %Y %H:%M:%S") + ": Beginning of prestats\n")
         registration_log.flush()
 
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold) + '&& cd ' + outputdir + '/stats ' + ' && design_ttest2 design ' + str(numpatient) + ' ' + str(numcontrol)
+        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + ' && tbss_4_prestats ' + str(prestats_treshold) + '&& cd ' + outputdir + '/stats '
         bashcmd = bashCommand.split()
         print("Bash command is:\n{}\n".format(bashcmd))
         registration_log.write(bashCommand+"\n")
@@ -979,13 +956,11 @@ def regall_FA(folder_path, grp1, grp2, starting_state=None, registration_type="-
     registration_log.flush()
 
 
-def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
+def regall(folder_path, core_count=1 ,metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
     """ Register all the subjects diffusion metrics specified in the argument metrics_dic into a common space using the transformation computed for the FA with the regall_FA function. This is performed based on TBSS of FSL.
     It is mandatory to have performed regall_FA prior to regall.
 
     :param folder_path: path to the root directory.
-    :param grp1: List of number corresponding to the type of the subjects to put in the first group.
-    :param grp2: List of number corresponding to the type of the subjects to put in the second group.
     :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
     :param core_count: Define the number of available core. default=1
     """
@@ -1008,50 +983,21 @@ def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'nod
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
+
     dest_subj_type = folder_path + "/subjects/subj_type.json"
     with open(dest_subj_type, 'r') as f:
         subj_type = json.load(f)
 
-    with open(folder_path + "/registration/"+"tbss_id.json") as json_file:
-        tbss_id = json.load(json_file)
-
     for key, value in metrics_dic.items():
         metric_bool = True
-        type_dict = {}
-        numpatient = 0
-        numcontrol = 0
         makedir(folder_path + "/registration/" + key, folder_path + "/logs.txt", log_prefix)
         for p in patient_list:
             patient_path = os.path.splitext(p)[0]
-            control_info = subj_type[patient_path]
-            if control_info in grp1:
-                metric_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + value + '/' + patient_path + key +".nii.gz"
-                pref = "control" + str(numcontrol) + "_"
-                numcontrol += 1
-                if os.path.isfile(metric_path):
-                    shutil.copyfile(
-                        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + value + '/' + patient_path + key + ".nii.gz",
-                        outputdir + "/" + key + "/" + pref + patient_path + ".nii.gz")
-                    type_dict[pref] = patient_path
-            if control_info in grp2:
-                metric_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + value + '/' + patient_path + key +".nii.gz"
-                pref = "case" + str(numpatient) + "_"
-                numpatient += 1
-                if os.path.isfile(metric_path):
-                    shutil.copyfile(
-                        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + value + '/' + patient_path + key + ".nii.gz",
-                        outputdir + "/" + key + "/" + pref + patient_path + ".nii.gz")
-                    type_dict[pref] = patient_path
-
-        # Verify that the matching between patient and FA is equivalent to the matching between patient and the computed metric
-        if type_dict != tbss_id:
-            metric_bool = False
-            registration_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                "%d.%b %Y %H:%M:%S") + ": Unable to process the metric "+ key + " : " +value +"! Some subject have a FA but not the metric!\n")
-            registration_log.write("Subject with FA: \n" +json.dumps(tbss_id, sort_keys=True, indent=4))
-            registration_log.write("Subject with the metric: \n" + json.dumps(type_dict, sort_keys=True, indent=4))
-
-            shutil.rmtree(outputdir + "/" + key + "/",ignore_errors=True)
+            metric_path = folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + value + '/' + patient_path + key + ".nii.gz"
+            if os.path.isfile(metric_path):
+                shutil.copyfile(
+                    folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + value + '/' + patient_path + key + ".nii.gz",
+                    outputdir + "/" + key + "/" + patient_path + ".nii.gz")
 
         if metric_bool:
             bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + ' && tbss_non_FA ' + key
@@ -1073,12 +1019,14 @@ def regall(folder_path, grp1, grp2, core_count=1 ,metrics_dic={'_noddi_odi':'nod
     registration_log.close()
 
 
-def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, regionWiseMean=True, additional_atlases=None):
+def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, regionWiseMean=True, additional_atlases=None):
     """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
     The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
     It is mandatory to have performed regall_FA prior to randomise_all.
 
     :param folder_path: path to the root directory.
+    :param grp1: List of number corresponding to the type of the subjects to put in the first group.
+    :param grp2: List of number corresponding to the type of the subjects to put in the second group.
     :param randomise_numberofpermutation: Define the number of permutations. default=5000
     :param skeletonised: If True, randomize will be using only the white matter skeleton instead of the whole brain. default=True
     :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
@@ -1092,6 +1040,15 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
     assert os.path.isdir(folder_path + "/registration/stats"), "You first need to run regall_FA() before using randomise!"
 
     randomise_log = open(folder_path + "/registration/stats/randomise_log.txt", "a+")
+
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+    dest_subj_type = folder_path + "/subjects/subj_type.json"
+    with open(dest_subj_type, 'r') as f:
+        subj_type = json.load(f)
+
+    ordered_patient_list = sorted(patient_list)
 
     if core_count==1:
         randomise_type= "randomise"
@@ -1116,43 +1073,87 @@ def randomise_all(folder_path,randomise_numberofpermutation=5000,skeletonised=Tr
                 "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
             randomise_log.flush()
 
+            patient_error = False
+            design_mat =[]
+            for p in ordered_patient_list:
+                patient_path = os.path.splitext(p)[0]
+                control_info = subj_type[patient_path]
+
+                if control_info not in grp1 and control_info not in grp2:
+                    if (not os.path.exists(outputdir + "/origdata/" + patient_path + "_FA.nii.gz") or \
+                        not True):
+                        print("Error REG FA or REG " + key + " " + value + "does not exist for " + patient_path)
+                    else:
+                        design_mat.append("0 0\n")
+                elif control_info in grp1:
+                    if (not os.path.exists(outputdir + "/origdata/" + patient_path + "_FA.nii.gz") or \
+                        not True):
+                        print("Error REG FA or REG " + key + " " + value + "does not exist for " + patient_path)
+                    else:
+                        design_mat.append("1 0\n")
+                elif control_info in grp2:
+                    if (not os.path.exists(outputdir + "/origdata/" + patient_path + "_FA.nii.gz") or \
+                        not True):
+                        print("Error REG FA or REG " + key + " " + value + "does not exist for " + patient_path)
+                    else:
+                        design_mat.append("0 1\n")
+                else:
+                    print("ERROR, Aborting randomise for " + key + " " + value)
+                    patient_error = True
+                    break
+
+            if not patient_error:
+                # Generate design.mat and design.con files
+                with open(outputdir + '/stats/design.mat', 'w') as f:
+                    f.write("/NumWaves 2\n")
+                    f.write("/NumPoints " + str(len(design_mat)) + "\n")
+                    f.write("/PPheights 1 1\n")
+                    f.write("/Matrix\n")
+                    f.writelines(design_mat)
+
+                with open(outputdir + '/stats/design.con', 'w') as f:
+                    f.write("/NumWaves 2\n")
+                    f.write("/NumContrasts 2\n")
+                    f.write("/PPheights 1 1\n")
+                    f.write("/Matrix\n")
+                    f.write("1 -1\n")
+                    f.write("-1 1\n")
+
+                bashcmd1 = bashCommand1.split()
+                print("Bash command is:\n{}\n".format(bashcmd1))
+                randomise_log.write(bashCommand1+"\n")
+                randomise_log.flush()
+                process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=randomise_log,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+
+                randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": End of randomise\n")
+                randomise_log.flush()
 
 
-            bashcmd1 = bashCommand1.split()
-            print("Bash command is:\n{}\n".format(bashcmd1))
-            randomise_log.write(bashCommand1+"\n")
-            randomise_log.flush()
-            process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=randomise_log,
-                                       stderr=subprocess.STDOUT)
-            output, error = process.communicate()
+                randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": Beginning of autoaq\n")
+                randomise_log.flush()
 
-            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                "%d.%b %Y %H:%M:%S") + ": End of randomise\n")
-            randomise_log.flush()
+                bashcmd2 = bashCommand2.split()
+                print("Bash command is:\n{}\n".format(bashcmd2))
+                randomise_log.write(bashCommand2+"\n")
+                randomise_log.flush()
+                process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=randomise_log,stderr=subprocess.STDOUT)
+                output, error = process.communicate()
 
+                bashcmd3 = bashCommand3.split()
+                print("Bash command is:\n{}\n".format(bashcmd3))
+                randomise_log.write(bashCommand3 + "\n")
+                randomise_log.flush()
+                process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=randomise_log,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
 
-            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                "%d.%b %Y %H:%M:%S") + ": Beginning of autoaq\n")
-            randomise_log.flush()
-
-            bashcmd2 = bashCommand2.split()
-            print("Bash command is:\n{}\n".format(bashcmd2))
-            randomise_log.write(bashCommand2+"\n")
-            randomise_log.flush()
-            process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=randomise_log,stderr=subprocess.STDOUT)
-            output, error = process.communicate()
-
-            bashcmd3 = bashCommand3.split()
-            print("Bash command is:\n{}\n".format(bashcmd3))
-            randomise_log.write(bashCommand3 + "\n")
-            randomise_log.flush()
-            process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=randomise_log,
-                                       stderr=subprocess.STDOUT)
-            output, error = process.communicate()
-
-            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                "%d.%b %Y %H:%M:%S") + ": End of autoaq\n")
-            randomise_log.flush()
+                randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": End of autoaq\n")
+                randomise_log.flush()
 
         if regionWiseMean:
             randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(

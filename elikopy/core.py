@@ -1799,13 +1799,11 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of Export\n")
         f.close()
 
-    def regall_FA(self, folder_path=None, grp1=None, grp2=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def regall_FA(self, folder_path=None, starting_state=None, registration_type="-T", postreg_type="-S", prestats_treshold=0.2, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Register all the subjects Fractional Anisotropy into a common space, skeletonisedd and non skeletonised. This is performed based on TBSS of FSL.
         It is mandatory to have performed DTI prior to regall_FA.
 
         :param folder_path: the path to the root directory. default=study_folder
-        :param grp1: List of number corresponding to the type of the subjects to put in the first group.
-        :param grp2: List of number corresponding to the type of the subjects to put in the second group.
         :param starting_state: Manually set which step of TBSS to execute first. Could either be None, reg, post_reg, prestats, design or randomise. default=None
         :param registration_type: Define the argument used by the tbss command tbss_2_reg. Could either by '-T', '-t' or '-n'. If '-T' is used, a FMRIB58_FA standard-space image is used. If '-t' is used, a custom image is used. If '-n' is used, every FA image is align to every other one, identify the "most representative" one, and use this as the target image.
         :param postreg_type: Define the argument used by the tbss command tbss_3_postreg. Could either by '-S' or '-T'. If you wish to use the FMRIB58_FA mean FA image and its derived skeleton, instead of the mean of your subjects in the study, use the '-T' option. Otherwise, use the '-S' option.
@@ -1821,10 +1819,6 @@ class Elikopy:
         assert postreg_type in ("-S", "-T"), 'invalid postreg type!'
         assert starting_state in (None, "reg", "postreg", "prestats"), 'invalid starting state!'
 
-        if grp1 is None:
-            grp1 = [1]
-        if grp2 is None:
-            grp2 = [2]
 
         log_prefix = "REGALL_FA"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -1844,7 +1838,7 @@ class Elikopy:
         f = open(folder_path + "/logs.txt", "a+")
         if slurm:
             job = {
-                "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import regall_FA; regall_FA(\"" + str(folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",starting_state=\"" + str(starting_state) + "\",registration_type=\"" + str(registration_type) + "\",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + ")'",
+                "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import regall_FA; regall_FA(\"" + str(folder_path) + "\",starting_state=\"" + str(starting_state) + "\",registration_type=\"" + str(registration_type) + "\",postreg_type=\"" + str(postreg_type) + "\",prestats_treshold=" + str(prestats_treshold) + ")'",
                 "job_name": "regall_FA",
                 "ntasks": 1,
                 "cpus_per_task": core_count,
@@ -1863,7 +1857,7 @@ class Elikopy:
             job_list.append(p_job_id)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            regall_FA(folder_path=folder_path, grp1=grp1, grp2=grp2, starting_state=starting_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold, core_count=core_count)
+            regall_FA(folder_path=folder_path, starting_state=starting_state, registration_type=registration_type, postreg_type=postreg_type, prestats_treshold=prestats_treshold, core_count=core_count)
             f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied REGALL_FA \n")
             f.flush()
         f.close()
@@ -1875,14 +1869,12 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of REGALL_FA\n")
         f.close()
 
-    def regall(self, folder_path=None, grp1=None, grp2=None, metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
+    def regall(self, folder_path=None, metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
                slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Register all the subjects diffusion metrics specified in the argument metrics_dic into a common space using the transformation computed for the FA with the regall_FA function. This is performed based on TBSS of FSL.
         It is mandatory to have performed regall_FA prior to regall.
 
         :param folder_path: the path to the root directory. default=study_folder
-        :param grp1: List of number corresponding to the type of the subjects to put in the first group.
-        :param grp2: List of number corresponding to the type of the subjects to put in the second group.
         :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
@@ -1890,12 +1882,6 @@ class Elikopy:
         :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
-
-
-        if grp1 is None:
-            grp1 = [1]
-        if grp2 is None:
-            grp2 = [2]
 
         log_prefix = "REGALL"
         folder_path = self._folder_path if folder_path is None else folder_path
@@ -1917,7 +1903,7 @@ class Elikopy:
         if slurm:
             job = {
                 "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import regall; regall(\"" + str(
-                    folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",metrics_dic=" + str(
+                    folder_path) + "\",metrics_dic=" + str(
                     json.dumps(metrics_dic)) + ")'",
                 "job_name": "regall",
                 "ntasks": 1,
@@ -1938,7 +1924,7 @@ class Elikopy:
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            regall(folder_path=folder_path, grp1=grp1, grp2=grp2, core_count=core_count, metrics_dic=metrics_dic)
+            regall(folder_path=folder_path, core_count=core_count, metrics_dic=metrics_dic)
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied REGALL \n")
             f.flush()
@@ -1953,7 +1939,7 @@ class Elikopy:
         f.close()
 
 
-    def randomise_all(self, folder_path=None,randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}, regionWiseMean=True,
+    def randomise_all(self, folder_path=None, grp1=None, grp2=None, randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}, regionWiseMean=True,
                additional_atlases=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
         The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
@@ -1995,7 +1981,7 @@ class Elikopy:
         if slurm:
             job = {
                 "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
-                    folder_path) + "\",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",core_count=" + str(core_count) + ",regionWiseMean="  + str(regionWiseMean) + ",metrics_dic=" + str(
+                    folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",core_count=" + str(core_count) + ",regionWiseMean="  + str(regionWiseMean) + ",metrics_dic=" + str(
                     json.dumps(metrics_dic)) + ",additional_atlases=" + str(additional_atlases) + ")'",
                 "job_name": "randomise_all",
                 "ntasks": 1,
@@ -2016,7 +2002,7 @@ class Elikopy:
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            randomise_all(folder_path=folder_path, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic,core_count=cpus, regionWiseMean=regionWiseMean, additional_atlases=additional_atlases)
+            randomise_all(folder_path=folder_path, grp1=grp1, grp2=grp2, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic,core_count=cpus, regionWiseMean=regionWiseMean, additional_atlases=additional_atlases)
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied randomise_all \n")
             f.flush()
