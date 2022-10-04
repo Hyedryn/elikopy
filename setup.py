@@ -40,6 +40,7 @@ setuptools.setup(
         'matplotlib',
         'cvxpy',
         'future',
-        'TIME-python'
+        'TIME-python',
+        'scikit-image'
     ],
 )
