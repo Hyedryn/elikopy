@@ -1911,7 +1911,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
     plt.tight_layout()
     plt.savefig(qc_path + "/segmentation.jpg", dpi=300, bbox_inches='tight')
 
-    if os.path.isfile(T1_path):
+    if os.path.isfile(T1_path) and os.path.isfile(T1gibbs_path):
         fig, axs = plt.subplots(3, 1, figsize=(10, 6))
         anat_data, anat_affine = load_nifti(T1_path)
         sl = np.shape(anat_data)[2] // 2 + 15
