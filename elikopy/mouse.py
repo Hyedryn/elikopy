@@ -93,8 +93,8 @@ def convertAndMerge(folder_path, raw_bruker_dicom_subfolder, nifti_bruker_folder
         basedir = os.path.join(nifti_bruker_folder, subject, dirr)
         if not os.path.isfile(os.path.join(basedir, "acquisition_method.txt")):
             continue
-        with open(os.path.join(basedir, "acquisition_method.txt")) as f:
-            method = f.readlines()[0]
+        with open(os.path.join(basedir, "acquisition_method.txt")) as facq_method:
+            method = facq_method.readlines()[0]
 
         if (method == "DtiEpi"):
             print("DtiEpi", dirr)
@@ -133,9 +133,9 @@ def convertAndMerge(folder_path, raw_bruker_dicom_subfolder, nifti_bruker_folder
             np.savetxt(os.path.join(nifti_bruker_folder, subject, "reverse_encoding", subject + ".bval"), bval, newline=' ',
                        fmt="%.42f")
             dwi.to_filename(os.path.join(nifti_bruker_folder, subject, "reverse_encoding", subject + ".nii.gz"))
-            f = open(os.path.join(nifti_bruker_folder, subject, "reverse_encoding", "nVol.txt"), "w")
-            f.write(str(bval.shape[0]))
-            f.close()
+            fnVol = open(os.path.join(nifti_bruker_folder, subject, "reverse_encoding", "nVol.txt"), "w")
+            fnVol.write(str(bval.shape[0]))
+            fnVol.close()
         else:
             print("Unknow acquisition method:", method)
 
