@@ -253,7 +253,7 @@ def preprocessing_solo(folder_path, patient_path, starting_step = None, denoisin
     f.write(msg)
 
     assert starting_step in [None, "denoising", "motion_correction", "brain_extraction", "topup"], "starting_step must be None, denoising, motion_correction, brain_extraction or topup"
-    
+
     global denoised
 
     fdwi = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.nii.gz'
@@ -404,7 +404,7 @@ def preprocessing_solo(folder_path, patient_path, starting_step = None, denoisin
         f.write(msg)
 
     if motion_correction:
-        imain_tot = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/motionCorrection/' + patient_path + 'motionCorrected.nii.gz'
+        imain_tot = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/motionCorrection/' + patient_path + '_motionCorrected.nii.gz'
 
     #############################
     ###      Topup step       ###
