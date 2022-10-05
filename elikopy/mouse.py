@@ -160,7 +160,7 @@ def convertAndMerge(folder_path, raw_bruker_dicom_subfolder, nifti_bruker_folder
     return int(bvals.shape[0])
 
 
-def link(folder_path, nifti_bruker_folder, nVol, subjectName):
+def link(folder_path, nifti_bruker_folder, nVol, subjectName, acqparams_path):
     pattern = re.compile("data_\\d")
     patternNum = re.compile("\\d")
 
@@ -198,8 +198,7 @@ def link(folder_path, nifti_bruker_folder, nVol, subjectName):
         fnVol.close()
         shutil.copyfile(os.path.join(nifti_bruker_folder, "shell_index.txt"), os.path.join(folder_path, typeFolder, "shell_index.txt"))
 
-        raw = folder_path.replace("Merge", "raw/acqparams.txt")
-        fraw = open(raw, 'r')
+        fraw = open(acqparams_path, 'r')
 
         acq = open(os.path.join(folder_path, typeFolder, "acqparams.txt"), "w")
         acq.write(fraw.readline())
@@ -241,7 +240,7 @@ def gen_Nifti(folder_path, raw_bruker_dicom_folder, nifti_bruker_folder):
         if (os.path.isdir(os.path.join(raw_bruker_dicom_folder, file)) and file != 'cleaning_data'):
             raw_bruker_dicom_subfolder = os.path.join(raw_bruker_dicom_folder, file)
             nVol = convertAndMerge(folder_path,raw_bruker_dicom_subfolder, nifti_bruker_folder, file)
-            link(folder_path, os.path.join(nifti_bruker_folder, file), nVol, file)
+            link(folder_path, os.path.join(nifti_bruker_folder, file), nVol, file, os.path.join(raw_bruker_dicom_subfolder, "acqparams.txt"))
 
 
 
