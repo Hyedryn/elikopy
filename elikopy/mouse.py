@@ -242,7 +242,7 @@ def gen_Nifti(folder_path, raw_bruker_dicom_folder, nifti_bruker_folder):
 
 
 
-def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algorithm="mppca_dipy", motion_correction=True, brain_extraction=True, topup=True, core_count = 1):
+def preprocessing_solo(folder_path, patient_path, starting_step = None, denoising=True, denoising_algorithm="mppca_dipy", motion_correction=True, brain_extraction=True, topup=True, core_count = 1):
     p = patient_path
     log_prefix = "MOUSE PREPROC SOLO"
     makedir(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/", folder_path + "/logs.txt", log_prefix)
@@ -252,25 +252,26 @@ def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algo
     print(msg)
     f.write(msg)
 
+    assert starting_step in [None, "denoising", "motion_correction", "brain_extraction", "topup"], "starting_step must be None, denoising, motion_correction, brain_extraction or topup"
+    
     global denoised
 
     fdwi = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.nii.gz'
     fbval = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval"
     fbvec = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec"
 
-    fcorr_dwi = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
-    fcorr_bval = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval"
-    fcorr_bvec = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec"
-
-    data, affine = load_nifti(fdwi)
-    bvals, bvecs = read_bvals_bvecs(fbval, fbvec)
-    gtab = gradient_table(bvals, bvecs, b0_threshold=65)
-
     denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/denoising/'
     motionCorr_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/motionCorrection/'
     topup_path = folder_path + '/subjects/' + patient_path + "/dMRI/preproc/topup"
     brainExtraction_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/brainExtraction/'
     mask_path = folder_path + '/subjects/' + patient_path + '/masks/'
+
+    data, affine = load_nifti(fdwi)
+    bvals, bvecs = read_bvals_bvecs(fbval, fbvec)
+    if starting_step not in ["denoising", "motion_correction", None] and motion_correction:
+        bvals, bvecs = read_bvals_bvecs(motionCorr_path + patient_path + '_motionCorrected.bval', motionCorr_path + patient_path + '_motionCorrected.bvec')
+    gtab = gradient_table(bvals, bvecs, b0_threshold=65)
+
 
     imain_tot = fdwi
 
@@ -283,7 +284,7 @@ def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algo
     ############################
     ### MPPCA Denoising step ###
     ############################
-    if denoising:
+    if denoising and starting_step not in ["motion_correction", "topup", "brain_extraction"]:
         msg = "[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Start of denoising step \n"
         print(msg)
@@ -349,15 +350,19 @@ def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algo
 
         save_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz', denoised.astype(np.float32), affine)
         data = denoised
+
+    if denoising:
         imain_tot = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/denoisingMPPCA/' + patient_path + '_mppca.nii.gz'
 
     ##############################
     ### Motion correction step ###
     ##############################
 
-    if motion_correction:
+    if motion_correction and starting_step not in ["topup", "brain_extraction"]:
         makedir(motionCorr_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
+        if starting_step == "motion_correction":
+            data, affine = load_nifti(imain_tot)
 
         msg = "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + \
               ": " + " Motion correction step.\n"
@@ -398,17 +403,23 @@ def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algo
         print(msg)
         f.write(msg)
 
+    if motion_correction:
         imain_tot = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/motionCorrection/' + patient_path + 'motionCorrected.nii.gz'
 
     #############################
     ###      Topup step       ###
     #############################
 
-    if topup:
+    if topup and starting_step not in ["brain_extraction"]:
         msg = "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + \
               ": " + " Start of topup step\n"
         print(msg)
         f.write(msg)
+        makedir(topup_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt",
+                log_prefix)
+
+        if starting_step == "topup":
+            data, affine = load_nifti(imain_tot)
 
         multiple_encoding = False
         topup_log = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/topup/topup_logs.txt", "a+")
@@ -496,6 +507,9 @@ def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algo
 
         topup_log.close()
 
+    if topup:
+        imain_tot = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr.nii.gz'
+
     #############################
     ### Brain extraction step ###
     #############################
@@ -504,6 +518,9 @@ def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algo
               ": " + " Start of brain extraction step\n"
         print(msg)
         f.write(msg)
+
+        if starting_step == "brain_extraction":
+            data, affine = load_nifti(imain_tot)
 
         makedir(brainExtraction_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
         makedir(mask_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
