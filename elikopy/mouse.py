@@ -292,8 +292,8 @@ def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algo
         makedir(denoising_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         shell_index = []
-        with open(os.path.join(folder_path, "data_" + str(subj_type[patient_path]), "shell_index.txt"), "r") as f:
-            for line in f:
+        with open(os.path.join(folder_path, "data_" + str(subj_type[patient_path]), "shell_index.txt"), "r") as fshell:
+            for line in fshell:
                 shell_index.append(int(line.strip()))
 
         denoised = data.copy()
@@ -413,13 +413,13 @@ def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algo
         multiple_encoding = False
         topup_log = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/topup/topup_logs.txt", "a+")
 
-        with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt') as f:
-            line = f.read()
+        with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt') as findex:
+            line = findex.read()
             line = " ".join(line.split())
             topup_index = [int(s) for s in line.split(' ')]
 
-        with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
-            topup_acq = [[float(x) for x in line2.split()] for line2 in f]
+        with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as facqparams:
+            topup_acq = [[float(x) for x in line2.split()] for line2 in facqparams]
 
         # Find all the bo to extract.
         current_index = 0
