@@ -902,7 +902,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of ODF CSD\n")
         f.close()
 
-    def odf_msmtcsd(self, folder_path=None, num_peaks = 2, peaks_threshold=0.25, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def odf_msmtcsd(self, folder_path=None, num_peaks = 2, peaks_threshold=0.25, maskType="brain_mask_dilated", slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the odf using MSMT-CSD for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
 
         example : study.odf_msmtcsd()
@@ -922,6 +922,7 @@ class Elikopy:
 
         import os.path
 
+        assert maskType in ["brain_mask_dilated", "brain_mask"], "maskType must be either brain_mask_dilated or brain_mask"
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of ODF MSMT-CSD with slurm:" + str(slurm) + "\n")
@@ -946,7 +947,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_msmtcsd_solo; odf_msmtcsd_solo(\"" + folder_path + "/\",\"" + p + "\", num_peaks =" + str(num_peaks) + ", core_count=" + str(core_count) + ", peaks_threshold="+ str(peaks_threshold) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import odf_msmtcsd_solo; odf_msmtcsd_solo(\"" + folder_path + "/\",\"" + p + "\", num_peaks =" + str(num_peaks) + ", core_count=" + str(core_count) + ", maskType=\"" + str(maskType) + "\", peaks_threshold="+ str(peaks_threshold) + ")'",
                         "job_name": "MSMTCSD_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -967,7 +968,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                odf_msmtcsd_solo(folder_path + "/", p, num_peaks=num_peaks, peaks_threshold=peaks_threshold, core_count=core_count)
+                odf_msmtcsd_solo(folder_path + "/", p, num_peaks=num_peaks, peaks_threshold=peaks_threshold, core_count=core_count, maskType=maskType)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied ODF MSMT-CSD on patient %s\n" % p)
                 f.flush()

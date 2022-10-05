@@ -3103,7 +3103,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     f.close()
 
 
-def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True):
+def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True, maskType="brain_mask_dilated"):
     """Perform MSMT CSD odf computation and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
 
     :param folder_path: the path to the root directory.
@@ -3134,7 +3134,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
     dwi2fod_cmd = 'dwi2fod msmt_csd -info ' + \
                   '-nthreads ' + str(core_count) + ' -mask ' + \
-                  folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz " + \
+                  folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_" + maskType + ".nii.gz " + \
                   folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz " + \
                   '-fslgrad ' + \
                   folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec " + \
