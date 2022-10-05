@@ -199,14 +199,12 @@ def link(folder_path, nifti_bruker_folder, nVol, subjectName, acqparams_path):
         shutil.copyfile(os.path.join(nifti_bruker_folder, "shell_index.txt"), os.path.join(folder_path, typeFolder, "shell_index.txt"))
 
         fraw = open(acqparams_path, 'r')
-
         acq = open(os.path.join(folder_path, typeFolder, "acqparams.txt"), "w")
         acq.write(fraw.readline())
         acq.close()
         acq = open(os.path.join(folder_path, typeFolder, "reverse_encoding", "acqparams.txt"), "w")
         acq.write(fraw.readline())
         acq.close()
-
         fraw.close()
 
     subjectPath = os.path.join(nifti_bruker_folder, subjectName)
@@ -247,6 +245,7 @@ def gen_Nifti(folder_path, raw_bruker_dicom_folder, nifti_bruker_folder):
 def preprocessing_solo(folder_path, patient_path, denoising=True, denoising_algorithm="mppca_dipy", motion_correction=True, brain_extraction=True, topup=True, core_count = 1):
     p = patient_path
     log_prefix = "MOUSE PREPROC SOLO"
+    makedir(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/", folder_path + "/logs.txt", log_prefix)
     f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
     msg = "[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for mouse %s \n" % p
