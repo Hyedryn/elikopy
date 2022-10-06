@@ -1019,7 +1019,75 @@ def regall(folder_path, core_count=1 ,metrics_dic={'_noddi_odi':'noddi','_mf_fvf
     registration_log.close()
 
 
-def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, regionWiseMean=True, additional_atlases=None):
+def regionWiseMean(folder_path, additional_atlases=None, metrics_dic={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}):
+    """ The mean value of the diffusion metrics across atlases regions are reported in CSV files. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
+    It is mandatory to have performed regall_FA prior to regionWiseMean.
+
+    :param folder_path: path to the root directory.
+    :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
+    :param additional_atlases:  Define additional atlases to be used as segmentation template for csv generation (see regionWiseMean). Dictionary is in the form {'Atlas_name_1':["path to atlas 1 xml","path to atlas 1 nifti"],'Atlas_name_1':["path to atlas 2 xml","path to atlas 2 nifti"]}.
+    """
+    outputdir = folder_path + "/registration"
+    log_prefix = "regionWiseMean"
+
+    assert os.path.isdir(
+        folder_path + "/registration/stats"), "You first need to run regall_FA() before using regionWiseMean!"
+
+    regionWiseMean_log = open(outputdir + "/regionWiseMean_log.txt", "a+")
+
+    for key, value in metrics_dic.items():
+        regionWiseMean_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Starting region based analysis\n")
+        regionWiseMean_log.flush()
+
+        import pandas as pd
+        import lxml.etree as etree
+        from dipy.io.image import load_nifti
+
+        # path to the atlas directory of FSL
+        fsldir = os.getenv('FSLDIR')
+        atlas_path = fsldir + "/data/atlases"
+
+        # list of directory and their labels
+        xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml",
+                   atlas_path + "/HarvardOxford-Subcortical.xml", atlas_path + "/JHU-tracts.xml"]
+        atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz",
+                   atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz",
+                   atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz",
+                   atlas_path + "/JHU/JHU-ICBM-tracts-prob-1mm.nii.gz"]
+        name = ["MNI", "HarvardCortical", "HarvardSubcortical", "JHUWhiteMatterTractography"]
+        if additional_atlases:
+            xmlName = xmlName + list(map(list, zip(*list(additional_atlases.values()))))[0]
+            atlases = atlases + list(map(list, zip(*list(additional_atlases.values()))))[1]
+            name = name + list(additional_atlases.keys())
+        # open the data
+        data, data_affine = load_nifti(outputdir + '/stats/all_' + key + '.nii.gz')
+
+        for iteration in range(len(atlases)):
+
+            # read the labels in xml file
+            x = etree.parse(xmlName[iteration])
+            labels = []
+            for elem in x.iter():
+                if elem.tag == 'label':
+                    labels.append([elem.attrib['index'], elem.text])
+            labels = np.array(labels)[:, 1]
+
+            # open the atlas
+            atlas, atlas_affine = load_nifti(atlases[iteration])
+
+            matrix = np.zeros((np.shape(data)[-1], np.shape(atlas)[-1]))
+            for i in range(np.shape(atlas)[-1]):
+                for j in range(np.shape(data)[-1]):
+                    patient = data[..., j]
+                    region = atlas[..., i]
+                    mean_fa = np.sum(patient * region) / np.sum(region)
+                    matrix[j, i] = mean_fa
+            df = pd.DataFrame(matrix, columns=labels)
+            df.to_csv(outputdir + '/stats/regionWise_' + name[iteration] + key + '.csv')
+
+
+def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000, skeletonised=True, metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},core_count=1, additional_atlases=None):
     """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
     The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
     It is mandatory to have performed regall_FA prior to randomise_all.
@@ -1030,16 +1098,19 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000,sk
     :param randomise_numberofpermutation: Define the number of permutations. default=5000
     :param skeletonised: If True, randomize will be using only the white matter skeleton instead of the whole brain. default=True
     :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
-    :param regionWiseMean: If true, csv containing atlas-based region wise mean will be generated.
     :param core_count: Number of allocated cpu core. default=1
     :param additional_atlases:  Define additional atlases to be used as segmentation template for csv generation (see regionWiseMean). Dictionary is in the form {'Atlas_name_1':["path to atlas 1 xml","path to atlas 1 nifti"],'Atlas_name_1':["path to atlas 2 xml","path to atlas 2 nifti"]}.
     """
     outputdir = folder_path + "/registration"
     log_prefix = "randomise"
 
+    outputdir_group = folder_path + "/registration/stats/" + "G1" + tuple(grp1) + "_G2" + tuple(grp2) + "/"
+
+    makedir(outputdir_group, folder_path + "/logs.txt", log_prefix)
+
     assert os.path.isdir(folder_path + "/registration/stats"), "You first need to run regall_FA() before using randomise!"
 
-    randomise_log = open(folder_path + "/registration/stats/randomise_log.txt", "a+")
+    randomise_log = open(outputdir_group + "randomise_log.txt", "a+")
 
     dest_success = folder_path + "/subjects/subj_list.json"
     with open(dest_success, 'r') as f:
@@ -1056,16 +1127,17 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000,sk
         randomise_type = "randomise_parallel"
 
     for key, value in metrics_dic.items():
-
         if skeletonised:
             outkey = key + '_skeletonised'
-            bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && ' + randomise_type + ' -i all_' + key + '_skeletonised -o '+ outkey +' -m mean_FA_skeleton_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
+            bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir_group + ' ' + ' && ' + randomise_type + ' -i ../all_' + key + '_skeletonised -o '+ outkey +' -m ../mean_FA_skeleton_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
         else:
             outkey = key
-            bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && ' + randomise_type + ' -i all_' + key + ' -o ' + key + ' -m mean_FA_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
+            bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir_group + ' ' + ' && ' + randomise_type + ' -i ../all_' + key + ' -o ' + key + ' -m ../mean_FA_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
 
-        bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_cortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_cortical.txt'
-        bashCommand3 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir + '/stats ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_cortical.txt'
+        randomise_log_metrics = open(folder_path + "/registration/stats/randomise_log_" + outkey + "_g1" + tuple(grp1) + "_g2" + tuple(grp2) + ".txt", "a+")
+
+        bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir_group + ' ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_cortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_cortical.txt'
+        bashCommand3 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir_group + ' ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_cortical.txt'
 
 
         if randomise_numberofpermutation > 0:
@@ -1104,14 +1176,14 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000,sk
 
             if not patient_error:
                 # Generate design.mat and design.con files
-                with open(outputdir + '/stats/design.mat', 'w') as f:
+                with open(outputdir_group + '/design.mat', 'w') as f:
                     f.write("/NumWaves 2\n")
                     f.write("/NumPoints " + str(len(design_mat)) + "\n")
                     f.write("/PPheights 1 1\n")
                     f.write("/Matrix\n")
                     f.writelines(design_mat)
 
-                with open(outputdir + '/stats/design.con', 'w') as f:
+                with open(outputdir_group + '/design.con', 'w') as f:
                     f.write("/NumWaves 2\n")
                     f.write("/NumContrasts 2\n")
                     f.write("/PPheights 1 1\n")
@@ -1123,7 +1195,7 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000,sk
                 print("Bash command is:\n{}\n".format(bashcmd1))
                 randomise_log.write(bashCommand1+"\n")
                 randomise_log.flush()
-                process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=randomise_log,
+                process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=randomise_log_metrics,
                                            stderr=subprocess.STDOUT)
                 output, error = process.communicate()
 
@@ -1140,14 +1212,14 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000,sk
                 print("Bash command is:\n{}\n".format(bashcmd2))
                 randomise_log.write(bashCommand2+"\n")
                 randomise_log.flush()
-                process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=randomise_log,stderr=subprocess.STDOUT)
+                process = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=randomise_log_metrics,stderr=subprocess.STDOUT)
                 output, error = process.communicate()
 
                 bashcmd3 = bashCommand3.split()
                 print("Bash command is:\n{}\n".format(bashcmd3))
                 randomise_log.write(bashCommand3 + "\n")
                 randomise_log.flush()
-                process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=randomise_log,
+                process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=randomise_log_metrics,
                                            stderr=subprocess.STDOUT)
                 output, error = process.communicate()
 
@@ -1155,53 +1227,7 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000,sk
                     "%d.%b %Y %H:%M:%S") + ": End of autoaq\n")
                 randomise_log.flush()
 
-        if regionWiseMean:
-            randomise_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                "%d.%b %Y %H:%M:%S") + ": Starting region based analysis\n")
-            randomise_log.flush()
-
-            import pandas as pd
-            import lxml.etree as etree
-            from dipy.io.image import load_nifti
-
-            # path to the atlas directory of FSL
-            fsldir = os.getenv('FSLDIR')
-            atlas_path = fsldir + "/data/atlases"
-
-            # list of directory and their labels
-            xmlName = [atlas_path + "/MNI.xml", atlas_path + "/HarvardOxford-Cortical.xml", atlas_path + "/HarvardOxford-Subcortical.xml", atlas_path + "/JHU-tracts.xml"]
-            atlases = [atlas_path + "/MNI/MNI-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-cort-prob-1mm.nii.gz", atlas_path + "/HarvardOxford/HarvardOxford-sub-prob-1mm.nii.gz", atlas_path + "/JHU/JHU-ICBM-tracts-prob-1mm.nii.gz"]
-            name = ["MNI", "HarvardCortical", "HarvardSubcortical", "JHUWhiteMatterTractography"]
-            if additional_atlases:
-                xmlName = xmlName + list(map(list, zip(*list(additional_atlases.values()))))[0]
-                atlases = atlases + list(map(list, zip(*list(additional_atlases.values()))))[1]
-                name = name + list(additional_atlases.keys())
-            # open the data
-            data, data_affine = load_nifti(outputdir + '/stats/all_' + key + '.nii.gz')
-
-            for iteration in range(len(atlases)):
-
-                # read the labels in xml file
-                x = etree.parse(xmlName[iteration])
-                labels = []
-                for elem in x.iter():
-                    if elem.tag == 'label':
-                        labels.append([elem.attrib['index'], elem.text])
-                labels = np.array(labels)[:, 1]
-
-                # open the atlas
-                atlas, atlas_affine = load_nifti(atlases[iteration])
-
-                matrix = np.zeros((np.shape(data)[-1], np.shape(atlas)[-1]))
-                for i in range(np.shape(atlas)[-1]):
-                    for j in range(np.shape(data)[-1]):
-                        patient = data[..., j]
-                        region = atlas[..., i]
-                        mean_fa = np.sum(patient * region) / np.sum(region)
-                        matrix[j, i] = mean_fa
-                df = pd.DataFrame(matrix, columns=labels)
-                df.to_csv(outputdir + '/stats/regionWise_' + name[iteration] + key + '.csv')
-
+                randomise_log_metrics.close()
 
     randomise_log.close()
 
