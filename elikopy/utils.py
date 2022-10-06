@@ -1104,7 +1104,7 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000, s
     outputdir = folder_path + "/registration"
     log_prefix = "randomise"
 
-    outputdir_group = folder_path + "/registration/stats/" + "G1" + tuple(grp1) + "_G2" + tuple(grp2) + "/"
+    outputdir_group = folder_path + "/registration/stats/" + "G1" + str(tuple(grp1)) + "_G2" + str(tuple(grp2)) + "/"
 
     makedir(outputdir_group, folder_path + "/logs.txt", log_prefix)
 
@@ -1134,7 +1134,7 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000, s
             outkey = key
             bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir_group + ' ' + ' && ' + randomise_type + ' -i ../all_' + key + ' -o ' + key + ' -m ../mean_FA_mask -d design.mat -t design.con -n ' + str(randomise_numberofpermutation) + ' --T2 --uncorrp'
 
-        randomise_log_metrics = open(folder_path + "/registration/stats/randomise_log_" + outkey + "_g1" + tuple(grp1) + "_g2" + tuple(grp2) + ".txt", "a+")
+        randomise_log_metrics = open(folder_path + "/registration/stats/randomise_log_" + outkey + "_g1" + str(tuple(grp1)) + "_g2" + str(tuple(grp2)) + ".txt", "a+")
 
         bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir_group + ' ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_cortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_corrected_cortical.txt'
         bashCommand3 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd ' + outputdir_group + ' ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report2_uncorrected_cortical.txt'
