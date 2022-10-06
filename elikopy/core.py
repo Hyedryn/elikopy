@@ -1940,8 +1940,8 @@ class Elikopy:
         f.close()
 
 
-    def randomise_all(self, folder_path=None, grp1=None, grp2=None, randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}, regionWiseMean=True,
-               additional_atlases=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def randomise_all(self, folder_path=None, grp1=None, grp2=None, randomise_numberofpermutation=5000,skeletonised=True,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},
+               slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
         The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
         It is mandatory to have performed regall_FA prior to randomise_all.
@@ -1982,8 +1982,8 @@ class Elikopy:
         if slurm:
             job = {
                 "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import randomise_all; randomise_all(\"" + str(
-                    folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",core_count=" + str(core_count) + ",regionWiseMean="  + str(regionWiseMean) + ",metrics_dic=" + str(
-                    json.dumps(metrics_dic)) + ",additional_atlases=" + str(additional_atlases) + ")'",
+                    folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",skeletonised=" + str(skeletonised) + ",core_count=" + str(core_count) + ",metrics_dic=" + str(
+                    json.dumps(metrics_dic)) + ")'",
                 "job_name": "randomise_all",
                 "ntasks": 1,
                 "cpus_per_task": core_count,
@@ -2003,7 +2003,7 @@ class Elikopy:
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
         else:
-            randomise_all(folder_path=folder_path, grp1=grp1, grp2=grp2, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic,core_count=cpus, regionWiseMean=regionWiseMean, additional_atlases=additional_atlases)
+            randomise_all(folder_path=folder_path, grp1=grp1, grp2=grp2, randomise_numberofpermutation=randomise_numberofpermutation, skeletonised=skeletonised, metrics_dic=metrics_dic,core_count=cpus)
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied randomise_all \n")
             f.flush()
