@@ -2629,7 +2629,13 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     from dipy.direction import peaks_from_model
     from dipy.data import default_sphere
 
-    # load data mask
+    # load the data
+    data, affine = load_nifti(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
+    bvals, bvecs = read_bvals_bvecs(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+
     mask_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_' + maskType + '.nii.gz'
     if os.path.isfile(mask_path):
         mask, _ = load_nifti(mask_path)
@@ -2720,45 +2726,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     mf_model = mf.MFModel(dictionary_path)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of DWI normalization\n")
-    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of DWI normalization\n")
-
-    # normalize the DWI
-    dwinormalise_cmd = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + \
-                  'dwinormalise individual ' + \
-                  '-nthreads ' + str(core_count) + ' ' + \
-                  folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz " + \
-                  folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_" + maskType + ".nii.gz " + \
-                  folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + mfdir + '/' + patient_path + "_dmri_preproc_individualNormalized.nii.gz " + \
-                  '-fslgrad ' + \
-                  folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec " + \
-                  folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval " + \
-                  ' -force ; '
-
-    import subprocess
-    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": mrtrix dwinormalise launched for patient %s \n" % p + " with bash command " + dwinormalise_cmd)
-
-    process = subprocess.Popen(dwinormalise_cmd, universal_newlines=True, shell=True, stdout=f,
-                               stderr=subprocess.STDOUT)
-
-    output, error = process.communicate()
-
-    # load the data
-    #data, affine = load_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
-    data, affine = load_nifti(
-        folder_path + '/subjects/' + patient_path + '/dMRI/microstructure/' + mfdir + '/' + \
-        patient_path + "_dmri_preproc_individualNormalized.nii.gz")
-    bvals, bvecs = read_bvals_bvecs(
-        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
-        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
-
-    f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
-    
 
     import time
 
