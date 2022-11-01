@@ -3251,7 +3251,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
 
 
-def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9]):
+def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9], maskType="brain_mask_dilated"):
     """ Computes the IVIM metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/ivim/.
 
     :param folder_path: the path to the root directory.
@@ -3276,6 +3276,8 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
     from dmipy.core.modeling_framework import MultiCompartmentModel
     from dmipy.signal_models.gaussian_models import G1Ball
 
+    assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                        "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
 
     # initialize the compartments model and build the ivim model
     from dmipy.core.modeling_framework import MultiCompartmentModel
@@ -3294,11 +3296,14 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
     bvals, bvecs = read_bvals_bvecs(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
-    wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask.nii.gz'
-    if os.path.isfile(wm_path):
-        mask, _ = load_nifti(wm_path)
+
+    # load data mask
+    mask_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_' + maskType + '.nii.gz'
+    if os.path.isfile(mask_path):
+        mask, _ = load_nifti(mask_path)
     else:
-        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+        mask, _ = load_nifti(
+            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
 
     # transform the bval, bvecs in a form suited for ivim
     from dipy.core.gradients import gradient_table
@@ -3308,12 +3313,13 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
     gtab_dipy = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
     acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy, b0_threshold=b0_threshold*1e6)
 
+    print("Start of ivim_fit_Dfixed for patient %s \n" % p)
     # fit the model to the data
     ivim_fit_Dfixed = ivim_mod.fit(acquisition_scheme=acq_scheme_dmipy, data=data, mask=mask, use_parallel_processing=True, number_of_processors=core_count)
 
-    from dipy.reconst.ivim import IvimModel
-    ivimmodel_dipy = IvimModel(gtab_dipy)
-    ivim_fit_dipy = ivimmodel_dipy.fit(data)
+    #from dipy.reconst.ivim import IvimModel
+    #ivimmodel_dipy = IvimModel(gtab_dipy)
+    #ivim_fit_dipy = ivimmodel_dipy.fit(data)
 
     # exctract the metrics
     fitted_parameters = ivim_fit_Dfixed.fitted_parameters
@@ -3506,7 +3512,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
         json.dump(params, outfile)
     
 
-def verdict_solo(folder_path, p, core_count=1, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
+def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.035, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
     """ Computes the verdict metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/verdict/.
 
     :param folder_path: the path to the root directory.
@@ -3562,7 +3568,7 @@ def verdict_solo(folder_path, p, core_count=1, G1Ball_1_lambda_iso=0.9e-9, C1Sti
     from dmipy.core.acquisition_scheme import gtab_dipy2dmipy
     b0_threshold = np.min(bvals) + 10
     b0_threshold = max(50, b0_threshold)
-    gtab_dipy = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
+    gtab_dipy = gradient_table(bvals, bvecs, b0_threshold=b0_threshold, small_delta=small_delta, big_delta=big_delta)
     acq_scheme_dmipy = gtab_dipy2dmipy(gtab_dipy, b0_threshold=b0_threshold*1e6)
 
     # fit the model to the data

@@ -1392,7 +1392,7 @@ class Elikopy:
         f.close()
 
 
-    def ivim(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9]):
+    def ivim(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9],maskType="brain_mask_dilated"):
         """Computes the IVIM metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/ivim/.
 
         example : study.ivim()
@@ -1409,6 +1409,9 @@ class Elikopy:
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
+        assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                            "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
+
 
         f=open(folder_path + "/logs.txt", "a+")
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Beginning of IVIM with slurm:" + str(slurm) + "\n")
@@ -1435,7 +1438,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import ivim_solo; ivim_solo(\"" + folder_path + "/\",\"" + p + "\",G1Ball_2_lambda_iso=" + str(G1Ball_2_lambda_iso) + ",core_count="+str(core_count)+ ", G1Ball_1_lambda_iso="+str(G1Ball_1_lambda_iso) + ")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import ivim_solo; ivim_solo(\"" + folder_path + "/\",\"" + p + "\",G1Ball_2_lambda_iso=" + str(G1Ball_2_lambda_iso) + ",core_count="+str(core_count)+ ", G1Ball_1_lambda_iso="+str(G1Ball_1_lambda_iso) + " ,maskType=\"" + str(maskType)+ "\")'",
                         "job_name": "ivim_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1457,7 +1460,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                ivim_solo(folder_path + "/",p,core_count=cpus, G1Ball_2_lambda_iso=G1Ball_2_lambda_iso, G1Ball_1_lambda_iso=G1Ball_1_lambda_iso)
+                ivim_solo(folder_path + "/",p,core_count=cpus, G1Ball_2_lambda_iso=G1Ball_2_lambda_iso, G1Ball_1_lambda_iso=G1Ball_1_lambda_iso,maskType=maskType)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied ivim on patient %s\n" % p)
                 f.flush()
@@ -1472,7 +1475,7 @@ class Elikopy:
         f.close()
 
 
-    def verdict(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9], TumorCells_Dconst=0.9e-9):
+    def verdict(self, folder_path=None, patient_list_m=None, big_delta=0.035, small_delta=0.003, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9], TumorCells_Dconst=0.9e-9):
         """Computes the verdict metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/verdict/.
 
         example : study.verdict()
@@ -1515,7 +1518,7 @@ class Elikopy:
             if slurm:
                 core_count = 1 if cpus is None else cpus
                 p_job = {
-                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import verdict_solo; verdict_solo(\"" + folder_path + "/\",\"" + p + "\",G1Ball_1_lambda_iso=" + str(G1Ball_1_lambda_iso) + ",TumorCells_Dconst=" + str(TumorCells_Dconst) + ",core_count="+str(core_count)+ ", C1Stick_1_lambda_par="+str(C1Stick_1_lambda_par) + ")'",
+                        "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import verdict_solo; verdict_solo(\"" + folder_path + "/\",\"" + p + "\",G1Ball_1_lambda_iso=" + str(G1Ball_1_lambda_iso) + ",TumorCells_Dconst=" + str(TumorCells_Dconst) + ",big_delta=" + str(big_delta) + ",small_delta=" + str(small_delta) + ",core_count="+str(core_count)+ ", C1Stick_1_lambda_par="+str(C1Stick_1_lambda_par) + ")'",
                         "job_name": "verdict_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1537,7 +1540,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                verdict_solo(folder_path + "/",p,core_count=cpus, G1Ball_1_lambda_iso=G1Ball_1_lambda_iso, C1Stick_1_lambda_par=C1Stick_1_lambda_par, TumorCells_Dconst=TumorCells_Dconst)
+                verdict_solo(folder_path + "/",p,core_count=cpus, big_delta=big_delta, small_delta=small_delta, G1Ball_1_lambda_iso=G1Ball_1_lambda_iso, C1Stick_1_lambda_par=C1Stick_1_lambda_par, TumorCells_Dconst=TumorCells_Dconst)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied verdict on patient %s\n" % p)
                 f.flush()
