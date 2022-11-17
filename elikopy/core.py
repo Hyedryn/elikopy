@@ -2237,6 +2237,12 @@ class Elikopy:
             else:
                 slurm_path = folder_path + '/subjects/' + patient_path + '/' + slurm_subpath + "/slurm-%j"
 
+            if not (os.path.exists(slurm_path)):
+                try:
+                    os.makedirs(slurm_path)
+                except OSError:
+                    print("Creation of the directory %s failed" % slurm_path)
+
             if slurm:
                 job = {
                     "wrap": "export OMP_NUM_THREADS=" + str(core_count) + " ; export FSLPARALLEL=" + str(
