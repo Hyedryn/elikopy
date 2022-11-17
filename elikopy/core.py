@@ -2186,7 +2186,7 @@ class Elikopy:
         f.close()
 
 
-    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, slurm_path=None):
+    def patientlist_wrapper(self, function, func_args, folder_path=None, patient_list_m=None, filename=None, function_name=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, slurm_subpath=None):
         """ A wrapper function that apply a function given as an argument to every subject of the study. The wrapped function must takes two arguments as input, the patient\_name and the path to the root of the study.
 
         :param folder_path: the path to the root directory. default=study_folder
@@ -2206,7 +2206,6 @@ class Elikopy:
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         slurm_email = self._slurm_email if slurm_email is None else slurm_email
-        slurm_path = folder_path + '/' + "slurm-%j" if slurm_path is None else slurm_path
 
         if slurm:
             assert function_name is not None, "The function name must be defined with slurm"
@@ -2233,6 +2232,10 @@ class Elikopy:
 
         for p in patient_list:
             patient_path = p
+            if slurm_subpath is None:
+                slurm_path = folder_path + '/subjects/' + patient_path + '/' + "slurm-%j"
+            else:
+                slurm_path = folder_path + '/subjects/' + patient_path + '/' + slurm_subpath + "/slurm-%j"
 
             if slurm:
                 job = {
