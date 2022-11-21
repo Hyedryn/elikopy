@@ -58,14 +58,17 @@ def getTransform(static_volume_file, moving_volume_file, mask_file=None, onlyAff
         affine_map = AffineMap(identity,
                                static.shape, static_grid2world,
                                moving.shape, moving_grid2world)
-        resampled = affine_map.transform(moving)
+        
+        if sanity_check:
+        
+            resampled = affine_map.transform(moving)
 
-        regtools.overlay_slices(static, resampled, None, 0,
-                                "Static", "Moving", "resampled_0.png")
-        regtools.overlay_slices(static, resampled, None, 1,
-                                "Static", "Moving", "resampled_1.png")
-        regtools.overlay_slices(static, resampled, None, 2,
-                                "Static", "Moving", "resampled_2.png")
+            regtools.overlay_slices(static, resampled, None, 0,
+                                    "Static", "Moving", "resampled_0.png")
+            regtools.overlay_slices(static, resampled, None, 1,
+                                    "Static", "Moving", "resampled_1.png")
+            regtools.overlay_slices(static, resampled, None, 2,
+                                    "Static", "Moving", "resampled_2.png")
 
         if onlyAffine:
             return affine_map
