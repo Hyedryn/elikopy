@@ -3,7 +3,6 @@ import os
 import shutil
 import json
 
-
 import numpy as np
 import math
 
@@ -3465,6 +3464,8 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     :param msmtCSD: boolean. If True then uses ODF from msmt-CSD, if False from CSD. default=True
     """
     
+    import nibabel as nib
+    from elikopy.utils import dipy_fod_to_mrtrix
     from dipy.io.streamline import load_tractogram, save_trk
     
     patient_path = p
@@ -3479,7 +3480,12 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     else:
         if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"):
             odf_csd_solo(folder_path, p)
-        odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF.nii.gz"
+        if not os.path.isfile(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF_mrtrix.nii.gz"):
+            img = nib.load(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF.nii.gz")
+            data = dipy_fod_to_mrtrix(img.get_fdata())
+            out = nib.Nifti1Image(data, img.affine, img.header)
+            out.to_filename(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF_mrtrix.nii.gz")
+        odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF_mrtrix.nii.gz"
         params['Local modeling']='CSD'
     tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
     mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz"
