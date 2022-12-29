@@ -1122,7 +1122,7 @@ def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000, s
     ordered_patient_list = sorted(patient_list)
 
     if core_count==1:
-        randomise_type= "randomise"
+        randomise_type = "randomise"
     else:
         randomise_type = "randomise_parallel"
 
@@ -1455,3 +1455,31 @@ def tensor_to_peak(t):
     peaks = vec_t[range(vol_shape), idx].reshape(t.shape[:3]+(3,)).real
 
     return peaks
+
+def clean_mask(mask)
+    from skimage.morphology import flood
+
+    mask = mask.copy()
+    mask_filled = mask.copy()
+    for x in range(mask.shape[0]):
+        mask_filled[x, :, :] = flood(mask[x, :, :], (0, 0))
+    mask = np.where(mask_filled == 0, 1, mask)
+
+    mask_filled = mask.copy()
+    for y in range(mask.shape[1]):
+        mask_filled[:, y, :] = flood(mask[:, y, :], (0, 0))
+    mask = np.where(mask_filled == 0, 1, mask)
+
+    mask_filled = mask.copy()
+    for z in range(mask.shape[2]):
+        mask_filled[:, :, z] = flood(mask[:, :, z], (0, 0))
+    mask = np.where(mask_filled == 0, 1, mask)
+
+    center = tuple([np.average(indices) for indices in np.where(mask == 1)])
+    center = tuple([int(point) for point in center])
+
+    mask = flood(mask, center)
+    mask_cleaned = np.zeros((mask.shape))
+    mask_cleaned[mask] = 1
+
+    return mask_cleaned

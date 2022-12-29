@@ -111,7 +111,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         f.close()
 
     if starting_state == None:
+        from elikopy.utils import clean_mask
+
         b0_mask, mask = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass, vol_idx=range(0, np.shape(data)[3]), dilate=bet_dilate)
+        mask = clean_mask(mask)
+
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',mask.astype(np.float32), affine)
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz',b0_mask.astype(np.float32), affine)
         save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz',
@@ -119,6 +123,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         _, mask_nodilate = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass,
                                     vol_idx=range(0, np.shape(data)[3]), dilate=None)
+        mask_nodilate = clean_mask(mask_nodilate)
+
         save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
                    mask_nodilate.astype(np.float32), affine)
 
@@ -3714,8 +3720,6 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
-
-
 
 def report_solo(folder_path,patient_path, slices=None, short=False):
     """ Legacy report function.
