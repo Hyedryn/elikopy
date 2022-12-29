@@ -346,7 +346,6 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None,
     mask_path = ""
     if maskType is not None and os.path.isfile(folder_path + '/subjects/' + p + "/masks/" + p + '_' + maskType + '.nii.gz'):
         mask_path = folder_path + '/subjects/' + p + "/masks/" + p + '_' + maskType + '.nii.gz'
-        mask, _ = load_nifti(mask_path)
     else:
         mask_path = None
 
