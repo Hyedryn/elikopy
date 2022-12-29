@@ -1671,7 +1671,7 @@ def mrtrix_fod_to_dipy(sh):
 
     return sh
 
-def clean_mask(mask)
+def clean_mask(mask):
     from skimage.morphology import flood
 
     mask = mask.copy()
