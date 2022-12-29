@@ -2196,7 +2196,7 @@ class Elikopy:
         :param filename: The name of the file containing the wrapped function (only with slurm /!\)
         :param function_name: The name of the wrapped function (only with slurm /!\)
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
-        :param slurm_email: Email adress to send notification if a task fails. default=None
+        :param slurm_email: Email address to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
         :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
@@ -2210,7 +2210,7 @@ class Elikopy:
         if slurm:
             assert function_name is not None, "The function name must be defined with slurm"
             assert filename is not None, "The filename must be defined with slurm"
-            assert slurm_email is not None, "The email adress must be defined with slurm"
+            assert slurm_email is not None, "The email address must be defined with slurm"
 
         log_prefix = "wrapper_elikopy"
 
@@ -2263,7 +2263,9 @@ class Elikopy:
                 if len(func_args) > 0:
                     for k, v in func_args.items():
                         print(k, v)
-                        if isinstance(v, str):
+                        if isinstance(v, (dict, list, tuple)):
+                            job["wrap"] = job["wrap"] + " , " + str(k) + "=" + str(json.dumps(v)) + ""
+                        elif not isinstance(v, (int, float, bool)):
                             job["wrap"] = job["wrap"] + " , " + str(k) + "=\"" + str(v) + "\""
                         else:
                             job["wrap"] = job["wrap"] + " , " + str(k) + "=" + str(v)
@@ -2278,7 +2280,7 @@ class Elikopy:
                 f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                     "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                function(folder_path, patient_path, *func_args)
+                function(folder_path, patient_path, **func_args)
 
             print("[PatientList Wrapper] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully applied wrap function on patient list on patient %s\n" % p)
