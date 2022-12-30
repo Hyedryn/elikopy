@@ -251,6 +251,21 @@ def regToT1fromB0(reg_path, T1_subject, DWI_subject, mask_file, metrics_dic, fol
         with open(reg_path + 'mapping_DWI_B0_to_T1.p', 'wb') as handle:
             pickle.dump(mapping_DWI_to_T1, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    if not (os.path.exists(folderpath + "/subjects/" + p + "/masks/reg/")):
+        try:
+            os.makedirs(folderpath + "/subjects/" + p + "/masks/reg/")
+        except OSError:
+            print("Creation of the directory %s failed" % folderpath + "/subjects/" + p + "/masks/reg/")
+
+    for maskType in ["brain_mask_dilated","brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                    "wm_mask_Freesurfer_T1"]:
+        in_mask_path = folderpath + "/subjects/" + p + "/masks/" + p + "_" + maskType + ".nii.gz"
+        reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_B0_" + maskType + ".nii.gz"
+        if os.path.exists(in_mask_path):
+            applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                           output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                           mask_static=mask_static, static_fa_file=FA_MNI)
+
     for key, value in metrics_dic.items():
         input_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '/'
         output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_B0/'
@@ -282,6 +297,21 @@ def regToT1fromWMFOD(reg_path, T1_subject, WM_FOD_subject, mask_file, metrics_di
                                          diffeomorph=False, sanity_check=False, DWI=True)
         with open(reg_path + 'mapping_DWI_WMFOD_to_T1.p', 'wb') as handle:
             pickle.dump(mapping_DWI_to_T1, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    if not (os.path.exists(folderpath + "/subjects/" + p + "/masks/reg/")):
+        try:
+            os.makedirs(folderpath + "/subjects/" + p + "/masks/reg/")
+        except OSError:
+            print("Creation of the directory %s failed" % folderpath + "/subjects/" + p + "/masks/reg/")
+
+    for maskType in ["brain_mask_dilated","brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                    "wm_mask_Freesurfer_T1"]:
+        in_mask_path = folderpath + "/subjects/" + p + "/masks/" + p + "_" + maskType + ".nii.gz"
+        reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_WMFOD_" + maskType + ".nii.gz"
+        if os.path.exists(in_mask_path):
+            applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                           output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                           mask_static=mask_static, static_fa_file=FA_MNI)
 
     for key, value in metrics_dic.items():
 
@@ -315,6 +345,21 @@ def regToT1fromAP(reg_path, T1_subject, AP_subject, mask_file, metrics_dic, fold
                                          diffeomorph=False, sanity_check=False, DWI=False)
         with open(reg_path + 'mapping_DWI_AP_to_T1.p', 'wb') as handle:
             pickle.dump(mapping_DWI_to_T1, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    if not (os.path.exists(folderpath + "/subjects/" + p + "/masks/reg/")):
+        try:
+            os.makedirs(folderpath + "/subjects/" + p + "/masks/reg/")
+        except OSError:
+            print("Creation of the directory %s failed" % folderpath + "/subjects/" + p + "/masks/reg/")
+
+    for maskType in ["brain_mask_dilated","brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
+                    "wm_mask_Freesurfer_T1"]:
+        in_mask_path = folderpath + "/subjects/" + p + "/masks/" + p + "_" + maskType + ".nii.gz"
+        reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_AP_" + maskType + ".nii.gz"
+        if os.path.exists(in_mask_path):
+            applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                           output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                           mask_static=mask_static, static_fa_file=FA_MNI)
 
     for key, value in metrics_dic.items():
 

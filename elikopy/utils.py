@@ -1198,7 +1198,7 @@ def regionWiseMean(folder_path, additional_atlases=None, metrics_dic={'_noddi_od
                       name[iteration] + key + '.csv')
 
 
-def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000, skeletonised=True, metrics_dic={'FA': 'dti', '_noddi_odi': 'noddi', '_mf_fvf_tot': 'mf', '_diamond_kappa': 'diamond'}, core_count=1, additional_atlases=None):
+def randomise_all(folder_path, grp1, grp2, randomise_numberofpermutation=5000, skeletonised=True, metrics_dic={'FA': 'dti', '_noddi_odi': 'noddi', '_mf_fvf_tot': 'mf', '_diamond_kappa': 'diamond'}, core_count=1):
     """ Performs tract base spatial statistics (TBSS) between the data in grp1 and grp2 (groups are specified during the call to regall_FA) for each diffusion metric specified in the argument metrics_dic.
     The mean value of the diffusion metrics across atlases regions can also be reported in CSV files using the regionWiseMean flag. The used atlases are : the Harvard-Oxford cortical and subcortical structural atlases, the JHU DTI-based white-matter atlases and the MNI structural atlas
     It is mandatory to have performed regall_FA prior to randomise_all.
@@ -1698,3 +1698,180 @@ def clean_mask(mask):
     mask_cleaned[mask] = 1
 
     return mask_cleaned
+
+def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic={'FA': 'dti_CommonSpace_T1_AP'}, core_count=1, maskType="brain_mask_dilated"):
+    """
+
+    :param folder_path: path to the root directory.
+    :param grp1: List of number corresponding to the type of the subjects to put in the first group.
+    :param grp2: List of number corresponding to the type of the subjects to put in the second group.
+    :param randomise_numberofpermutation: Define the number of permutations. default=5000
+    :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
+    :param core_count: Number of allocated cpu core. default=1
+    """
+    outputdir = folder_path + "/vbm"
+    log_prefix = "vbm"
+
+    from dipy.io.image import load_nifti, save_nifti
+
+    outputdir_group = folder_path + "/vbm/stats/" + "G1" + \
+        str(tuple(grp1)).replace(" ", "") + "_G2" + \
+        str(tuple(grp2)).replace(" ", "") + "/"
+
+    makedir(outputdir_group, folder_path + "/logs.txt", log_prefix)
+
+    vbm_log = open(outputdir_group + "vbm_log.txt", "a+")
+
+    dest_success = folder_path + "/subjects/subj_list.json"
+    with open(dest_success, 'r') as f:
+        patient_list = json.load(f)
+    dest_subj_type = folder_path + "/subjects/subj_type.json"
+    with open(dest_subj_type, 'r') as f:
+        subj_type = json.load(f)
+
+    ordered_patient_list = sorted(patient_list)
+
+    if core_count == 1:
+        randomise_type = "randomise"
+    else:
+        randomise_type = "randomise_parallel"
+
+    for key, value in metrics_dic.items():
+        outkey = value + "_" + key
+        bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && ' + randomise_type + \
+            ' -i all_' + value + "_" + key + ' -o ' + value + "_" + key + ' -m mask_' + value + "_" + key +' -d design_' + value + "_" + key +'.mat -t design_' + value + "_" + key +'.con -n ' + \
+            str(randomise_numberofpermutation) + ' --T2 --uncorrp'
+
+        vbm_log_metrics = open(outputdir_group + "/vbm_log_" + outkey + "_g1" + str(
+            tuple(grp1)).replace(" ", "") + "_g2" + str(tuple(grp2)).replace(" ", "") + ".txt", "a+")
+
+        bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + \
+            '_report1_corrected_cortical.txt && autoaq -i ' + outkey + \
+            '_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_corrected_cortical.txt'
+        bashCommand3 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + \
+            '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + \
+            '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_uncorrected_cortical.txt'
+
+        if randomise_numberofpermutation > 0:
+            vbm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Beginning of randomise\n")
+            vbm_log.flush()
+
+            patient_error = False
+            design_mat = []
+            fslmerge_cmd = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + " && fslmerge -t all_" + value + "_" + key + ".nii.gz "
+            mergedMask = None
+            for p in ordered_patient_list:
+                patient_path = os.path.splitext(p)[0]
+                control_info = subj_type[patient_path]
+
+                metric_path = folder_path + "/subjects/" + patient_path + "/dMRI/microstructure/" + value + "/" + patient_path + "_" + key + ".nii.gz"
+                if "AP" in value:
+                    regType = "AP"
+                elif "B0" in value:
+                    regType = "B0"
+                elif "WMFOD" in value:
+                    regType = "WMFOD"
+                else:
+                    regType = ""
+                mask_path = folder_path + "/subjects/" + patient_path + "/masks/reg/" + patient_path + "_" + regType + "_" + maskType + ".nii.gz"
+                mask = None
+                if control_info not in grp1 and control_info not in grp2:
+                    pass
+                elif control_info in grp1:
+                    if (not os.path.exists(metric_path) or
+                            not True):
+                        print("Error with " + metric_path)
+                    else:
+                        design_mat.append("1 0\n")
+                        fslmerge_cmd += metric_path + " "
+                        mask, _ = load_nifti(mask_path)
+                elif control_info in grp2:
+                    if (not os.path.exists(metric_path) or
+                            not True):
+                        print("Error with " + metric_path)
+                    else:
+                        design_mat.append("0 1\n")
+                        fslmerge_cmd += metric_path + " "
+                        mask, _ = load_nifti(mask_path)
+                else:
+                    print("ERROR, Aborting randomise for " + key + " " + value)
+                    patient_error = True
+                    break
+
+                if mask is not None:
+                    if mergedMask is not None:
+                        mergedMask = np.logical_and(mergedMask, mask)
+                    else:
+                        mergedMask = mask
+
+            save_nifti(outputdir_group + "/mask_" + value + "_" + key + ".nii.gz", mergedMask, None)
+
+            if not patient_error:
+                # Generate design.mat and design.con files
+                with open(outputdir_group + '/design_' + value + "_" + key +'.mat', 'w') as f:
+                    f.write("/NumWaves 2\n")
+                    f.write("/NumPoints " + str(len(design_mat)) + "\n")
+                    f.write("/PPheights 1 1\n")
+                    f.write("/Matrix\n")
+                    f.writelines(design_mat)
+
+                with open(outputdir_group + '/design_' + value + "_" + key +'.con', 'w') as f:
+                    f.write("/NumWaves 2\n")
+                    f.write("/NumContrasts 2\n")
+                    f.write("/PPheights 1 1\n")
+                    f.write("/Matrix\n")
+                    f.write("1 -1\n")
+                    f.write("-1 1\n")
+
+                print("Bash command is:\n{}\n".format(fslmerge_cmd.split()))
+                vbm_log.write(fslmerge_cmd+"\n")
+                vbm_log.flush()
+                process = subprocess.Popen(fslmerge_cmd, universal_newlines=True, shell=True, stdout=vbm_log_metrics,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+
+                bashcmd1 = bashCommand1.split()
+                print("Bash command is:\n{}\n".format(bashcmd1))
+                vbm_log.write(bashCommand1+"\n")
+                vbm_log.flush()
+                process = subprocess.Popen(bashCommand1, universal_newlines=True, shell=True, stdout=vbm_log_metrics,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+
+                vbm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": End of randomise\n")
+                vbm_log.flush()
+
+                vbm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": Beginning of autoaq\n")
+                vbm_log.flush()
+
+                bashcmd2 = bashCommand2.split()
+                print("Bash command is:\n{}\n".format(bashcmd2))
+                vbm_log.write(bashCommand2+"\n")
+                vbm_log.flush()
+                process = subprocess.Popen(bashCommand2, universal_newlines=True,
+                                           shell=True, stdout=vbm_log_metrics, stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+
+                bashcmd3 = bashCommand3.split()
+                print("Bash command is:\n{}\n".format(bashcmd3))
+                vbm_log.write(bashCommand3 + "\n")
+                vbm_log.flush()
+                process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=vbm_log_metrics,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+
+                vbm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": End of autoaq\n")
+                vbm_log.flush()
+
+        vbm_log_metrics.close()
+
+    vbm_log.close()
+
