@@ -378,7 +378,7 @@ def regToT1fromAP(reg_path, T1_subject, AP_subject, mask_file, metrics_dic, fold
                                         mask_static=mask_static, static_fa_file=FA_MNI)
 
 
-def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None, T1_filepath=None, T1wCommonSpace_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz", metrics_dic={'_FA': 'dti', 'RD': 'dti', 'AD': 'dti', 'MD': 'dti'}):
+def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None, T1_filepath=None, T1wCommonSpace_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz", T1wCommonSpaceMask_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain_mask.nii.gz", metrics_dic={'_FA': 'dti', 'RD': 'dti', 'AD': 'dti', 'MD': 'dti'}):
     preproc_folder = folder_path + '/subjects/' + p + '/dMRI/preproc/'
     T1_CommonSpace = os.path.expandvars(T1wCommonSpace_filepath)
     FA_MNI = os.path.expandvars('${FSLDIR}/data/standard/FSL_HCP1065_FA_1mm.nii.gz')
@@ -439,7 +439,10 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None,
                    inverse=False, static_fa_file=T1_CommonSpace)
 
     print("Start of getTransform for DWI to T1")
-    mask_static = os.path.expandvars('${FSLDIR}/data/standard/'+ "MNI152_T1_1mm_brain_mask.nii.gz")
+    if T1wCommonSpaceMask_filepath is not None:
+        mask_static = os.path.expandvars(T1wCommonSpaceMask_filepath)
+    else:
+        mask_static = None
 
     if DWI_type == "B0":
         regToT1fromB0(reg_path, T1_subject, DWI_subject, mask_path, metrics_dic, folder_path, p, mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI)
