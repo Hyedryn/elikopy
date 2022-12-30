@@ -1748,7 +1748,7 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
 
         outkey = value + "_" + key
         bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && ' + randomise_type + \
-            ' -i all_' + value + "_" + key + ' -o ' + value + "_" + key + ' -m mask_' + value + "_" + key +' -d design_' + value + "_" + key +'.mat -t design_' + value + "_" + key +'.con -n ' + \
+            ' -i all_' + value + "_" + key + '_smooth -o ' + value + "_" + key + ' -m mask_' + value + "_" + key +' -d design_' + value + "_" + key +'.mat -t design_' + value + "_" + key +'.con -n ' + \
             str(randomise_numberofpermutation) + ' -T -x --uncorrp'
 
         vbm_log_metrics = open(outputdir_group + "/vbm_log_" + outkey + "_g1" + str(
@@ -1845,6 +1845,15 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
                 vbm_log.write(fslmerge_cmd+"\n")
                 vbm_log.flush()
                 process = subprocess.Popen(fslmerge_cmd, universal_newlines=True, shell=True, stdout=vbm_log_metrics,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+
+                mrfilter_cmd = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + \
+                               " && mrfilter -force -nthreads " + str(core_count) + " all_" + value + "_" + key + ".nii.gz smooth all_" + value + "_" + key + "_smooth.nii.gz ; "
+                print("Bash command is:\n{}\n".format(mrfilter_cmd.split()))
+                vbm_log.write(mrfilter_cmd+"\n")
+                vbm_log.flush()
+                process = subprocess.Popen(mrfilter_cmd, universal_newlines=True, shell=True, stdout=vbm_log_metrics,
                                            stderr=subprocess.STDOUT)
                 output, error = process.communicate()
 
