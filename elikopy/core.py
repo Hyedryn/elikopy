@@ -2020,6 +2020,81 @@ class Elikopy:
             "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of randomise_all\n")
         f.close()
 
+    def vbm(self, folder_path=None, grp1=None, grp2=None, randomise_numberofpermutation=5000,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},maskType="brain_mask_dilated",
+               slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+        """ Performs Voxel Based Morphometry 
+
+        :param folder_path: the path to the root directory. default=study_folder
+        :param randomise_numberofpermutation: Define the number of permutations. default=5000
+        :param grp1: Define the first group of subjects.
+        :param grp2: Define the second group of subjects.
+        :param maskType: Define the mask type to use for the analysis. default=brain_mask_dilated
+        :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
+        :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
+        :param slurm_email: Email adress to send notification if a task fails. default=None
+        :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
+        :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
+        :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
+        """
+
+        log_prefix = "vbm"
+        folder_path = self._folder_path if folder_path is None else folder_path
+        slurm = self._slurm if slurm is None else slurm
+        slurm_email = self._slurm_email if slurm_email is None else slurm_email
+
+        if slurm:
+            assert slurm_email is not None, "The email address must be defined with slurm"
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": Beginning of vbm with slurm:" + str(slurm) + "\n")
+        f.close()
+
+        vbm_path = folder_path + "/vbm"
+        makedir(vbm_path, folder_path + "/logs.txt", log_prefix)
+
+        core_count = 1 if cpus is None else cpus
+
+        job_list = []
+        f = open(folder_path + "/logs.txt", "a+")
+        if slurm:
+            job = {
+                "wrap": "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; python -c 'from elikopy.utils import vbm; vbm(\"" + str(
+                    folder_path) + "\",grp1=" + str(grp1) + ",grp2=" + str(grp2) + ",randomise_numberofpermutation=" + str(randomise_numberofpermutation) + ",maskType=\"" + str(maskType) + "\",core_count=" + str(core_count) + ",metrics_dic=" + str(
+                    json.dumps(metrics_dic)) + ")'",
+                "job_name": "vbm",
+                "ntasks": 1,
+                "cpus_per_task": core_count,
+                "mem_per_cpu": 8096,
+                "time": "20:00:00",
+                "mail_user": slurm_email,
+                "mail_type": "FAIL",
+                "output": vbm_path + '/' + "slurm-%j.out",
+                "error": vbm_path + '/' + "slurm-%j.err",
+            }
+            job["time"] = job["time"] if slurm_timeout is None else slurm_timeout
+            job["mem_per_cpu"] = job["mem_per_cpu"] if slurm_mem is None else slurm_mem
+            p_job_id = {}
+            p_job_id["id"] = submit_job(job)
+            p_job_id["name"] = "vbm"
+            job_list.append(p_job_id)
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
+        else:
+            elikopy.utils.vbm(folder_path=folder_path, grp1=grp1, grp2=grp2, randomise_numberofpermutation=randomise_numberofpermutation, maskType=maskType, metrics_dic=metrics_dic, core_count=cpus)
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Successfully applied vbm \n")
+            f.flush()
+        f.close()
+
+        if slurm:
+            elikopy.utils.getJobsState(folder_path, job_list, "vbm")
+
+        f = open(folder_path + "/logs.txt", "a+")
+        f.write(
+            "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of vbm\n")
+        f.close()
+
     def noddi_fix_icvf_thresholding(self, folder_path=None, patient_list_m=None, fintra_threshold=0.99, fbundle_threshold=0.05,
                  maskType="brain_mask_dilated"):
         """ A function to quickly change the treshold value applied on the icvf metric of noddi without the needs of executing again the full noddi core function.
