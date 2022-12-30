@@ -2265,7 +2265,7 @@ class Elikopy:
                         print(k, v)
                         if isinstance(v, (dict, list, tuple)):
                             job["wrap"] = job["wrap"] + " , " + str(k) + "=" + str(json.dumps(v)) + ""
-                        elif not isinstance(v, (int, float, bool, None)):
+                        elif v is not None and not isinstance(v, (int, float, bool)):
                             job["wrap"] = job["wrap"] + " , " + str(k) + "=\"" + str(v) + "\""
                         else:
                             job["wrap"] = job["wrap"] + " , " + str(k) + "=" + str(v)
