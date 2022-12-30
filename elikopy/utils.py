@@ -1818,7 +1818,7 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
 
                 if mask is not None:
                     if mergedMask is not None:
-                        mergedMask = np.logical_and(mergedMask, mask)
+                        mergedMask = mergedMask * mask
                     else:
                         mergedMask = mask
 
