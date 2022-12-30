@@ -1737,10 +1737,19 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
         randomise_type = "randomise_parallel"
 
     for key, value in metrics_dic.items():
+        if "AP" in value:
+            regType = "AP"
+        elif "B0" in value:
+            regType = "B0"
+        elif "WMFOD" in value:
+            regType = "WMFOD"
+        else:
+            regType = ""
+
         outkey = value + "_" + key
         bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && ' + randomise_type + \
             ' -i all_' + value + "_" + key + ' -o ' + value + "_" + key + ' -m mask_' + value + "_" + key +' -d design_' + value + "_" + key +'.mat -t design_' + value + "_" + key +'.con -n ' + \
-            str(randomise_numberofpermutation) + ' --T2 --uncorrp'
+            str(randomise_numberofpermutation) + ' -T --uncorrp'
 
         vbm_log_metrics = open(outputdir_group + "/vbm_log_" + outkey + "_g1" + str(
             tuple(grp1)).replace(" ", "") + "_g2" + str(tuple(grp2)).replace(" ", "") + ".txt", "a+")
@@ -1770,14 +1779,6 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
                 control_info = subj_type[patient_path]
 
                 metric_path = folder_path + "/subjects/" + patient_path + "/dMRI/microstructure/" + value + "/" + patient_path + "_" + key + ".nii.gz"
-                if "AP" in value:
-                    regType = "AP"
-                elif "B0" in value:
-                    regType = "B0"
-                elif "WMFOD" in value:
-                    regType = "WMFOD"
-                else:
-                    regType = ""
                 mask_path = folder_path + "/subjects/" + patient_path + "/masks/reg/" + patient_path + "_" + regType + "_" + maskType + ".nii.gz"
                 mask = None
                 if control_info not in grp1 and control_info not in grp2:
