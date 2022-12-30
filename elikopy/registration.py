@@ -352,8 +352,14 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None,
 
     if T1_filepath is None:
         T1_subject = folder_path + '/subjects/' + p + '/T1/' + p + "_T1_brain.nii.gz"
+    elif os.path.exists(os.path.join(T1_filepath,p + ".nii.gz")):
+        T1_subject = os.path.join(T1_filepath,p + ".nii.gz")
+    elif os.path.exists(os.path.join(T1_filepath,p + "_T1.nii.gz")):
+        T1_subject = os.path.join(T1_filepath,p + "_T1.nii.gz")
+    elif os.path.exists(os.path.join(T1_filepath,p + "_T1_brain.nii.gz")):
+        T1_subject = os.path.join(T1_filepath,p + "_T1_brain.nii.gz")
     else:
-        T1_subject = T1_filepath
+        raise ValueError("No T1 file found in the T1_filepath folder")
 
     DWI_subject = preproc_folder + p + "_dmri_preproc.nii.gz"
     AP_subject = folder_path + '/subjects/' + p + '/masks/' + p + '_ap.nii.gz'
