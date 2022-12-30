@@ -1749,21 +1749,33 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
         outkey = value + "_" + key
         bashCommand1 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && ' + randomise_type + \
             ' -i all_' + value + "_" + key + ' -o ' + value + "_" + key + ' -m mask_' + value + "_" + key +' -d design_' + value + "_" + key +'.mat -t design_' + value + "_" + key +'.con -n ' + \
-            str(randomise_numberofpermutation) + ' -T --uncorrp'
+            str(randomise_numberofpermutation) + ' -T -x --uncorrp'
 
         vbm_log_metrics = open(outputdir_group + "/vbm_log_" + outkey + "_g1" + str(
             tuple(grp1)).replace(" ", "") + "_g2" + str(tuple(grp2)).replace(" ", "") + ".txt", "a+")
 
-        bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + \
-            outkey + '_report2_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + \
-            '_report1_corrected_cortical.txt && autoaq -i ' + outkey + \
+        bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_tfce_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_tfce_corrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + \
+            '_report1_tfce_corrected_cortical.txt && autoaq -i ' + outkey + \
             '_tfce_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + \
-            outkey + '_report2_corrected_cortical.txt'
-        bashCommand3 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + \
-            outkey + '_report2_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + \
-            '_report1_uncorrected_cortical.txt && autoaq -i ' + outkey + \
+            outkey + '_report2_tfce_corrected_cortical.txt'
+        bashCommand3 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_tfce_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_tfce_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_tfce_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + \
+            '_report1_tfce_uncorrected_cortical.txt && autoaq -i ' + outkey + \
             '_tfce_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + \
-            outkey + '_report2_uncorrected_cortical.txt'
+            outkey + '_report2_tfce_uncorrected_cortical.txt'
+
+
+        bashCommand4 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && autoaq -i ' + outkey + '_vox_corrp_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_vox_corrected_subcortical.txt && autoaq -i ' + outkey + '_vox_corrp_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_vox_corrected_subcortical.txt && autoaq -i ' + outkey + '_vox_corrp_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + \
+            '_report1_vox_corrected_cortical.txt && autoaq -i ' + outkey + \
+            '_vox_corrp_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_vox_corrected_cortical.txt'
+        bashCommand5 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; cd \"' + outputdir_group + '\" ' + ' && autoaq -i ' + outkey + '_vox_p_tstat1 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + outkey + '_report1_vox_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_vox_p_tstat2 -a \"Harvard-Oxford Subcortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_vox_uncorrected_subcortical.txt && autoaq -i ' + outkey + '_vox_p_tstat1 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + outkey + \
+            '_report1_vox_uncorrected_cortical.txt && autoaq -i ' + outkey + \
+            '_vox_p_tstat2 -a \"Harvard-Oxford Cortical Structural Atlas\" -t 0.95 -o ' + \
+            outkey + '_report2_vox_uncorrected_cortical.txt'
 
         if randomise_numberofpermutation > 0:
             vbm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -1860,11 +1872,25 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
                                            shell=True, stdout=vbm_log_metrics, stderr=subprocess.STDOUT)
                 output, error = process.communicate()
 
-                bashcmd3 = bashCommand3.split()
-                print("Bash command is:\n{}\n".format(bashcmd3))
+
+                print("Bash command is:\n{}\n".format(bashCommand3.split()))
                 vbm_log.write(bashCommand3 + "\n")
                 vbm_log.flush()
                 process = subprocess.Popen(bashCommand3, universal_newlines=True, shell=True, stdout=vbm_log_metrics,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+
+                print("Bash command is:\n{}\n".format(bashCommand4.split()))
+                vbm_log.write(bashCommand4 + "\n")
+                vbm_log.flush()
+                process = subprocess.Popen(bashCommand4, universal_newlines=True, shell=True, stdout=vbm_log_metrics,
+                                           stderr=subprocess.STDOUT)
+                output, error = process.communicate()
+
+                print("Bash command is:\n{}\n".format(bashCommand5.split()))
+                vbm_log.write(bashCommand5 + "\n")
+                vbm_log.flush()
+                process = subprocess.Popen(bashCommand5, universal_newlines=True, shell=True, stdout=vbm_log_metrics,
                                            stderr=subprocess.STDOUT)
                 output, error = process.communicate()
 
