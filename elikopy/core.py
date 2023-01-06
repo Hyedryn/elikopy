@@ -2305,11 +2305,11 @@ class Elikopy:
 
         job_list = []
 
-        if os.path.dirname(filename) is not in ["", ".", "./"]:
+        if slurm and os.path.dirname(filename) not in ["", ".", "./"]:
             dirpath = os.path.dirname(filename)
             filename = os.path.basename(filename)
             baseImportCmd = "import sys; sys.path.append('" + dirpath + "'); from " + filename[:-3] + " import " + function_name
-        else:
+        elif slurm:
             baseImportCmd = "from " + filename + " import " + function_name
 
         for p in patient_list:
