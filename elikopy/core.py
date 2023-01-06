@@ -2308,7 +2308,7 @@ class Elikopy:
         if slurm and os.path.dirname(filename) not in ["", ".", "./"]:
             dirpath = os.path.dirname(filename)
             filename = os.path.basename(filename)
-            baseImportCmd = "import sys; sys.path.append('" + dirpath + "'); from " + filename[:-3] + " import " + function_name
+            baseImportCmd = "import sys; sys.path.append(\"" + dirpath + "\"); from " + filename[:-3] + " import " + function_name
         elif slurm:
             baseImportCmd = "from " + filename + " import " + function_name
 
