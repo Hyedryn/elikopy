@@ -2305,6 +2305,13 @@ class Elikopy:
 
         job_list = []
 
+        if os.path.dirname(filename) is not in ["", ".", "./"]:
+            dirpath = os.path.dirname(filename)
+            filename = os.path.basename(filename)
+            baseImportCmd = "import sys; sys.path.append('" + dirpath + "'); from " + filename[:-3] + " import " + function_name
+        else:
+            baseImportCmd = "from " + filename + " import " + function_name
+
         for p in patient_list:
             patient_path = p
             if slurm_subpath is None:
@@ -2321,7 +2328,7 @@ class Elikopy:
             if slurm:
                 job = {
                     "wrap": "export OMP_NUM_THREADS=" + str(core_count) + " ; export FSLPARALLEL=" + str(
-                        core_count) + " ; python -c 'from " + filename + " import "+function_name+"; "+function_name+"(\"" + str(
+                        core_count) + " ; python -c '" + baseImportCmd + "; "+function_name+"(\"" + str(
                         folder_path) + "\",\"" + str(
                         patient_path) + "\"",
                     "job_name": "wrapper_elikopy_" + str(patient_path) + "_" + str(function_name),
