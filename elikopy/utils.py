@@ -1675,6 +1675,7 @@ def clean_mask(mask):
     from skimage.morphology import flood
 
     mask = mask.copy()
+    mask = np.pad(mask, pad_width=1, mode='constant', constant_values=0)
     mask_filled = mask.copy()
     for x in range(mask.shape[0]):
         mask_filled[x, :, :] = flood(mask[x, :, :], (0, 0))
@@ -1696,6 +1697,8 @@ def clean_mask(mask):
     mask = flood(mask, center)
     mask_cleaned = np.zeros((mask.shape))
     mask_cleaned[mask] = 1
+    
+    mask = mask[tuple(slice(1, dim - 1) for dim in mask.shape)]
 
     return mask_cleaned
 
