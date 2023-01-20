@@ -1698,7 +1698,7 @@ def clean_mask(mask):
     mask_cleaned = np.zeros((mask.shape))
     mask_cleaned[mask] = 1
     
-    mask = mask[tuple(slice(1, dim - 1) for dim in mask.shape)]
+    mask_cleaned = mask_cleaned[tuple(slice(1, dim - 1) for dim in mask_cleaned.shape)]
 
     return mask_cleaned
 
