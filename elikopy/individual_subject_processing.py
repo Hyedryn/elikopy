@@ -3,7 +3,6 @@ import os
 import shutil
 import json
 
-
 import numpy as np
 import math
 
@@ -111,7 +110,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         f.close()
 
     if starting_state == None:
+        from elikopy.utils import clean_mask
+
         b0_mask, mask = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass, vol_idx=range(0, np.shape(data)[3]), dilate=bet_dilate)
+        mask = clean_mask(mask)
+
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',mask.astype(np.float32), affine)
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz',b0_mask.astype(np.float32), affine)
         save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz',
@@ -119,6 +122,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         _, mask_nodilate = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass,
                                     vol_idx=range(0, np.shape(data)[3]), dilate=None)
+        mask_nodilate = clean_mask(mask_nodilate)
+
         save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
                    mask_nodilate.astype(np.float32), affine)
 
@@ -3465,6 +3470,8 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     :param msmtCSD: boolean. If True then uses ODF from msmt-CSD, if False from CSD. default=True
     """
     
+    import nibabel as nib
+    from elikopy.utils import dipy_fod_to_mrtrix
     from dipy.io.streamline import load_tractogram, save_trk
     
     patient_path = p
@@ -3479,7 +3486,12 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     else:
         if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"):
             odf_csd_solo(folder_path, p)
-        odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF.nii.gz"
+        if not os.path.isfile(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF_mrtrix.nii.gz"):
+            img = nib.load(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF.nii.gz")
+            data = dipy_fod_to_mrtrix(img.get_fdata())
+            out = nib.Nifti1Image(data, img.affine, img.header)
+            out.to_filename(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF_mrtrix.nii.gz")
+        odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF_mrtrix.nii.gz"
         params['Local modeling']='CSD'
     tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
     mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz"
@@ -3714,8 +3726,6 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
-
-
 
 def report_solo(folder_path,patient_path, slices=None, short=False):
     """ Legacy report function.
