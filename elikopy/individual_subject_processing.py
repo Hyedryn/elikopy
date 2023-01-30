@@ -3057,10 +3057,6 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     import nibabel as nib
     from elikopy.utils import peak_to_tensor
 
-    peaks_1_2 = np.concatenate((peaks1,peaks2))
-    frac_1_2 = np.concatenate((frac1,frac2))
-
-
     img_mf_peaks = nib.load(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
     img_mf_frac = nib.load(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
     hdr = img_mf_peaks.header
