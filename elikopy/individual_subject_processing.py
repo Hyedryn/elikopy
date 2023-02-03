@@ -3104,7 +3104,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     f.close()
 
 
-def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True, maskType="brain_mask_dilated"):
+def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, report=True, maskType="brain_mask_dilated"):
     """Perform MSMT CSD odf computation and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
 
     :param folder_path: the path to the root directory.
