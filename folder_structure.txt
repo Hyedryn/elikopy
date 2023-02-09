@@ -1,5 +1,5 @@
-CASE/
-CONTROL/
+data_1/
+data_2/
 T1/
 EXPORT_**/
 TBSS/	tbss_outputs
