@@ -738,8 +738,11 @@ class Elikopy:
 
         :param folder_path: the path to the root directory. default=study_folder
         :param dictionary_path: Path to the dictionary of fingerprints (mandatory).
-        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
-        :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
+        :param peaksType: default="MSMT-CSD".
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated.
+        :param csf_mask: default=True.
+        :param ear_mask: default=False.
+        :param mfdir: default=None.
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
@@ -825,8 +828,11 @@ class Elikopy:
         example : study.odf_csd()
 
         :param folder_path: the path to the root directory. default=study_folder
-        :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
+        :param CSD_bvalue: The fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
         :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
+        :param CSD_FA_treshold: default=0.7.
+        :param num_peaks: default=2.
+        :param peaks_threshold: default=.25.
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None

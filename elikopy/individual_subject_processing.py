@@ -39,7 +39,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     :param cuda_name: name of the eddy command to run when cuda==True. default="eddy_cuda10.1"
     :param s2v: list of parameters of Eddy for slice-to-volume motion correction (see Eddy FSL documentation): [mporder,s2v_niter,s2v_lambda,s2v_interp]. The slice-to-volume motion correction is performed if mporder>0, cuda is used and a slspec file is provided during the patient_list command. default=[0,5,1,'trilinear']
     :param olrep: list of parameters of Eddy for outlier replacement (see Eddy FSL documentation): [repol,ol_nstd,ol_nvox,ol_type]. The outlier replacement is performed if repol==True. default=[False, 4, 250, 'sw']
-    :param qc_reg: If true, the motion registration step of the quality control will be performed. We do not advise to use this argument as it increases the computation time. default=False
+    :param qc_reg: If true, the motion registration step of the quality control will be performed. We do not advise to use this argument as it increases the computation time. default=True
     :param niter: Define the number of iterations for eddy volume-to-volume. default=5
     :param slspec_gc_path: Path to the folder containing volume specific slice-specification for eddy. If not None, eddy motion correction with gradient cycling will be performed.
     :param report: If False, no quality report will be generated. default=True
@@ -3057,10 +3057,6 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     import nibabel as nib
     from elikopy.utils import peak_to_tensor
 
-    peaks_1_2 = np.concatenate((peaks1,peaks2))
-    frac_1_2 = np.concatenate((frac1,frac2))
-
-
     img_mf_peaks = nib.load(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
     img_mf_frac = nib.load(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
     hdr = img_mf_peaks.header
@@ -3108,7 +3104,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     f.close()
 
 
-def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True, maskType="brain_mask_dilated"):
+def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, report=True, maskType="brain_mask_dilated"):
     """Perform MSMT CSD odf computation and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
 
     :param folder_path: the path to the root directory.

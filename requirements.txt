@@ -1,4 +1,4 @@
-dipy>
+dipy
 dmipy
 scipy
 numpy
@@ -15,7 +15,6 @@ torch
 torchvision
 future
 fpdf
-scikit-image
 PyPDF2
 lxml
 TIME-python
