@@ -16,7 +16,7 @@ torchvision
 future
 fpdf
 scikit-image
-PyPDF2
+pypdf
 lxml
 TIME-python
 scikit-learn

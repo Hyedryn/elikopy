@@ -625,13 +625,13 @@ class Elikopy:
             output, error = process.communicate()
 
             # 2) merge both pdfs
-            from PyPDF2 import PdfFileMerger
+            from pypdf import PdfMerger
             for p in patient_list:
                 patient_path = p
                 if os.path.exists(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.qc/qc_updated.pdf'):
                     pdfs = [folder_path + '/subjects/' + patient_path + '/dMRI/preproc/quality_control/qc_report.pdf',
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr.qc/qc_updated.pdf']
-                    merger = PdfFileMerger()
+                    merger = PdfMerger()
                     for pdf in pdfs:
                         merger.append(pdf)
                     merger.write(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')

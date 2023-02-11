@@ -35,7 +35,7 @@ setuptools.setup(
         'torch',
         #'dmipy',
         'lxml',
-        'PyPDF2',
+        'pypdf',
         'fpdf',
         'matplotlib',
         'cvxpy',

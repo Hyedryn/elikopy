@@ -1402,7 +1402,7 @@ def merge_all_reports(folder_path):
 
     :param folder_path: Path to the root folder of the study.
     """
-    from PyPDF2 import PdfFileWriter, PdfFileReader
+    from pypdf import PdfWriter, PdfReader
     import json
     import os
 
@@ -1410,17 +1410,17 @@ def merge_all_reports(folder_path):
     with open(dest_success, 'r') as f:
         patient_list = json.load(f)
 
-    writer = PdfFileWriter()
+    writer = PdfWriter()
 
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
         pdf_path = folder_path + '/subjects/' + patient_path + '/quality_control.pdf'
         if (os.path.exists(pdf_path)):
-            reader = PdfFileReader(pdf_path)
-            for i in range(reader.numPages):
-                page = reader.getPage(i)
-                page.compressContentStreams()
-                writer.addPage(page)
+            reader = PdfReader(pdf_path)
+            for i in range(len(reader.pages)):
+                page = reader.pages[i]
+                page.compress_content_streams()
+                writer.add_page(page)
 
     with open(folder_path + '/quality_control_all_tmp.pdf', 'wb') as f:
         writer.write(f)
@@ -1444,7 +1444,7 @@ def merge_all_specific_reports(folder_path, merge_wm_report=False, merge_legacy_
     :param merge_wm_report: Select wm report.
     :param merge_legacy_report: Select legacy report.
     """
-    from PyPDF2 import PdfFileWriter, PdfFileReader
+    from pypdf import PdfWriter, PdfReader
     import json
     import os
 
@@ -1453,10 +1453,10 @@ def merge_all_specific_reports(folder_path, merge_wm_report=False, merge_legacy_
         patient_list = json.load(f)
 
     if merge_wm_report:
-        wm_writer = PdfFileWriter()
+        wm_writer = PdfWriter()
 
     if merge_legacy_report:
-        legacy_writer = PdfFileWriter()
+        legacy_writer = PdfWriter()
 
     for p in patient_list:
         patient_path = os.path.splitext(p)[0]
@@ -1465,21 +1465,21 @@ def merge_all_specific_reports(folder_path, merge_wm_report=False, merge_legacy_
             pdf_path = folder_path + '/subjects/' + patient_path + \
                 '/masks/quality_control/qc_report.pdf'
             if (os.path.exists(pdf_path)):
-                reader = PdfFileReader(pdf_path)
-                for i in range(reader.numPages):
-                    page = reader.getPage(i)
-                    page.compressContentStreams()
-                    wm_writer.addPage(page)
+                reader = PdfReader(pdf_path)
+                for i in range(len(reader.pages)):
+                    page = reader.pages[i]
+                    page.compress_content_streams()
+                    wm_writer.add_page(page)
 
         if merge_legacy_report:
             pdf_path = folder_path + '/subjects/' + patient_path + \
                 '/report/report_' + patient_path + '.pdf'
             if (os.path.exists(pdf_path)):
-                reader = PdfFileReader(pdf_path)
-                for i in range(reader.numPages):
-                    page = reader.getPage(i)
-                    page.compressContentStreams()
-                    legacy_writer.addPage(page)
+                reader = PdfReader(pdf_path)
+                for i in range(len(reader.pages)):
+                    page = reader.pages[i]
+                    page.compress_content_streams()
+                    legacy_writer.add_page(page)
 
     if merge_wm_report:
         with open(folder_path + '/wm_mask_qc_report_all.pdf', 'wb') as f:

@@ -1601,9 +1601,9 @@ def dti_solo(folder_path, p, maskType="brain_mask_dilated", report=True):
             shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
         else:
             """Merge with QC of preproc""";
-            from PyPDF2 import PdfFileMerger
+            from pypdf import PdfMerger
             pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-            merger = PdfFileMerger()
+            merger = PdfMerger()
             for pdf in pdfs:
                 merger.append(pdf)
             merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_dti.pdf')
@@ -1870,7 +1870,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from fpdf import FPDF
-    from PyPDF2 import PdfFileMerger
+    from pypdf import PdfMerger
 
     T1_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
     T1gibbs_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_gibbscorrected.nii.gz'
@@ -2019,7 +2019,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
         shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
     else:
         pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-        merger = PdfFileMerger()
+        merger = PdfMerger()
         for pdf in pdfs:
             merger.append(pdf)
         merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf')
@@ -2267,9 +2267,9 @@ def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.
         shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
     else:
         """Merge with QC of preproc""";
-        from PyPDF2 import PdfFileMerger
+        from pypdf import PdfMerger
         pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-        merger = PdfFileMerger()
+        merger = PdfMerger()
         for pdf in pdfs:
             merger.append(pdf)
         merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_noddi.pdf')
@@ -2566,9 +2566,9 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
         shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
     else:
         """Merge with QC of preproc""";
-        from PyPDF2 import PdfFileMerger
+        from pypdf import PdfMerger
         pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-        merger = PdfFileMerger()
+        merger = PdfMerger()
         for pdf in pdfs:
             merger.append(pdf)
         merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_diamond.pdf')
@@ -2941,9 +2941,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
                             folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
         else:
             """Merge with QC of preproc""";
-            from PyPDF2 import PdfFileMerger
+            from pypdf import PdfMerger
             pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-            merger = PdfFileMerger()
+            merger = PdfMerger()
             for pdf in pdfs:
                 merger.append(pdf)
             merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_mf.pdf')
@@ -3443,9 +3443,9 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
         shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
     else:
         """Merge with QC of preproc""";
-        from PyPDF2 import PdfFileMerger
+        from pypdf import PdfMerger
         pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-        merger = PdfFileMerger()
+        merger = PdfMerger()
         for pdf in pdfs:
             merger.append(pdf)
         merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_ivim.pdf')
@@ -3710,9 +3710,9 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
         shutil.copyfile(qc_path + '/qc_report.pdf', folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
     else:
         """Merge with QC of preproc""";
-        from PyPDF2 import PdfFileMerger
+        from pypdf import PdfMerger
         pdfs = [folder_path + '/subjects/' + patient_path + '/quality_control.pdf', qc_path + '/qc_report.pdf']
-        merger = PdfFileMerger()
+        merger = PdfMerger()
         for pdf in pdfs:
             merger.append(pdf)
         merger.write(folder_path + '/subjects/' + patient_path + '/quality_control_verdict.pdf')
