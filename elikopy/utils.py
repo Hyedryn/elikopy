@@ -1540,7 +1540,7 @@ def peak_to_tensor(peaks, norm=None, pixdim=[2, 2, 2]):
 
         try:
             if norm is not None:
-                D = deltas_to_D(dx, dy, dz, vec_len=scaleFactor*norm[xyz])
+                D = deltas_to_D(dx, dy, dz, vec_len=scaleFactor/norm[xyz])
             else:
                 D = deltas_to_D(dx, dy, dz, vec_len=scaleFactor)
         except np.linalg.LinAlgError:
