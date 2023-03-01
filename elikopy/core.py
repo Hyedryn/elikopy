@@ -983,7 +983,8 @@ class Elikopy:
         f.close()
 
 
-    def tracking(self, folder_path=None, streamline_number:int=100000, max_angle:int=15, msmtCSD:bool=True, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def tracking(self, folder_path=None, streamline_number:int=100000, max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True,
+                 slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the odf using MSMT-CSD for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/tractography/.
 
         example : study.tracking_solo()
@@ -1027,7 +1028,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import tracking_solo; tracking_solo(\"" + folder_path + "/\",\"" + p + "\", streamline_number =" + str(streamline_number) + ", msmtCSD=" + str(msmtCSD) + ", core_count=" + str(core_count) + ", max_angle="+ str(max_angle) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import tracking_solo; tracking_solo(\"" + folder_path + "/\",\"" + p + "\", streamline_number =" + str(streamline_number) + ", msmtCSD=" + str(msmtCSD) + ", core_count=" + str(core_count) + ", cutoff=" + str(cutoff) + ", max_angle="+ str(max_angle) + ")'",
                         "job_name": "TRACKING_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -1047,7 +1048,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                tracking_solo(folder_path + "/", p,  streamline_number=streamline_number, max_angle=max_angle, msmtCSD=msmtCSD, core_count=core_count)
+                tracking_solo(folder_path + "/", p,  streamline_number=streamline_number, max_angle=max_angle, cutoff=cutoff, msmtCSD=msmtCSD, core_count=core_count)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied tracking_solo on patient %s\n" % p)
                 f.flush()

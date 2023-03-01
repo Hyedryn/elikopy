@@ -3460,13 +3460,15 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
-def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15, msmtCSD:bool=True, core_count:int=1):
+def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15,
+                  cutoff:float=0.1, msmtCSD:bool=True, core_count:int=1):
     """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
     :param streamline_number: Number of streamlines in the final tractogram. default=100000
     :param max_angle: Maximum angle between two tractography steps. default=15
+    :param cutoff: Value below which streamlines do not propagate. default=0.1
     :param msmtCSD: boolean. If True then uses ODF from msmt-CSD, if False from CSD. default=True
     """
     
@@ -3476,7 +3478,8 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     
     patient_path = p
     
-    params={'Number of streamlines':streamline_number, 'Maximum angle':max_angle}
+    params={'Number of streamlines':streamline_number, 'Maximum angle':max_angle,
+            'Cutoff value':cutoff}
 
     if msmtCSD:
         if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/"):
@@ -3506,6 +3509,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
                  ' -seed_image ' +mask_path+
                  ' -select ' +str(streamline_number)+
                  ' -angle ' +str(max_angle)+
+                 ' -cutoff ' +str(cutoff)+
                  ' -force')
     
     tracking_log = open(tracking_path+"tractography_logs.txt", "a+")
