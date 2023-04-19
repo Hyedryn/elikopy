@@ -3460,8 +3460,9 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
-def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angle:int=15,
-                  cutoff:float=0.1, msmtCSD:bool=True, core_count:int=1):
+def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
+                  max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True,
+                  output_filename:str=None,core_count:int=1):
     """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
     :param folder_path: the path to the root directory.
@@ -3470,6 +3471,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     :param max_angle: Maximum angle between two tractography steps. default=15
     :param cutoff: Value below which streamlines do not propagate. default=0.1
     :param msmtCSD: boolean. If True then uses ODF from msmt-CSD, if False from CSD. default=True
+    :param output_filename: str. Specify output filename for tractogram.
     """
     
     import nibabel as nib
@@ -3500,7 +3502,10 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000, max_angl
     mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz"
     dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
     
-    output_file = tracking_path+patient_path+'_tractogram.tck'
+    if not output_filename:
+        output_filename='tractogram'
+    
+    output_file = tracking_path+patient_path+'_'+output_filename+'.tck'
     
     if not os.path.isdir(tracking_path):
         os.mkdir(tracking_path)
