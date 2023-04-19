@@ -1028,7 +1028,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import tracking_solo; tracking_solo(\"" + folder_path + "/\",\"" + p + "\", streamline_number =" + str(streamline_number) + ", msmtCSD=" + str(msmtCSD) + ", core_count=" + str(core_count) + ", cutoff=" + str(cutoff) + ", max_angle="+ str(max_angle) + ", output_filename="+ str(output_filename) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import tracking_solo; tracking_solo(\"" + folder_path + "/\",\"" + p + "\", streamline_number =" + str(streamline_number) + ", msmtCSD=" + str(msmtCSD) + ", core_count=" + str(core_count) + ", cutoff=" + str(cutoff) + ", max_angle="+ str(max_angle) + ", output_filename= \"" + output_filename + "\"" + ")'",
                         "job_name": "TRACKING_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
