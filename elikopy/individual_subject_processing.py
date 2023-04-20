@@ -2689,7 +2689,8 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
                                                  mask=mask, frac12=None)
     elif peaksType=="MSMT-CSD":
-        if not os.path.exists(odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz") and os.path.exists(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz'):
+        if not (os.path.exists(odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz")
+                or os.path.exists(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')):
             odf_msmtcsd_solo(folder_path, patient_path, core_count=core_count)
         msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
         msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
