@@ -2594,6 +2594,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     :param core_count: Define the number of available core. default=1
     :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
     """
+
     log_prefix = "MF SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p, flush = True)
@@ -2629,10 +2630,6 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     import microstructure_fingerprinting.mf_utils as mfu
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io import read_bvals_bvecs
-    from dipy.core.gradients import gradient_table
-    from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel, auto_response)
-    from dipy.direction import peaks_from_model
-    from dipy.data import default_sphere
 
     # load the data
     data, affine = load_nifti(
@@ -2658,20 +2655,11 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,
                                                  peakmode='tensor', mask=mask, frac12=fracs_file)
     elif peaksType == "CSD":
-        if os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz') and os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz'):
-            csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
-            csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
-        else:
-            odf_csd_solo(folder_path, patient_path, core_count=core_count)
-            csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
-            csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
-        # peaks=csd_peaks_peak_dirs
+        csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
+        csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
         numfasc_2 = np.sum(csd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
             csd_peaks_peak_values[:, :, :, 1] > 0.15)
         print("Approximate number of non empty voxel: ", numfasc_2)
-
-        # peaks = csd_peaks.peak_dirs
-        # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
 
         normPeaks0 = csd_peaks_peak_dirs[..., 0, :]
         normPeaks1 = csd_peaks_peak_dirs[..., 1, :]
@@ -2686,12 +2674,13 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         mu2 = normPeaks1
         frac1 = csd_peaks_peak_values[..., 0]
         frac2 = csd_peaks_peak_values[..., 1]
-        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2,
+                                                 mu1=mu1, mu2=mu2, peakmode='peaks',
                                                  mask=mask, frac12=None)
     elif peaksType=="MSMT-CSD":
-        if not (os.path.exists(odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz")
-                or os.path.exists(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')):
-            odf_msmtcsd_solo(folder_path, patient_path, core_count=core_count)
+
+        from elikopy.utils import get_acquisition_view
+
         msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
         msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
 
@@ -2699,10 +2688,13 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
                     msmtcsd_peaks_peak_values[:, :, :, 1] > 0.15)
         print("Approximate number of non empty voxel: ", numfasc_2)
 
-        # peaks = csd_peaks.peak_dirs
-        # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
-        msmtcsd_peaks_peak_dirs[..., 0] = -msmtcsd_peaks_peak_dirs[..., 0]
-        msmtcsd_peaks_peak_dirs[..., 3] = -msmtcsd_peaks_peak_dirs[..., 3]
+        # !!!
+        view = get_acquisition_view(affine)
+
+        if view == 'axial':
+            msmtcsd_peaks_peak_dirs[..., 0] = -msmtcsd_peaks_peak_dirs[..., 0]
+            msmtcsd_peaks_peak_dirs[..., 3] = -msmtcsd_peaks_peak_dirs[..., 3]
+        # elif view == 'sagittal':
 
         normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
         normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
