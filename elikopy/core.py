@@ -983,7 +983,7 @@ class Elikopy:
         f.close()
 
 
-    def tracking(self, folder_path=None, streamline_number:int=100000, max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True, output_filename:str=None,
+    def tracking(self, folder_path=None, streamline_number:int=100000, max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True, output_filename:str="tractogram",
                  slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the odf using MSMT-CSD for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/tractography/.
 
