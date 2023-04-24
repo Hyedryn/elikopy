@@ -2584,7 +2584,9 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
         f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated", report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD", mfdir=None):
+def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated",
+            report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD",
+            mfdir=None, output_filename: str = ""):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2593,7 +2595,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
     :param core_count: Define the number of available core. default=1
     :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
+    :param output_filename: str. Specify output filename.
     """
+
     log_prefix = "MF SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual microstructure fingerprinting processing for patient %s \n" % p, flush = True)
@@ -2629,10 +2633,6 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     import microstructure_fingerprinting.mf_utils as mfu
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io import read_bvals_bvecs
-    from dipy.core.gradients import gradient_table
-    from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel, auto_response)
-    from dipy.direction import peaks_from_model
-    from dipy.data import default_sphere
 
     # load the data
     data, affine = load_nifti(
@@ -2658,20 +2658,11 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,
                                                  peakmode='tensor', mask=mask, frac12=fracs_file)
     elif peaksType == "CSD":
-        if os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz') and os.path.exists(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz'):
-            csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
-            csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
-        else:
-            odf_csd_solo(folder_path, patient_path, core_count=core_count)
-            csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
-            csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
-        # peaks=csd_peaks_peak_dirs
+        csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
+        csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
         numfasc_2 = np.sum(csd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
             csd_peaks_peak_values[:, :, :, 1] > 0.15)
         print("Approximate number of non empty voxel: ", numfasc_2)
-
-        # peaks = csd_peaks.peak_dirs
-        # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
 
         normPeaks0 = csd_peaks_peak_dirs[..., 0, :]
         normPeaks1 = csd_peaks_peak_dirs[..., 1, :]
@@ -2686,28 +2677,37 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         mu2 = normPeaks1
         frac1 = csd_peaks_peak_values[..., 0]
         frac2 = csd_peaks_peak_values[..., 1]
-        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2,
+                                                 mu1=mu1, mu2=mu2,
+                                                 peakmode='peaks',
                                                  mask=mask, frac12=None)
-    elif peaksType=="MSMT-CSD":
-        if os.path.exists(odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz") and os.path.exists(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz'):
-            msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
-            msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
-        else:
-            odf_msmtcsd_solo(folder_path, patient_path, core_count=core_count)
-            msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
-            msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
+    elif peaksType == "MSMT-CSD":
+
+        from elikopy.utils import get_acquisition_view
+
+        msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
+        msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
 
         numfasc_2 = np.sum(msmtcsd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
                     msmtcsd_peaks_peak_values[:, :, :, 1] > 0.15)
         print("Approximate number of non empty voxel: ", numfasc_2)
 
-        # peaks = csd_peaks.peak_dirs
-        # peaks = np.reshape(peaks, (peaks.shape[0], peaks.shape[1], peaks.shape[2], 6), order='C')
-        msmtcsd_peaks_peak_dirs[..., 1] = -msmtcsd_peaks_peak_dirs[..., 1]
-        msmtcsd_peaks_peak_dirs[..., 2] = -msmtcsd_peaks_peak_dirs[..., 2]
+        view = get_acquisition_view(affine)
+        peaks_old = msmtcsd_peaks_peak_dirs.copy()
 
-        msmtcsd_peaks_peak_dirs[..., 4] = -msmtcsd_peaks_peak_dirs[..., 4]
-        msmtcsd_peaks_peak_dirs[..., 5] = -msmtcsd_peaks_peak_dirs[..., 5]
+        if view == 'axial':
+            msmtcsd_peaks_peak_dirs[..., 0] = -peaks_old[..., 0]
+            msmtcsd_peaks_peak_dirs[..., 3] = -peaks_old[..., 3]
+            color_order = 'rgb'
+
+        elif view == 'sagittal':
+            msmtcsd_peaks_peak_dirs[..., 0] = -peaks_old[..., 1]
+            msmtcsd_peaks_peak_dirs[..., 1] = peaks_old[..., 2]
+            msmtcsd_peaks_peak_dirs[..., 2] = peaks_old[..., 0]
+            msmtcsd_peaks_peak_dirs[..., 3] = -peaks_old[..., 4]
+            msmtcsd_peaks_peak_dirs[..., 4] = peaks_old[..., 5]
+            msmtcsd_peaks_peak_dirs[..., 5] = peaks_old[..., 3]
+            color_order = 'brg'
 
         normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
         normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
@@ -2722,7 +2722,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         mu2 = normPeaks1
         frac1 = msmtcsd_peaks_peak_values[..., 0]
         frac2 = msmtcsd_peaks_peak_values[..., 1]
-        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2,
+                                                 mu1=mu1, mu2=mu2,
+                                                 peakmode='peaks',
                                                  mask=mask, frac12=None)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2740,8 +2742,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     parallel = False if core_count == 1 else True
     start = time.time()
     # Fit to data:
-    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask,
-                          ear_mask=ear_mask, verbose=3, parallel=parallel)#, cpus=core_count)
+    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals,
+                          bvecs=bvecs, csf_mask=csf_mask, ear_mask=ear_mask,
+                          verbose=3, parallel=parallel)  # , cpus=core_count)
 
     end = time.time()
     stats_header = "patient_id, elapsed_time, core_count"
@@ -2760,8 +2763,12 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     MSE = MF_fit.MSE
     R2 = MF_fit.R2
 
+    if len(output_filename) > 0:
+        filename = '_mf_'+output_filename
+    else:
+        filename = '_mf'
 
-    MF_fit.write_nifti(mf_path + '/' + patient_path + '_mf.nii.gz', affine=affine)
+    MF_fit.write_nifti(mf_path + '/' + patient_path + filename+'.nii.gz', affine=affine)
 
     # Export pseudo tensor
     frac = 0
@@ -2770,10 +2777,10 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     fvf_list = []
     import nibabel as nib
     from elikopy.utils import peak_to_tensor
-    while os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f'+str(frac)+'.nii.gz') and os.path.exists(mf_path + '/' + patient_path + '_mf_frac_f' + str(frac) + '.nii.gz'):
-        peaks_path = mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '.nii.gz'
-        frac_path = mf_path + '/' + patient_path + '_mf_frac_f' + str(frac) + '.nii.gz'
-        fvf_path = mf_path + '/' + patient_path + '_mf_fvf_f' + str(frac) + '.nii.gz'
+    while os.path.exists(mf_path + '/' + patient_path + filename+'_peak_f'+str(frac)+'.nii.gz') and os.path.exists(mf_path + '/' + patient_path + filename+'_frac_f' + str(frac) + '.nii.gz'):
+        peaks_path = mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '.nii.gz'
+        frac_path = mf_path + '/' + patient_path + filename+'_frac_f' + str(frac) + '.nii.gz'
+        fvf_path = mf_path + '/' + patient_path + filename+'_fvf_f' + str(frac) + '.nii.gz'
         img_mf_peaks = nib.load(peaks_path)
         img_mf_frac = nib.load(frac_path)
         hdr = img_mf_peaks.header
@@ -2785,33 +2792,28 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         hdr['dim'][5] = 6 # 1
         hdr['regular'] = b'r'
         hdr['intent_code'] = 1005
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor.nii.gz', t, img_mf_peaks.affine, hdr)
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '_pseudoTensor.nii.gz', t, img_mf_peaks.affine, hdr)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
 
-        import TIME.utils
-        RGB_peak = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()])
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB.nii.gz', RGB_peak, img_mf_frac.affine)
+        import unravel.utils
+        RGB_peak = unravel.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], order=color_order)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '_RGB.nii.gz', RGB_peak, img_mf_frac.affine)
         peaks_list.append(img_mf_peaks.get_fdata())
-
-        RGB_peak_frac = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], [img_mf_frac.get_fdata()])
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB_frac.nii.gz', RGB_peak_frac, img_mf_frac.affine)
         frac_list.append(img_mf_frac.get_fdata())
 
         if os.path.exists(fvf_path):
             img_mf_fvf = nib.load(fvf_path)
             fvf_list.append(img_mf_fvf.get_fdata())
-            RGB_peak_frac_fvf = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], [img_mf_frac.get_fdata()], [img_mf_fvf.get_fdata()])
-            save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB_frac_fvf.nii.gz', RGB_peak_frac_fvf, img_mf_frac.affine)
 
         frac = frac + 1
         
     if len(frac_list) > 0 and len(peaks_list) > 0:
-        RGB_peaks_frac = TIME.utils.peaks_to_RGB(peaks_list, frac_list)
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, img_mf_frac.affine)
+        RGB_peaks_frac = unravel.utils.peaks_to_RGB(peaks_list, frac_list, order=color_order)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, img_mf_frac.affine)
 
     if len(frac_list) > 0 and len(peaks_list) > 0 and len(fvf_list)>0:
-        RGB_peaks_frac_fvf = TIME.utils.peaks_to_RGB(peaks_list, frac_list, fvf_list)
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine)
+        RGB_peaks_frac_fvf = unravel.utils.peaks_to_RGB(peaks_list, frac_list, fvf_list, order=color_order)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine, order=color_order)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
@@ -3083,21 +3085,21 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine, hdr)
 
-    import TIME.utils
-    RGB_peak = TIME.utils.peaks_to_RGB([peaks1])
+    import unravel.utils
+    RGB_peak = unravel.utils.peaks_to_RGB([peaks1])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
-    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks1], [frac1])
+    RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks1], [frac1])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
-    RGB_peak = TIME.utils.peaks_to_RGB([peaks2])
+    RGB_peak = unravel.utils.peaks_to_RGB([peaks2])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
-    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks2], [frac2])
+    RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks2], [frac2])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
 
-    RGB_peaks = TIME.utils.peaks_to_RGB([peaks1, peaks2])
+    RGB_peaks = unravel.utils.peaks_to_RGB([peaks1, peaks2])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
-    RGB_peaks_frac = TIME.utils.peaks_to_RGB([peaks1, peaks2], [frac1, frac2])
+    RGB_peaks_frac = unravel.utils.peaks_to_RGB([peaks1, peaks2], [frac1, frac2])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
 
 
@@ -3222,28 +3224,28 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     hdr['intent_code'] = 1005
 
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_pseudoTensor.nii.gz', t_p1, affine, hdr)
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT_peak_f1_pseudoTensor_normed.nii.gz', t_normed_p1, affine,
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_pseudoTensor_normed.nii.gz', t_normed_p1, affine,
                hdr)
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine,
                hdr)
 
-    import TIME.utils
+    import unravel.utils
 
-    RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]])
+    RGB_peak = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
-    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]], [frac_1_2[:, :, :, 0]])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
+    RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]], [frac_1_2[:, :, :, 0]])
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
-    RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]])
+    RGB_peak = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
-    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 1]])
+    RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 1]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
 
-    RGB_peaks = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]])
+    RGB_peaks = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
-    RGB_peaks_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 0], frac_1_2[:, :, :, 1]])
+    RGB_peaks_frac = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 0], frac_1_2[:, :, :, 1]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
 
 

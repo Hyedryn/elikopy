@@ -40,7 +40,7 @@ setuptools.setup(
         'matplotlib',
         'cvxpy',
         'future',
-        'TIME-python',
+        'unravel-python',
         'scikit-image'
     ],
 )
