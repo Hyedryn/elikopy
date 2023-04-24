@@ -3225,7 +3225,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     RGB_peak = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
     RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]], [frac_1_2[:, :, :, 0]])
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
     RGB_peak = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
