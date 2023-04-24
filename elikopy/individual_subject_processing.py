@@ -2801,6 +2801,10 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         peaks_list.append(img_mf_peaks.get_fdata())
         frac_list.append(img_mf_frac.get_fdata())
 
+        if os.path.exists(fvf_path):
+            img_mf_fvf = nib.load(fvf_path)
+            fvf_list.append(img_mf_fvf.get_fdata())
+
         frac = frac + 1
         
     if len(frac_list) > 0 and len(peaks_list) > 0:
