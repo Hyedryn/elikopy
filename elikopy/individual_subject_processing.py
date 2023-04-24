@@ -2675,7 +2675,8 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         frac1 = csd_peaks_peak_values[..., 0]
         frac2 = csd_peaks_peak_values[..., 1]
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2,
-                                                 mu1=mu1, mu2=mu2, peakmode='peaks',
+                                                 mu1=mu1, mu2=mu2,
+                                                 peakmode='peaks',
                                                  mask=mask, frac12=None)
     elif peaksType=="MSMT-CSD":
 
@@ -2691,10 +2692,19 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         # !!!
         view = get_acquisition_view(affine)
 
+        peaks_old = msmtcsd_peaks_peak_dirs.copy()
+
         if view == 'axial':
-            msmtcsd_peaks_peak_dirs[..., 0] = -msmtcsd_peaks_peak_dirs[..., 0]
-            msmtcsd_peaks_peak_dirs[..., 3] = -msmtcsd_peaks_peak_dirs[..., 3]
-        # elif view == 'sagittal':
+            msmtcsd_peaks_peak_dirs[..., 0] = -peaks_old[..., 0]
+            msmtcsd_peaks_peak_dirs[..., 3] = -peaks_old[..., 3]
+
+        elif view == 'sagittal':
+            msmtcsd_peaks_peak_dirs[..., 0] = -peaks_old[..., 1]
+            msmtcsd_peaks_peak_dirs[..., 1] = peaks_old[..., 2]
+            msmtcsd_peaks_peak_dirs[..., 2] = peaks_old[..., 0]
+            msmtcsd_peaks_peak_dirs[..., 3] = -peaks_old[..., 4]
+            msmtcsd_peaks_peak_dirs[..., 4] = peaks_old[..., 5]
+            msmtcsd_peaks_peak_dirs[..., 5] = peaks_old[..., 3]
 
         normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
         normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
@@ -2709,7 +2719,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         mu2 = normPeaks1
         frac1 = msmtcsd_peaks_peak_values[..., 0]
         frac2 = msmtcsd_peaks_peak_values[..., 1]
-        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2, mu1=mu1, mu2=mu2, peakmode='peaks',
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=frac1, frac2=frac2,
+                                                 mu1=mu1, mu2=mu2,
+                                                 peakmode='peaks',
                                                  mask=mask, frac12=None)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -2727,8 +2739,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     parallel = False if core_count == 1 else True
     start = time.time()
     # Fit to data:
-    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals, bvecs=bvecs, csf_mask=csf_mask,
-                          ear_mask=ear_mask, verbose=3, parallel=parallel)#, cpus=core_count)
+    MF_fit = mf_model.fit(data, mask, numfasc, peaks=peaks, bvals=bvals,
+                          bvecs=bvecs, csf_mask=csf_mask, ear_mask=ear_mask,
+                          verbose=3, parallel=parallel)  # , cpus=core_count)
 
     end = time.time()
     stats_header = "patient_id, elapsed_time, core_count"
