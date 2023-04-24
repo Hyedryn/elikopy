@@ -2791,18 +2791,18 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
 
         import unravel.utils
-        RGB_peak = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], order=color_order)
+        RGB_peak = unravel.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], order=color_order)
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB.nii.gz', RGB_peak, img_mf_frac.affine)
         peaks_list.append(img_mf_peaks.get_fdata())
 
         frac = frac + 1
         
     if len(frac_list) > 0 and len(peaks_list) > 0:
-        RGB_peaks_frac = TIME.utils.peaks_to_RGB(peaks_list, frac_list, order=color_order)
+        RGB_peaks_frac = unravel.utils.peaks_to_RGB(peaks_list, frac_list, order=color_order)
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, img_mf_frac.affine)
 
     if len(frac_list) > 0 and len(peaks_list) > 0 and len(fvf_list)>0:
-        RGB_peaks_frac_fvf = TIME.utils.peaks_to_RGB(peaks_list, frac_list, fvf_list, order=color_order)
+        RGB_peaks_frac_fvf = unravel.utils.peaks_to_RGB(peaks_list, frac_list, fvf_list, order=color_order)
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine, order=color_order)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -3075,21 +3075,21 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine, hdr)
 
-    import TIME.utils
-    RGB_peak = TIME.utils.peaks_to_RGB([peaks1])
+    import unravel.utils
+    RGB_peak = unravel.utils.peaks_to_RGB([peaks1])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
-    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks1], [frac1])
+    RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks1], [frac1])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
-    RGB_peak = TIME.utils.peaks_to_RGB([peaks2])
+    RGB_peak = unravel.utils.peaks_to_RGB([peaks2])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
-    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks2], [frac2])
+    RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks2], [frac2])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
 
-    RGB_peaks = TIME.utils.peaks_to_RGB([peaks1, peaks2])
+    RGB_peaks = unravel.utils.peaks_to_RGB([peaks1, peaks2])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
-    RGB_peaks_frac = TIME.utils.peaks_to_RGB([peaks1, peaks2], [frac1, frac2])
+    RGB_peaks_frac = unravel.utils.peaks_to_RGB([peaks1, peaks2], [frac1, frac2])
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
 
 
@@ -3220,22 +3220,22 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine,
                hdr)
 
-    import TIME.utils
+    import unravel.utils
 
-    RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]])
+    RGB_peak = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
-    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]], [frac_1_2[:, :, :, 0]])
+    RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3]], [frac_1_2[:, :, :, 0]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
-    RGB_peak = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]])
+    RGB_peak = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
-    RGB_peak_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 1]])
+    RGB_peak_frac = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 1]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
 
-    RGB_peaks = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]])
+    RGB_peaks = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
-    RGB_peaks_frac = TIME.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 0], frac_1_2[:, :, :, 1]])
+    RGB_peaks_frac = unravel.utils.peaks_to_RGB([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]], [frac_1_2[:, :, :, 0], frac_1_2[:, :, :, 1]])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
 
 
