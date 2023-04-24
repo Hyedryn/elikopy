@@ -2787,7 +2787,6 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         hdr['intent_code'] = 1005
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor.nii.gz', t, img_mf_peaks.affine, hdr)
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
-        frac = frac + 1
 
         import TIME.utils
         RGB_peak = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()])
@@ -2804,6 +2803,8 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
             RGB_peak_frac_fvf = TIME.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], [img_mf_frac.get_fdata()], [img_mf_fvf.get_fdata()])
             save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB_frac_fvf.nii.gz', RGB_peak_frac_fvf, img_mf_frac.affine)
 
+        frac = frac + 1
+        
     if len(frac_list) > 0 and len(peaks_list) > 0:
         RGB_peaks_frac = TIME.utils.peaks_to_RGB(peaks_list, frac_list)
         save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, img_mf_frac.affine)
@@ -3462,7 +3463,7 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
 
 def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
                   max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True,
-                  output_filename:str=None,core_count:int=1):
+                  output_filename:str='tractogram',core_count:int=1):
     """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
     :param folder_path: the path to the root directory.
@@ -3501,9 +3502,6 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
     tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
     mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz"
     dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
-    
-    if not output_filename:
-        output_filename='tractogram'
     
     output_file = tracking_path+patient_path+'_'+output_filename+'.tck'
     
