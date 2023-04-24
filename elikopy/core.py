@@ -745,7 +745,7 @@ class Elikopy:
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 20h by a custom timeout.
-        :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
+        :param cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
         log_prefix = "MF"
