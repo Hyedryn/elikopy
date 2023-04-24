@@ -2584,7 +2584,9 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
         f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated", report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD", mfdir=None):
+def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated",
+            report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD",
+            mfdir=None, output_filename: str = ""):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2593,6 +2595,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
     :param core_count: Define the number of available core. default=1
     :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
+    :param output_filename: str. Specify output filename.
     """
 
     log_prefix = "MF SOLO"
@@ -2689,9 +2692,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
                     msmtcsd_peaks_peak_values[:, :, :, 1] > 0.15)
         print("Approximate number of non empty voxel: ", numfasc_2)
 
-        # !!!
         view = get_acquisition_view(affine)
-
         peaks_old = msmtcsd_peaks_peak_dirs.copy()
 
         if view == 'axial':
@@ -2762,8 +2763,12 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     MSE = MF_fit.MSE
     R2 = MF_fit.R2
 
+    if len(output_filename) > 0:
+        filename = '_mf_'+output_filename
+    else:
+        filename = '_mf'
 
-    MF_fit.write_nifti(mf_path + '/' + patient_path + '_mf.nii.gz', affine=affine)
+    MF_fit.write_nifti(mf_path + '/' + patient_path + filename+'.nii.gz', affine=affine)
 
     # Export pseudo tensor
     frac = 0
@@ -2772,10 +2777,10 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     fvf_list = []
     import nibabel as nib
     from elikopy.utils import peak_to_tensor
-    while os.path.exists(mf_path + '/' + patient_path + '_mf_peak_f'+str(frac)+'.nii.gz') and os.path.exists(mf_path + '/' + patient_path + '_mf_frac_f' + str(frac) + '.nii.gz'):
-        peaks_path = mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '.nii.gz'
-        frac_path = mf_path + '/' + patient_path + '_mf_frac_f' + str(frac) + '.nii.gz'
-        fvf_path = mf_path + '/' + patient_path + '_mf_fvf_f' + str(frac) + '.nii.gz'
+    while os.path.exists(mf_path + '/' + patient_path + filename+'_peak_f'+str(frac)+'.nii.gz') and os.path.exists(mf_path + '/' + patient_path + filename+'_frac_f' + str(frac) + '.nii.gz'):
+        peaks_path = mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '.nii.gz'
+        frac_path = mf_path + '/' + patient_path + filename+'_frac_f' + str(frac) + '.nii.gz'
+        fvf_path = mf_path + '/' + patient_path + filename+'_fvf_f' + str(frac) + '.nii.gz'
         img_mf_peaks = nib.load(peaks_path)
         img_mf_frac = nib.load(frac_path)
         hdr = img_mf_peaks.header
@@ -2787,23 +2792,24 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         hdr['dim'][5] = 6 # 1
         hdr['regular'] = b'r'
         hdr['intent_code'] = 1005
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor.nii.gz', t, img_mf_peaks.affine, hdr)
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '_pseudoTensor.nii.gz', t, img_mf_peaks.affine, hdr)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '_pseudoTensor_normed.nii.gz', t_normed, img_mf_peaks.affine, hdr)
 
         import unravel.utils
         RGB_peak = unravel.utils.peaks_to_RGB([img_mf_peaks.get_fdata()], order=color_order)
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_f' + str(frac) + '_RGB.nii.gz', RGB_peak, img_mf_frac.affine)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '_RGB.nii.gz', RGB_peak, img_mf_frac.affine)
         peaks_list.append(img_mf_peaks.get_fdata())
+        frac_list.append(img_mf_frac.get_fdata())
 
         frac = frac + 1
         
     if len(frac_list) > 0 and len(peaks_list) > 0:
         RGB_peaks_frac = unravel.utils.peaks_to_RGB(peaks_list, frac_list, order=color_order)
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, img_mf_frac.affine)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, img_mf_frac.affine)
 
     if len(frac_list) > 0 and len(peaks_list) > 0 and len(fvf_list)>0:
         RGB_peaks_frac_fvf = unravel.utils.peaks_to_RGB(peaks_list, frac_list, fvf_list, order=color_order)
-        save_nifti(mf_path + '/' + patient_path + '_mf_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine, order=color_order)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine, order=color_order)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)

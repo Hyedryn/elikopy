@@ -731,7 +731,8 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
         f.close()
 
-    def fingerprinting(self, dictionary_path=None, folder_path=None, peaksType="MSMT-CSD", maskType="brain_mask_dilated", csf_mask=True, ear_mask=False, mfdir=None, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def fingerprinting(self, dictionary_path=None, folder_path=None, peaksType="MSMT-CSD", maskType="brain_mask_dilated", csf_mask=True, ear_mask=False, mfdir=None, output_filename:str="",
+                       slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the Microstructure Fingerprinting metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
         example : study.fingerprinting(dictionary_path='my_dictionary')
@@ -747,7 +748,7 @@ class Elikopy:
         :param slurm_cpus: Replace the default number of slurm cpus of 1 by a custom number of cpus of using slum, or for standard processing, its the number of core available for processing.
         :param slurm_mem: Replace the default amount of ram allocated to the slurm task (8096MO by cpu) by a custom amount of ram.
         """
-        log_prefix="MF"
+        log_prefix = "MF"
         folder_path = self._folder_path if folder_path is None else folder_path
         slurm = self._slurm if slurm is None else slurm
         mfdir = "mf" if mfdir is None else mfdir
@@ -784,7 +785,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", peaksType=\"" + str(peaksType) + "\", core_count=" + str(core_count) + ", maskType=\"" + str(maskType) + "\", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ")'",
+                        "wrap": "export MKL_NUM_THREADS="+ str(core_count)+" ; export OMP_NUM_THREADS="+ str(core_count)+" ; python -c 'from elikopy.individual_subject_processing import mf_solo; mf_solo(\"" + folder_path + "/\",\"" + p + "\", \"" + dictionary_path + "\", peaksType=\"" + str(peaksType) + "\", core_count=" + str(core_count) + ", maskType=\"" + str(maskType) + "\", mfdir=\"" + str(mfdir)+ "\", csf_mask=" + str(csf_mask) + ", ear_mask=" + str(ear_mask) + ", output_filename= \"" + output_filename + "\"" + ")'",
                         "job_name": "mf_" + p,
                         "ntasks": 1,
                         "cpus_per_task": core_count,
@@ -805,7 +806,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                mf_solo(folder_path + "/", p, dictionary_path, peaksType=peaksType, core_count=core_count, maskType=maskType, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir)
+                mf_solo(folder_path + "/", p, dictionary_path, peaksType=peaksType, core_count=core_count, maskType=maskType, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir, output_filename=output_filename)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
                 f.flush()
