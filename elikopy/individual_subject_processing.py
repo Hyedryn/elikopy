@@ -3214,7 +3214,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     hdr['intent_code'] = 1005
 
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_pseudoTensor.nii.gz', t_p1, affine, hdr)
-    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT_peak_f1_pseudoTensor_normed.nii.gz', t_normed_p1, affine,
+    save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_pseudoTensor_normed.nii.gz', t_normed_p1, affine,
                hdr)
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor.nii.gz', t_p2, affine, hdr)
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_pseudoTensor_normed.nii.gz', t_normed_p2, affine,
