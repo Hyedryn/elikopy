@@ -2813,7 +2813,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
 
     if len(frac_list) > 0 and len(peaks_list) > 0 and len(fvf_list)>0:
         RGB_peaks_frac_fvf = unravel.utils.peaks_to_RGB(peaks_list, frac_list, fvf_list, order=color_order)
-        save_nifti(mf_path + '/' + patient_path + filename+'_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine, order=color_order)
+        save_nifti(mf_path + '/' + patient_path + filename+'_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
