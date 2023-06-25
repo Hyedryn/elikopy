@@ -2708,6 +2708,8 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
             msmtcsd_peaks_peak_dirs[..., 4] = peaks_old[..., 5]
             msmtcsd_peaks_peak_dirs[..., 5] = peaks_old[..., 3]
             color_order = 'brg'
+        else:
+            color_order = 'rgb'
 
         normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
         normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
