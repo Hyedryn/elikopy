@@ -3571,7 +3571,7 @@ def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
     bashCommand=('tcksift ' + input_file + ' ' + odf_file_path + ' ' +
                  output_file +
                  ' -nthreads ' + str(core_count) +
-                 ' -term_number ' + streamline_number +
+                 ' -term_number ' + str(streamline_number) +
                  ' -force')
 
     sift_log = open(tracking_path+"sift_logs.txt", "a+")
