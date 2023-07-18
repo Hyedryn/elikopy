@@ -3533,7 +3533,57 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
     
     with open(output_file[:-3]+'json', 'w') as outfile:
         json.dump(params, outfile)
-    
+        
+        
+def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
+              msmtCSD: bool = True, input_filename: str = 'tractogram',
+              core_count: int = 1):
+    """ Computes the sifted whole brain tractogram of a single patient based on
+    the fod obtained from msmt-CSD.
+
+    :param folder_path: the path to the root directory.
+    :param p: The name of the patient.
+    :param streamline_number: Number of streamlines in the final tractogram. default=100000
+    :param msmtCSD: boolean. If True then uses ODF from msmt-CSD, if False from CSD. default=True
+    :param input_filename: str. Specify input filename for tractogram.
+    """
+
+    from dipy.io.streamline import load_tractogram, save_trk
+
+    patient_path = p
+
+    if msmtCSD:
+        odf_file_path = (folder_path + '/subjects/' + patient_path
+                         + "/dMRI/ODF/MSMT-CSD/"+patient_path
+                         + "_MSMT-CSD_WM_ODF.nii.gz")
+    else:
+        odf_file_path = (folder_path + '/subjects/' + patient_path
+                         + "/dMRI/ODF/CSD/"+patient_path
+                         + "_CSD_SH_ODF_mrtrix.nii.gz")
+
+    tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
+    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz"
+    dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
+
+    input_file = tracking_path+patient_path+'_'+input_filename+'.tck'
+    output_file = tracking_path+patient_path+'_'+input_filename+'_sift.tck'
+
+    bashCommand=('tcksift ' + input_file + ' ' + odf_file_path + ' ' +
+                 output_file +
+                 ' -nthreads ' + str(core_count) +
+                 ' -term_number ' + streamline_number +
+                 ' -force')
+
+    sift_log = open(tracking_path+"sift_logs.txt", "a+")
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True,
+                               stdout=sift_log, stderr=subprocess.STDOUT)
+
+    process.communicate()
+    sift_log.close()
+
+    tract = load_tractogram(output_file, dwi_path)
+    save_trk(tract, output_file[:-3]+'trk')
+
 
 def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.035, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
     """ Computes the verdict metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/verdict/.
