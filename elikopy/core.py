@@ -2404,16 +2404,17 @@ class Elikopy:
         for p in patient_list:
             patient_path = p
             if slurm_subpath is None:
-                slurm_path = folder_path + '/subjects/' + patient_path + '/' + "slurm-%j"
+                slurm_path = folder_path + '/subjects/' + patient_path + '/'
             else:
-                slurm_path = folder_path + '/subjects/' + patient_path + '/' + slurm_subpath + "/slurm-%j"
+                slurm_path = folder_path + '/subjects/' + patient_path + '/' + slurm_subpath
 
             if not (os.path.exists(slurm_path)):
                 try:
                     os.makedirs(slurm_path)
                 except OSError:
                     print("Creation of the directory %s failed" % slurm_path)
-
+            slurm_path = slurm_path + "/slurm-%j"
+            
             if slurm:
                 job = {
                     "wrap": "export OMP_NUM_THREADS=" + str(core_count) + " ; export FSLPARALLEL=" + str(
