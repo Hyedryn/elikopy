@@ -2586,7 +2586,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
 
 def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated",
             report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD",
-            mfdir=None, output_filename: str = ""):
+            force_axial: bool=False, mfdir=None, output_filename: str = ""):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2709,7 +2709,12 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
             msmtcsd_peaks_peak_dirs[..., 5] = peaks_old[..., 3]
             color_order = 'brg'
         else:
-            color_order = 'rgb'
+            if force_axial:
+                msmtcsd_peaks_peak_dirs[..., 0] = -peaks_old[..., 0]
+                msmtcsd_peaks_peak_dirs[..., 3] = -peaks_old[..., 3]
+                color_order = 'rgb'
+            else:
+                raise AssertionError("No correction found for the current acquisition view. Please use CSD or use the force_axial parameter.")
 
         normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
         normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
