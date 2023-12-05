@@ -458,7 +458,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, static_files_path=None, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
+    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, static_files_path=None, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], eddy_additional_arg="", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
         """ Performs data preprocessing. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
         denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
         The results are stored in the preprocessing subfolder of each study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -550,7 +550,7 @@ class Elikopy:
                             denoising) + ",denoising_algorithm=\"" + str(denoising_algorithm) +"\",reslice=" + str(reslice) + ",reslice_addSlice=" + str(reslice_addSlice) + ",gibbs=" + str(
                             gibbs) + ",topup=" + str(topup) + ",forceSynb0DisCo=" + str(forceSynb0DisCo) + ",useGPUsynb0DisCo=" + str(useGPUsynb0DisCo) + ",topupConfig=\"" + str(topupConfig) + "\",starting_state=\"" + str(starting_state) + "\",static_files_path=\""+ static_files_path +"\" ,bet_median_radius=" + str(
                             bet_median_radius) + ",bet_dilate=" + str(bet_dilate) + ", qc_reg=" + str(qc_reg) + ", report=" + str(report) + ", slspec_gc_path=" + str(slspec_gc_path) + ", core_count=" + str(core_count)+ ", niter=" + str(niter)+",bet_numpass=" + str(
-                            bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"])'",
+                            bet_numpass) + ",cuda=" + str(cuda) + ",cuda_name=\"" + str(cuda_name) + "\",s2v=[" + str(s2v[0]) + "," + str(s2v[1]) + "," + str(s2v[2]) + ",\"" + str(s2v[3]) + "\"],olrep=[" + str(olrep[0]) + "," + str(olrep[1]) + "," + str(olrep[2]) + ",\"" + str(olrep[3]) + "\"], " + "eddy_additional_arg=\"" + str(eddy_additional_arg) + "\" )'",
                         "job_name": "preproc_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 8,
@@ -599,7 +599,7 @@ class Elikopy:
                                  eddy=eddy,biasfield=biasfield, biasfield_bsplineFitting=biasfield_bsplineFitting, biasfield_convergence=biasfield_convergence,
                                  starting_state=starting_state,
                                  bet_median_radius=bet_median_radius,bet_dilate=bet_dilate,bet_numpass=bet_numpass,cuda=self._cuda, qc_reg=qc_reg, core_count=core_count,
-                                 cuda_name=cuda_name, s2v=s2v, olrep=olrep, niter=niter, slspec_gc_path=slspec_gc_path, report=report, static_files_path=static_files_path)
+                                 cuda_name=cuda_name, s2v=s2v, olrep=olrep, niter=niter, slspec_gc_path=slspec_gc_path, report=report, static_files_path=static_files_path, eddy_additional_arg=eddy_additional_arg)
                     matplotlib.pyplot.close(fig='all')
                     f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully preprocessed patient %s\n" % p)
                     f.flush()
