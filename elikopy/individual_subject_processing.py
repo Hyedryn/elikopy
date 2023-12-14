@@ -9,6 +9,8 @@ import math
 import subprocess
 from elikopy.utils import makedir
 
+import functools
+print = functools.partial(print, flush=True)
 
 
 def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, denoising_algorithm="mppca_mrtrix", gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], static_files_path=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], eddy_additional_arg="", qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
@@ -2663,7 +2665,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
         numfasc_2 = np.sum(csd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
             csd_peaks_peak_values[:, :, :, 1] > 0.15)
-        print("Approximate number of non empty voxel: ", numfasc_2)
+        print("Approximate number of non empty voxel: ", numfasc_2, flush = True)
 
         normPeaks0 = csd_peaks_peak_dirs[..., 0, :]
         normPeaks1 = csd_peaks_peak_dirs[..., 1, :]
@@ -2691,7 +2693,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
 
         numfasc_2 = np.sum(msmtcsd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
                     msmtcsd_peaks_peak_values[:, :, :, 1] > 0.15)
-        print("Approximate number of non empty voxel: ", numfasc_2)
+        print("Approximate number of non empty voxel: ", numfasc_2, flush = True)
 
         view = get_acquisition_view(affine)
         peaks_old = msmtcsd_peaks_peak_dirs.copy()
@@ -2743,7 +2745,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
+        "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n", flush = True)
 
     import time
 
@@ -2757,14 +2759,15 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     end = time.time()
     stats_header = "patient_id, elapsed_time, core_count"
     stats_val = p + ", " + str(end - start) + ", " + str(core_count)
-    print(stats_header)
-    print(stats_val)
+    print(stats_header, flush = True)
+    print(stats_val, flush = True)
     f.write(stats_header)
     f.write(stats_val)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": End of fitting\n")
-
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": End of fitting\n", flush = True)
     # extract info
     frac_f0 = MF_fit.frac_f0
     fvf_tot = MF_fit.fvf_tot
@@ -2778,6 +2781,8 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
 
     MF_fit.write_nifti(mf_path + '/' + patient_path + filename+'.nii.gz', affine=affine)
 
+    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+        "%d.%b %Y %H:%M:%S") + ": Saving of unravel pseudotensor dic\n", flush = True)
     # Export pseudo tensor
     frac = 0
     frac_list = []
@@ -2827,7 +2832,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         save_nifti(mf_path + '/' + patient_path + filename+'_peak_tot_RGB_frac_fvf.nii.gz', RGB_peaks_frac_fvf, img_mf_frac.affine)
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
+        "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p, flush = True)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)

@@ -2417,7 +2417,7 @@ class Elikopy:
             
             if slurm:
                 job = {
-                    "wrap": "export OMP_NUM_THREADS=" + str(core_count) + " ; export FSLPARALLEL=" + str(
+                    "wrap": "export OMP_NUM_THREADS=" + str(core_count) + " ; export PYTHONUNBUFFERED=" + str(True) + " ; export FSLPARALLEL=" + str(
                         core_count) + " ; python -c '" + baseImportCmd + "; "+function_name+"(\"" + str(
                         folder_path) + "\",\"" + str(
                         patient_path) + "\"",
