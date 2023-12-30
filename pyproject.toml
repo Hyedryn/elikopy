@@ -1,0 +1,48 @@
+[tool.poetry]
+name = "elikopy"
+version = "0.3"
+description = "A set of tools for analysing dMRI"
+authors = [
+    "qdessain <quentin.dessain@uclouvain.be>",
+    "msimon <mathieu.simon@uclouvain.be>",
+    "ndelinte <nicolas.delinte@uclouvain.be>"
+]
+license = "AGPL-3.0"  # Update this to match the exact SPDX identifier if different
+readme = "README.md"
+homepage = "https://github.com/Hyedryn/elikopy"
+repository = "https://github.com/Hyedryn/elikopy"
+documentation = "https://github.com/Hyedryn/elikopy"  # Update if you have specific documentation URL
+
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Operating System :: OS Independent",
+    'Programming Language :: Python :: 3 :: Only',
+    "Intended Audience :: Science/Research",
+]
+
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.24"
+dipy = "^1.7.0"
+torch = "^2.0.1"
+pypdf = "^3.4"
+fpdf = "^1.7.2"
+matplotlib = "^3.7"
+future = ">=0.15"
+unravel-python = "^1.4"
+scikit-image = ">=0.20"
+scipy = "^1.11"
+pandas = "^1.3"
+sphinx_rtd_theme = ">=0.5"
+sphinx = "^3.2.0"
+torchvision = ">=0.15"
+scikit-learn = "^1.3"
+nibabel = "^5.0.0"
+numba = ">=0.53.0"
+microstructure-fingerprinting-rensonnetg = { git = "https://github.com/rensonnetg/microstructure_fingerprinting.git" }
+dmipy = { git = "https://github.com/Hyedryn/dmipy.git" }
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

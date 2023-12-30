@@ -15,11 +15,6 @@ ElikoPy requires [Python](https://www.python.org/) v3.8+ to run.
 After cloning the repo, you can either firstly install all the python dependencies including optionnal dependency used to speed up the code:
 
 ```sh
-$ pip install -r requirements.txt --user
-```
-Or you can install directly the library with only the mandatory dependencies (if you performed the previous step, you still need to perform this step):
-
-```sh
 $ python3 -m pip install .
 ```
 
