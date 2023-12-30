@@ -2660,6 +2660,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         fracs_file = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nii.gz'
         (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,
                                                  peakmode='tensor', mask=mask, frac12=fracs_file)
+        color_order = 'rgb'
     elif peaksType == "CSD":
         csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
         csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
@@ -2684,6 +2685,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
                                                  mu1=mu1, mu2=mu2,
                                                  peakmode='peaks',
                                                  mask=mask, frac12=None)
+        color_order = 'rgb'
     elif peaksType == "MSMT-CSD":
 
         from elikopy.utils import get_acquisition_view
