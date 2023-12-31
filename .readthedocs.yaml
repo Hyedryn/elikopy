@@ -6,11 +6,19 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
+    poetry: "1.1.13"
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
   configuration: docs/conf.py
 
 python:
-   install:
-     - requirements: docs/requirements.txt
+  install:
+    - method: poetry
+      path: .
+      extra_requirements:
+        - docs
+
+submodules:
+  include: all  # Include all submodules, if any
+  recursive: true

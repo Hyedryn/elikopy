@@ -13,7 +13,7 @@
 autodoc_mock_imports = ['torch']
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../elikopy'))
 
 import sphinx_rtd_theme
 
@@ -35,7 +35,9 @@ author = 'Quentin Dessain, Mathieu Simon'
 extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.autodoc',
+    'sphinx_autodoc_typehints',
 ]
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
