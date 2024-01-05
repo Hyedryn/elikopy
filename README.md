@@ -12,23 +12,15 @@ This Python library is based on
 
 ElikoPy requires [Python](https://www.python.org/) v3.8+ to run.
 
-After cloning the repo, you can either firstly install all the python dependencies including optionnal dependency used to speed up the code:
+After cloning the repo, you can either firstly install all the python dependencies including optional dependency used to speed up the code:
 
 ```sh
 $ python3 -m pip install .
 ```
 
-Microstructure Fingerprinting is currently not avaible in the standard python repo, you can clone and install this library manually.
+FSL also needs to be installed and available in our path if you want to perform movement correction or TBSS.
 
-```sh
-$ git clone git@github.com:rensonnetg/microstructure_fingerprinting.git
-$ cd microstructure_fingerprinting
-$ python setup.py install
-```
-
-FSL also needs to be installed and availabe in our path if you want to perform mouvement correction or tbss.
-
-Unfortunatly, the DIAMOND code is not publically available. If you do not have it in your possesion, you will not be able to use this algorithm. If you have it, simply add the executable to your path. 
+Unfortunately, the DIAMOND code is not publicly available. If you do not have it in your possession, you will not be able to use this algorithm. If you have it, simply add the executable to your path. 
 
 ### Usage
 
