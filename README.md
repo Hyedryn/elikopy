@@ -1,39 +1,35 @@
 # ElikoPy
 
+[![Documentation Status](https://readthedocs.org/projects/elikopy/badge/?version=latest)](https://elikopy.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/elikopy?label=pypi%20package)](https://pypi.org/project/elikopy//) ![GitHub repo size](https://img.shields.io/github/repo-size/Hyedryn/elikopy)
 
-ElikoPy is Python library aiming at easing the processing of diffusion imaging for microstructural analysis. 
-This Python library is based on
-  - DIPY, a python library for the analysis of MR diffusion imaging.
-  - Microstructure fingerprinting, a python library doing estimation of white matter microstructural properties from a dictionary of Monte Carlo diffusion MRI fingerprints.
-  - FSL, a comprehensive library of analysis tools for FMRI, MRI and DTI brain imaging data.
-  - DIAMOND, a c software that is characterizing brain tissue by assessment of the distribution of anisotropic microstructural environments in diffusion‐compartment imaging.
+ElikoPy is a Python library designed to simplify the processing of diffusion imaging for microstructural analysis.
 
-### Installation
+## Installation
 
-ElikoPy requires [Python](https://www.python.org/) v3.8+ to run.
+### Prerequistes
 
-After cloning the repo, you can either firstly install all the python dependencies including optional dependency used to speed up the code:
+ElikoPy requires [Python](https://www.python.org/) v3.8+.
+
+### Installation Steps
+
+Clone the repository and install the dependencies:
 
 ```sh
-$ python3 -m pip install .
+git clone https://github.com/Hyedryn/elikopy.git
+cd elikopy
+python -m pip install .
 ```
 
-FSL also needs to be installed and available in our path if you want to perform movement correction or TBSS.
+If you wish to use movement correction or TBSS, ensure FSL is installed and available in your path.
 
-Unfortunately, the DIAMOND code is not publicly available. If you do not have it in your possession, you will not be able to use this algorithm. If you have it, simply add the executable to your path. 
+**Note:** The DIAMOND microstructural model is not publicly available. If you have it, add the executable to your path. Otherwise, you won't be able to use this algorithm.
 
-### Usage
+## Development
 
-Todo
+Interested in contributing? Wonderful!
 
-### Development
+Feel free to open issues or pull requests. Your contributions are welcome!
 
-Want to contribute? Great!
+## Publications & Citations
 
-Do not hesitate to open issue or pull request!
-### Todos
-
- - Release a complete and accurate documentation for the library
-
-
-**Free Software, Hell Yeah!**
+If you use ElikoPy in your research, please cite it using the package DOI.
