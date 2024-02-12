@@ -2716,7 +2716,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         elif view == 'sagittal':
             color_order = 'brg'
         else:
-            raise Warning("No correction found for the RGB colors of the current acquisition view. Defaulting to axial (RGB).")
+            print("Warning: No correction found for the RGB colors of the current acquisition view. Defaulting to axial (RGB).")
 
         normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
         normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
