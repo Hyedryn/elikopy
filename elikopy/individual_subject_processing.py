@@ -3184,24 +3184,15 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
     output, error = process.communicate()
 
-    if os.path.exists(odf_msmtcsd_path + '/' + "fixel"):
-        shutil.rmtree(odf_msmtcsd_path + '/' + "fixel")
+    sh2peaks_cmd = "sh2peaks -force -nthreads " + str(core_count) + \
+                    " -num " + str(num_peaks) + " " + \
+                    odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ; '
 
-    fod2fixel_cmd = "fod2fixel -force -nthreads " + str(core_count) + " -peak peaks.mif" + \
-                    " -maxnum " + str(num_peaks) + " " + \
-                    odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' + \
-                    odf_msmtcsd_path + '/' + "fixel ; "
+    peaks2amp_cmd = "peaks2amp -force -nthreads " + str(core_count) + " " + \
+                     odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' +\
+                     + odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks_amp.nii.gz ; "
 
-    fixel2peak_cmd = "fixel2peaks -info -force -nthreads " + str(core_count) + " " + \
-                     odf_msmtcsd_path + '/' + "fixel " + odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks.nii.gz " +\
-                     " -number " + str(num_peaks) + " ; "
-
-    fixel2voxel_cmd = "fixel2voxel -info -force -nthreads " + str(core_count) + " " + \
-                      odf_msmtcsd_path + '/' + "fixel/peaks.mif None " + odf_msmtcsd_path + \
-                      '/' + patient_path + "_MSMT-CSD_peaks_amp.nii.gz" + \
-                      " -number " + str(num_peaks) + " ; "
-
-    bashCommand = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + fod2fixel_cmd + fixel2peak_cmd + fixel2voxel_cmd
+    bashCommand = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + sh2peaks_cmd + peaks2amp_cmd
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": mrtrix ODF MSMT-CSD postprocessing launched for patient %s \n" % p + " with bash command " + bashCommand)
