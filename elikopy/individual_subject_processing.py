@@ -2707,7 +2707,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
 
         # Rotate peaks to go from Mrtrix convention to Python
         for k in range(K):
-            msmtcsd_peaks_peak_dirs[..., 3*k:3*k+3] = msmtcsd_peaks_peak_dirs[..., 3*k:3*k+3]  @ u
+            msmtcsd_peaks_peak_dirs[..., 3*k:3*k+3] = msmtcsd_peaks_peak_dirs[..., 3*k:3*k+3] @ u
 
         # TODO : Automate RGB selection to all views
         view = get_acquisition_view(affine)
