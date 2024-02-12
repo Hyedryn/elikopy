@@ -2703,7 +2703,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         u, _ = polar(affine[0:3, 0:3])
 
         # Number of fixels
-        K = int(p.shape[-1]/3)
+        K = int(msmtcsd_peaks_peak_dirs.shape[-1]/3)
 
         # Rotate peaks to go from Mrtrix convention to Python
         for k in range(K):
