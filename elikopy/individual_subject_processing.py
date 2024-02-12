@@ -2589,7 +2589,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
 
 def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated",
             report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD",
-            force_axial: bool=False, mfdir=None, output_filename: str = ""):
+            mfdir=None, output_filename: str = ""):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -2633,7 +2633,6 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
 
     # imports
     import microstructure_fingerprinting as mf
-    import microstructure_fingerprinting.mf_utils as mfu
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io import read_bvals_bvecs
 
@@ -2652,21 +2651,23 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
             folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
 
     # compute numfasc and peaks
-    if os.path.exists(diamond_path) and peaksType=="DIAMOND":
+    if os.path.exists(diamond_path) and peaksType == "DIAMOND":
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Diamond Path found! MF will be based on diamond \n")
         tensor_files0 = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t0.nii.gz'
         tensor_files1 = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_t1.nii.gz'
         fracs_file = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/" + patient_path + '_diamond_fractions.nii.gz'
-        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None, mu1=tensor_files0, mu2=tensor_files1,
-                                                 peakmode='tensor', mask=mask, frac12=fracs_file)
+        (peaks, numfasc) = mf.cleanup_2fascicles(frac1=None, frac2=None,
+                                                 mu1=tensor_files0, mu2=tensor_files1,
+                                                 peakmode='tensor', mask=mask,
+                                                 frac12=fracs_file)
         color_order = 'rgb'
     elif peaksType == "CSD":
         csd_peaks_peak_dirs, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
         csd_peaks_peak_values, _ = load_nifti(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
-        numfasc_2 = np.sum(csd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
-            csd_peaks_peak_values[:, :, :, 1] > 0.15)
-        print("Approximate number of non empty voxel: ", numfasc_2, flush = True)
+        numfasc_2 = (np.sum(csd_peaks_peak_values[:, :, :, 0] > 0.15)
+                     + np.sum(csd_peaks_peak_values[:, :, :, 1] > 0.15))
+        print("Approximate number of non empty voxel: ", numfasc_2, flush=True)
 
         normPeaks0 = csd_peaks_peak_dirs[..., 0, :]
         normPeaks1 = csd_peaks_peak_dirs[..., 1, :]
@@ -2689,37 +2690,33 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     elif peaksType == "MSMT-CSD":
 
         from elikopy.utils import get_acquisition_view
+        from scipy.linalg import polar
 
         msmtcsd_peaks_peak_dirs, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks.nii.gz')
         msmtcsd_peaks_peak_values, _ = load_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peaks_amp.nii.gz')
 
-        numfasc_2 = np.sum(msmtcsd_peaks_peak_values[:, :, :, 0] > 0.15) + np.sum(
-                    msmtcsd_peaks_peak_values[:, :, :, 1] > 0.15)
-        print("Approximate number of non empty voxel: ", numfasc_2, flush = True)
+        numfasc_2 = (np.sum(msmtcsd_peaks_peak_values[:, :, :, 0] > 0.15)
+                     + np.sum(msmtcsd_peaks_peak_values[:, :, :, 1] > 0.15))
+        print("Approximate number of non empty voxel: ", numfasc_2, flush=True)
 
+        # Polar decomposition
+        u, _ = polar(affine[0:3, 0:3])
+
+        # Number of fixels
+        K = int(p.shape[-1]/3)
+
+        # Rotate peaks to go from Mrtrix convention to Python
+        for k in range(K):
+            msmtcsd_peaks_peak_dirs[..., 3*k:3*k+3] = msmtcsd_peaks_peak_dirs[..., 3*k:3*k+3]  @ u
+
+        # TODO : Automate RGB selection to all views
         view = get_acquisition_view(affine)
-        peaks_old = msmtcsd_peaks_peak_dirs.copy()
-
         if view == 'axial':
-            msmtcsd_peaks_peak_dirs[..., 0] = -peaks_old[..., 0]
-            msmtcsd_peaks_peak_dirs[..., 3] = -peaks_old[..., 3]
             color_order = 'rgb'
-
         elif view == 'sagittal':
-            msmtcsd_peaks_peak_dirs[..., 0] = -peaks_old[..., 1]
-            msmtcsd_peaks_peak_dirs[..., 1] = peaks_old[..., 2]
-            msmtcsd_peaks_peak_dirs[..., 2] = peaks_old[..., 0]
-            msmtcsd_peaks_peak_dirs[..., 3] = -peaks_old[..., 4]
-            msmtcsd_peaks_peak_dirs[..., 4] = peaks_old[..., 5]
-            msmtcsd_peaks_peak_dirs[..., 5] = peaks_old[..., 3]
             color_order = 'brg'
         else:
-            if force_axial:
-                msmtcsd_peaks_peak_dirs[..., 0] = -peaks_old[..., 0]
-                msmtcsd_peaks_peak_dirs[..., 3] = -peaks_old[..., 3]
-                color_order = 'rgb'
-            else:
-                raise AssertionError("No correction found for the current acquisition view. Please use CSD or use the force_axial parameter.")
+            raise Warning("No correction found for the RGB colors of the current acquisition view. Defaulting to axial (RGB).")
 
         normPeaks0 = msmtcsd_peaks_peak_dirs[..., 0:3]
         normPeaks1 = msmtcsd_peaks_peak_dirs[..., 3:6]
@@ -2747,7 +2744,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n")
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n", flush = True)
+        "%d.%b %Y %H:%M:%S") + ": Beginning of fitting\n", flush=True)
 
     import time
 
@@ -2761,15 +2758,15 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
     end = time.time()
     stats_header = "patient_id, elapsed_time, core_count"
     stats_val = p + ", " + str(end - start) + ", " + str(core_count)
-    print(stats_header, flush = True)
-    print(stats_val, flush = True)
+    print(stats_header, flush=True)
+    print(stats_val, flush=True)
     f.write(stats_header)
     f.write(stats_val)
 
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": End of fitting\n")
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-        "%d.%b %Y %H:%M:%S") + ": End of fitting\n", flush = True)
+        "%d.%b %Y %H:%M:%S") + ": End of fitting\n", flush=True)
     # extract info
     frac_f0 = MF_fit.frac_f0
     fvf_tot = MF_fit.fvf_tot
@@ -2802,9 +2799,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         pixdim = hdr['pixdim'][1:4]
         t = peak_to_tensor(img_mf_peaks.get_fdata(),norm=None,pixdim=pixdim)
         t_normed = peak_to_tensor(img_mf_peaks.get_fdata(), norm=img_mf_frac.get_fdata(),pixdim=pixdim)
-        hdr['dim'][0] = 5 # 4 scalar, 5 vector
-        hdr['dim'][4] = 1 # 3
-        hdr['dim'][5] = 6 # 1
+        hdr['dim'][0] = 5  # 4 scalar, 5 vector
+        hdr['dim'][4] = 1  # 3
+        hdr['dim'][5] = 6  # 1
         hdr['regular'] = b'r'
         hdr['intent_code'] = 1005
         save_nifti(mf_path + '/' + patient_path + filename+'_peak_f' + str(frac) + '_pseudoTensor.nii.gz', t, img_mf_peaks.affine, hdr)
