@@ -3190,8 +3190,8 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
                     odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ; '
 
     peaks2amp_cmd = "peaks2amp -force -nthreads " + str(core_count) + " " + \
-                     odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' +\
-                     + odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks_amp.nii.gz ; "
+                     odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_WM_ODF.nii.gz ' + \
+                     odf_msmtcsd_path + '/' + patient_path + "_MSMT-CSD_peaks_amp.nii.gz ; "
 
     bashCommand = 'export OMP_NUM_THREADS=' + str(core_count) + ' ; ' + sh2peaks_cmd + peaks2amp_cmd
 
