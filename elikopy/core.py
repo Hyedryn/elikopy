@@ -808,7 +808,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                mf_solo(folder_path + "/", p, dictionary_path, peaksType=peaksType, core_count=core_count, maskType=maskType, csf_mask=csf_mask, force_axial=force_axial, ear_mask=ear_mask, mfdir=mfdir, output_filename=output_filename)
+                mf_solo(folder_path + "/", p, dictionary_path, peaksType=peaksType, core_count=core_count, maskType=maskType, csf_mask=csf_mask, ear_mask=ear_mask, mfdir=mfdir, output_filename=output_filename)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied microstructure fingerprinting on patient %s\n" % p)
                 f.flush()
