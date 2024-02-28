@@ -629,7 +629,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     import dipy.reconst.dti as dti
-    from dipy.align.imaffine import (AffineMap, MutualInformationMetric, AffineRegistration)
+    from dipy.align.imaffine import MutualInformationMetric, AffineRegistration
     from dipy.align.transforms import RigidTransform3D
     from dipy.segment.mask import segment_from_cfa
     from dipy.segment.mask import bounding_box
@@ -1385,13 +1385,19 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     f.close()
 
 
-def dti_solo(folder_path, p, maskType="brain_mask_dilated", report=True):
+def dti_solo(folder_path, p, maskType="brain_mask_dilated",
+             use_all_shells: bool = False, report=True):
     """
-    Computes the DTI metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
+    Computes the DTI metrics for a single subject. The outputs are available in
+    the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
     :param folder_path: the path to the root directory.
     :param p: The name of the patient.
-    :param use_wm_mask: If true a white matter mask is used. The white_matter() function needs to already be applied. default=False
+    :param use_wm_mask: If true a white matter mask is used. The white_matter()
+    function needs to already be applied. default=False
+    :param use_all_shells: Boolean. DTI will use all shells available, not just
+    shells <= 2000, this will cause a more defined white matter at the cost of
+    an erronous estimation of the CSF. The default is False.
     """
     log_prefix = "DTI SOLO"
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -1424,10 +1430,19 @@ def dti_solo(folder_path, p, maskType="brain_mask_dilated", report=True):
     bvals, bvecs = read_bvals_bvecs(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+    # Remove shells >2000================================
+    if not use_all_shells:
+        indexes = np.argwhere(bvals < 2000+10)
+        indexes = indexes.squeeze()
+        bvals = bvals[indexes]
+        bvecs = bvecs[indexes]
+        data = data[..., indexes]
+        print('Warning: removing shells above b=2000 for DTI. To disable this, '
+              + 'activate the use_all_shells option.')
     # create the model===================================
     b0_threshold = np.min(bvals)+10
     b0_threshold = max(50, b0_threshold)
-    gtab = gradient_table(bvals, bvecs,b0_threshold=b0_threshold)
+    gtab = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
     tenmodel = dti.TensorModel(gtab)
     tenfit = tenmodel.fit(data, mask=mask)
     # FA ================================================

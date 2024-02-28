@@ -23,7 +23,8 @@ from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall
 
 
 def dicom_to_nifti(folder_path):
-    """ Convert dicom data into compressed nifti. Converted dicoms are then moved to a sub-folder named original_data.
+    """ Convert dicom data into compressed nifti. Converted dicoms are then
+    moved to a sub-folder named original_data.
     The niftis are named patientID_ProtocolName_SequenceName.
 
     :param folder_path: Path to root folder containing all the dicoms
@@ -653,7 +654,8 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
         f.close()
 
-    def dti(self,folder_path=None, patient_list_m=None, maskType="brain_mask_dilated", slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def dti(self,folder_path=None, patient_list_m=None, maskType="brain_mask_dilated", use_all_shells: bool = False,
+            slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Computes the DTI metrics for each subject using Weighted Least-Squares. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
         example : study.dti()
@@ -661,6 +663,9 @@ class Elikopy:
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
+        :param use_all_shells: Boolean. DTI will use all shells available, not just
+        shells <= 2000, this will cause a more defined white matter at the cost of
+        an erronous estimation of the CSF. The default is False.
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 1h by a custom timeout.
@@ -697,7 +702,7 @@ class Elikopy:
 
             if slurm:
                 p_job = {
-                        "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/\",\"" + p + "\",maskType=\"" + str(maskType) + "\")'",
+                        "wrap": "python -c 'from elikopy.individual_subject_processing import dti_solo; dti_solo(\"" + folder_path + "/\",\"" + p + "\",maskType=\"" + str(maskType) + "\", use_all_shells=" + str(use_all_shells) +")'",
                         "job_name": "dti_" + p,
                         "ntasks": 1,
                         "cpus_per_task": 1,
@@ -719,7 +724,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                dti_solo(folder_path + "/",p,maskType=maskType)
+                dti_solo(folder_path + "/",p,maskType=maskType,use_all_shells=use_all_shells)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied DTI on patient %s\n" % p)
                 f.flush()
