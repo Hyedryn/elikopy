@@ -24,6 +24,7 @@ from elikopy.utils import submit_job, get_job_state, makedir, tbss_utils, regall
 
 def dicom_to_nifti(folder_path):
     """ Convert dicom data into compressed nifti. Converted dicoms are then
+    moved to a sub-folder named original_data.
     The niftis are named patientID_ProtocolName_SequenceName.
 
     :param folder_path: Path to root folder containing all the dicoms
