@@ -629,7 +629,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     import dipy.reconst.dti as dti
-    from dipy.align.imaffine import (MutualInformationMetric, AffineRegistration)
+    from dipy.align.imaffine import MutualInformationMetric, AffineRegistration
     from dipy.align.transforms import RigidTransform3D
     from dipy.segment.mask import segment_from_cfa
     from dipy.segment.mask import bounding_box
