@@ -1139,7 +1139,7 @@ class Elikopy:
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient %s is ready to be processed\n" % p)
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully submited job %s using slurm\n" % p_job_id)
             else:
-                tracking_solo(folder_path + "/", p,  streamline_number=streamline_number, msmtCSD=msmtCSD, input_filename=input_filename, core_count=core_count)
+                sift_solo(folder_path + "/", p,  streamline_number=streamline_number, msmtCSD=msmtCSD, input_filename=input_filename, core_count=core_count)
                 matplotlib.pyplot.close(fig='all')
                 f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Successfully applied sift_solo on patient %s\n" % p)
                 f.flush()
