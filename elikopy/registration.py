@@ -523,6 +523,12 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None,
                        static_file=T1_ref_subject,
                        output_path=folder_path + '/subjects/' + p + '/T1/' + p + '_space-T1Ref_type-brain_T1.nii.gz', binary=False,
                        inverse=False, static_fa_file=T1_ref_subject)
+
+        reg_T1RefToCommonSpace_precomputed = folder_path + '/subjects/' + p_ref + '/reg/' + 'mapping_T1w_to_T1wCommonSpace.p'
+        if not os.path.exists(reg_T1RefToCommonSpace_precomputed):
+            raise ValueError("No mapping_T1w_to_T1wCommonSpace.p file found in the reg folder of the reference subject")
+        with open(reg_T1RefToCommonSpace_precomputed, 'rb') as handle:
+            mapping_T1w_to_T1wCommonSpace = pickle.load(handle)
     else:
         mapping_T1w_to_T1wRef = None
 
