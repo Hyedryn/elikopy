@@ -1702,7 +1702,10 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
             brain_extracted_T1_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
             brain_extracted_mask_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain_mask.nii.gz'
             if not os.path.exists(brain_extracted_T1_path):
+                print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": T1 Brain extraction for patient %s (mri_synth_strip) \n" % p)
                 cmd = f"mri_synth_strip -i {anat_path} -o {brain_extracted_T1_path} -m {brain_extracted_mask_path} "
+                print("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": " + cmd)
                 import subprocess
                 process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
