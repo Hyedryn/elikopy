@@ -18,7 +18,7 @@ from dipy.align.metrics import CCMetric
 
 import pickle
 
-from utils import get_patient_ref
+from elikopy.utils import get_patient_ref
 
 
 def getTransform(static_volume_file, moving_volume_file, mask_file=None, onlyAffine=False,
