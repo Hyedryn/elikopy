@@ -18,6 +18,8 @@ from dipy.align.metrics import CCMetric
 
 import pickle
 
+from utils import get_patient_ref
+
 
 def getTransform(static_volume_file, moving_volume_file, mask_file=None, onlyAffine=False,
                  diffeomorph=True, sanity_check=False, DWI=False):
@@ -136,7 +138,7 @@ def getTransform(static_volume_file, moving_volume_file, mask_file=None, onlyAff
     return mapping
 
 
-def applyTransform(file_path, mapping, mapping_2=None, mask_file=None, static_file='', output_path='', binary=False,
+def applyTransform(file_path, mapping, mapping_2=None, mapping_3=None, mask_file=None, static_file='', output_path='', binary=False,
                    inverse=False, mask_static=None, static_fa_file=''):
     '''
 
@@ -181,6 +183,12 @@ def applyTransform(file_path, mapping, mapping_2=None, mask_file=None, static_fi
         else:
             transformed = mapping_2.transform(transformed)
 
+    if mapping_3 is not None:
+        if inverse:
+            transformed = mapping_3.transform_inverse(transformed)
+        else:
+            transformed = mapping_3.transform(transformed)
+
     if binary:
         transformed[transformed > .5] = 1
         transformed[transformed <= .5] = 0
@@ -205,7 +213,7 @@ def applyTransform(file_path, mapping, mapping_2=None, mask_file=None, static_fi
         return transformed
 
 
-def applyTransformToAllMapsInFolder(input_folder, output_folder, mapping, mapping_2=None, static_file=None,
+def applyTransformToAllMapsInFolder(input_folder, output_folder, mapping, mapping_2=None, mapping_3=None, static_file=None,
                                     mask_file=None,
                                     keywordList=[], inverse=False, mask_static=None, static_fa_file=''):
     '''
@@ -228,7 +236,7 @@ def applyTransformToAllMapsInFolder(input_folder, output_folder, mapping, mappin
         if all(keyword in filename for keyword in keywordList):
             # print(filename)
             try:
-                applyTransform(input_folder + filename, mapping, mapping_2=mapping_2, static_file=static_file,
+                applyTransform(input_folder + filename, mapping, mapping_2=mapping_2, mapping_3=mapping_3, static_file=static_file,
                                output_path=output_folder + filename, mask_file=mask_file, binary=False, inverse=inverse,
                                mask_static=mask_static, static_fa_file=static_fa_file)
             except TypeError:
@@ -236,7 +244,7 @@ def applyTransformToAllMapsInFolder(input_folder, output_folder, mapping, mappin
 
 
 def regToT1fromB0(reg_path, T1_subject, DWI_subject, mask_file, metrics_dic, folderpath, p, mapping_T1_to_T1MNI, T1_MNI,
-                  mask_static, FA_MNI):
+                  mask_static, FA_MNI, longitudinal_transform=None):
     if os.path.exists(reg_path + 'mapping_DWI_B0_to_T1.p'):
         with open(reg_path + 'mapping_DWI_B0_to_T1.p', 'rb') as handle:
             mapping_DWI_to_T1 = pickle.load(handle)
@@ -260,15 +268,24 @@ def regToT1fromB0(reg_path, T1_subject, DWI_subject, mask_file, metrics_dic, fol
     for maskType in ["brain_mask_dilated","brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
                     "wm_mask_Freesurfer_T1"]:
         in_mask_path = folderpath + "/subjects/" + p + "/masks/" + p + "_" + maskType + ".nii.gz"
-        reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_B0_" + maskType + ".nii.gz"
         if os.path.exists(in_mask_path):
-            applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
-                           output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
-                           mask_static=mask_static, static_fa_file=FA_MNI)
+            if longitudinal_transform is not None:
+                reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_B0_" + maskType + "_longitudinal.nii.gz"
+                applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=longitudinal_transform, mapping_3=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                               output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                               mask_static=mask_static, static_fa_file=FA_MNI)
+            else:
+                reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_B0_" + maskType + ".nii.gz"
+                applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                               output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                               mask_static=mask_static, static_fa_file=FA_MNI)
 
     for key, value in metrics_dic.items():
         input_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '/'
-        output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_B0/'
+        if longitudinal_transform is not None:
+            output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_B0_longitudinal/'
+        else:
+            output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_B0/'
 
         if not (os.path.exists(output_folder)):
             try:
@@ -277,13 +294,19 @@ def regToT1fromB0(reg_path, T1_subject, DWI_subject, mask_file, metrics_dic, fol
                 print("Creation of the directory %s failed" % output_folder)
 
         print("Start of applyTransformToAllMapsInFolder for metrics ", value, ":", key)
-        applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI,
-                                        static_file=T1_MNI, mask_file=mask_file, keywordList=[p, key], inverse=False,
-                                        mask_static=mask_static, static_fa_file=FA_MNI)
+        if longitudinal_transform is not None:
+            applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=longitudinal_transform,
+                                            mapping_3=mapping_T1_to_T1MNI, static_file=T1_MNI, mask_file=mask_file,
+                                            keywordList=[p, key], inverse=False, mask_static=mask_static,
+                                            static_fa_file=FA_MNI)
+        else:
+            applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI,
+                                            static_file=T1_MNI, mask_file=mask_file, keywordList=[p, key], inverse=False,
+                                            mask_static=mask_static, static_fa_file=FA_MNI)
 
 
 def regToT1fromWMFOD(reg_path, T1_subject, WM_FOD_subject, mask_file, metrics_dic, folderpath, p, mapping_T1_to_T1MNI,
-                     T1_MNI, mask_static, FA_MNI):
+                     T1_MNI, mask_static, FA_MNI, longitudinal_transform=None):
     if os.path.exists(reg_path + 'mapping_DWI_WMFOD_to_T1.p'):
         with open(reg_path + 'mapping_DWI_WMFOD_to_T1.p', 'rb') as handle:
             mapping_DWI_to_T1 = pickle.load(handle)
@@ -307,16 +330,25 @@ def regToT1fromWMFOD(reg_path, T1_subject, WM_FOD_subject, mask_file, metrics_di
     for maskType in ["brain_mask_dilated","brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
                     "wm_mask_Freesurfer_T1"]:
         in_mask_path = folderpath + "/subjects/" + p + "/masks/" + p + "_" + maskType + ".nii.gz"
-        reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_WMFOD_" + maskType + ".nii.gz"
         if os.path.exists(in_mask_path):
-            applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
-                           output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
-                           mask_static=mask_static, static_fa_file=FA_MNI)
+            if longitudinal_transform is not None:
+                reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_WMFOD_" + maskType + "_longitudinal.nii.gz"
+                applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=longitudinal_transform, mapping_3=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                                 output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                                 mask_static=mask_static, static_fa_file=FA_MNI)
+            else:
+                reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_WMFOD_" + maskType + ".nii.gz"
+                applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                               output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                               mask_static=mask_static, static_fa_file=FA_MNI)
 
     for key, value in metrics_dic.items():
 
         input_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '/'
-        output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_WMFOD/'
+        if longitudinal_transform is not None:
+            output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_WMFOD_longitudinal/'
+        else:
+            output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_WMFOD/'
 
         if not (os.path.exists(output_folder)):
             try:
@@ -325,13 +357,19 @@ def regToT1fromWMFOD(reg_path, T1_subject, WM_FOD_subject, mask_file, metrics_di
                 print("Creation of the directory %s failed" % output_folder)
 
         print("Start of applyTransformToAllMapsInFolder for metrics ", value, ":", key)
-        applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI,
-                                        static_file=T1_MNI, mask_file=mask_file, keywordList=[p, key], inverse=False,
-                                        mask_static=mask_static, static_fa_file=FA_MNI)
+        if longitudinal_transform is not None:
+            applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=longitudinal_transform,
+                                            mapping_3=mapping_T1_to_T1MNI, static_file=T1_MNI, mask_file=mask_file,
+                                            keywordList=[p, key], inverse=False, mask_static=mask_static,
+                                            static_fa_file=FA_MNI)
+        else:
+            applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI,
+                                            static_file=T1_MNI, mask_file=mask_file, keywordList=[p, key], inverse=False,
+                                            mask_static=mask_static, static_fa_file=FA_MNI)
 
 
 def regToT1fromAP(reg_path, T1_subject, AP_subject, mask_file, metrics_dic, folderpath, p, mapping_T1_to_T1MNI, T1_MNI,
-                  mask_static, FA_MNI):
+                  mask_static, FA_MNI, longitudinal_transform=None):
     if os.path.exists(reg_path + 'mapping_DWI_AP_to_T1.p'):
         with open(reg_path + 'mapping_DWI_AP_to_T1.p', 'rb') as handle:
             mapping_DWI_to_T1 = pickle.load(handle)
@@ -355,16 +393,26 @@ def regToT1fromAP(reg_path, T1_subject, AP_subject, mask_file, metrics_dic, fold
     for maskType in ["brain_mask_dilated","brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
                     "wm_mask_Freesurfer_T1"]:
         in_mask_path = folderpath + "/subjects/" + p + "/masks/" + p + "_" + maskType + ".nii.gz"
-        reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_AP_" + maskType + ".nii.gz"
+
         if os.path.exists(in_mask_path):
-            applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
-                           output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
-                           mask_static=mask_static, static_fa_file=FA_MNI)
+            if longitudinal_transform is not None:
+                reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_AP_" + maskType + "_longitudinal.nii.gz"
+                applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=longitudinal_transform, mapping_3=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                               output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                               mask_static=mask_static, static_fa_file=FA_MNI)
+            else:
+                reg_mask_path = folderpath + "/subjects/" + p + "/masks/reg/" + p + "_AP_" + maskType + ".nii.gz"
+                applyTransform(in_mask_path, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI, static_file=T1_MNI,
+                               output_path=reg_mask_path, mask_file=None, binary=False, inverse=False,
+                               mask_static=mask_static, static_fa_file=FA_MNI)
 
     for key, value in metrics_dic.items():
 
         input_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '/'
-        output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_AP/'
+        if longitudinal_transform is not None:
+            output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_AP_longitudinal/'
+        else:
+            output_folder = folderpath + '/subjects/' + p + '/dMRI/microstructure/' + value + '_CommonSpace_T1_AP/'
 
         if not (os.path.exists(output_folder)):
             try:
@@ -373,12 +421,18 @@ def regToT1fromAP(reg_path, T1_subject, AP_subject, mask_file, metrics_dic, fold
                 print("Creation of the directory %s failed" % output_folder)
 
         print("Start of applyTransformToAllMapsInFolder for metrics ", value, ":", key)
-        applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI,
-                                        static_file=T1_MNI, mask_file=mask_file, keywordList=[p, key], inverse=False,
-                                        mask_static=mask_static, static_fa_file=FA_MNI)
+        if longitudinal_transform is not None:
+            applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=longitudinal_transform,
+                                            mapping_3=mapping_T1_to_T1MNI, static_file=T1_MNI, mask_file=mask_file,
+                                            keywordList=[p, key], inverse=False, mask_static=mask_static,
+                                            static_fa_file=FA_MNI)
+        else:
+            applyTransformToAllMapsInFolder(input_folder, output_folder, mapping_DWI_to_T1, mapping_2=mapping_T1_to_T1MNI,
+                                            static_file=T1_MNI, mask_file=mask_file, keywordList=[p, key], inverse=False,
+                                            mask_static=mask_static, static_fa_file=FA_MNI)
 
 
-def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None, T1_filepath=None, T1wCommonSpace_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz", T1wCommonSpaceMask_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain_mask.nii.gz", metrics_dic={'_FA': 'dti', 'RD': 'dti', 'AD': 'dti', 'MD': 'dti'}):
+def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None, T1_filepath=None, T1wCommonSpace_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz", T1wCommonSpaceMask_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain_mask.nii.gz", metrics_dic={'_FA': 'dti', 'RD': 'dti', 'AD': 'dti', 'MD': 'dti'}, longitudinal=False):
     preproc_folder = folder_path + '/subjects/' + p + '/dMRI/preproc/'
     T1_CommonSpace = os.path.expandvars(T1wCommonSpace_filepath)
     FA_MNI = os.path.expandvars('${FSLDIR}/data/standard/FSL_HCP1065_FA_1mm.nii.gz')
@@ -438,6 +492,36 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None,
                    output_path=folder_path + '/subjects/' + p + '/T1/' + p + '_T1_MNI_FS.nii.gz', binary=False,
                    inverse=False, static_fa_file=T1_CommonSpace)
 
+
+    if longitudinal != False and longitudinal>0:
+        print("Start of getTransform for T1 to T1_ref")
+        p_ref = get_patient_ref(root=folder_path, patient=p, suffix_length=longitudinal)
+        T1_ref_subject = folder_path + '/subjects/' + p_ref + '/T1/' + p_ref + "_T1_brain.nii.gz"
+
+        if os.path.exists(reg_path + 'mapping_T1w_to_T1wRef.p'):
+            with open(reg_path + 'mapping_T1w_to_T1wRef.p', 'rb') as handle:
+                mapping_T1w_to_T1wRef = pickle.load(handle)
+        else:
+            if not (os.path.exists(reg_path)):
+                try:
+                    os.makedirs(reg_path)
+                except OSError:
+                    print("Creation of the directory %s failed" % reg_path)
+            mapping_T1w_to_T1wRef = getTransform(T1_ref_subject, T1_subject, mask_file=mask_file,
+                                                         onlyAffine=False, diffeomorph=False,
+                                                         sanity_check=False, DWI=False)
+            with open(reg_path + 'mapping_T1w_to_T1wRef.p', 'wb') as handle:
+                pickle.dump(mapping_T1w_to_T1wRef, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        applyTransform(T1_subject, mapping_T1w_to_T1wRef, mapping_2=None, mask_file=None,
+                       static_file=T1_ref_subject,
+                       output_path=folder_path + '/subjects/' + p + '/T1/' + p + '_space-T1Ref_type-brain_T1.nii.gz', binary=False,
+                       inverse=False, static_fa_file=T1_ref_subject)
+    else:
+        mapping_T1w_to_T1wRef = None
+
+
+
     print("Start of getTransform for DWI to T1")
     if T1wCommonSpaceMask_filepath is not None:
         mask_static = os.path.expandvars(T1wCommonSpaceMask_filepath)
@@ -445,11 +529,11 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None,
         mask_static = None
 
     if DWI_type == "B0":
-        regToT1fromB0(reg_path, T1_subject, DWI_subject, mask_path, metrics_dic, folder_path, p, mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI)
+        regToT1fromB0(reg_path, T1_subject, DWI_subject, mask_path, metrics_dic, folder_path, p, mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI, longitudinal_transform=mapping_T1w_to_T1wRef)
     elif DWI_type == "WMFOD":
-        regToT1fromWMFOD(reg_path, T1_subject, WM_FOD_subject, mask_path, metrics_dic, folder_path, p, mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI)
+        regToT1fromWMFOD(reg_path, T1_subject, WM_FOD_subject, mask_path, metrics_dic, folder_path, p, mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI, longitudinal_transform=mapping_T1w_to_T1wRef)
     elif DWI_type == "AP":
-        regToT1fromAP(reg_path, T1_subject, AP_subject, mask_path, metrics_dic, folder_path, p, mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI)
+        regToT1fromAP(reg_path, T1_subject, AP_subject, mask_path, metrics_dic, folder_path, p, mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI, longitudinal_transform=mapping_T1w_to_T1wRef)
     else:
         print("DWI_type not recognized")
 
