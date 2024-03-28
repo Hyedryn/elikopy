@@ -1951,3 +1951,18 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
 
     vbm_log.close()
 
+
+def get_patient_ref(root:str, patient:str, suffix_length:int=2):
+    patient_list=json.load(open(root+'subjects/subj_list.json', "r"))
+    patient_list.sort()
+    i=np.argwhere(np.array(patient_list)==patient)[0,0]
+    names = []
+    for p in patient_list:
+        names.append(p[:-suffix_length])
+    pat_array=np.array(names)
+    _,idx=np.unique(pat_array,return_index=True)
+    p=idx-i
+    p[p>0]=-len(patient_list)
+    ref_idx=np.max(p)
+    ref=patient_list[i+ref_idx]
+    return ref
