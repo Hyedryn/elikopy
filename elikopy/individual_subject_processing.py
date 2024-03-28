@@ -2,7 +2,7 @@ import datetime
 import os
 import shutil
 import json
-
+import sys
 import numpy as np
 import math
 
@@ -84,6 +84,25 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual preprocessing for patient %s \n" % p)
     f.close()
+
+    anat_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
+    if os.path.exists(anat_path):
+        brain_extracted_T1_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
+        brain_extracted_mask_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain_mask.nii.gz'
+        if not os.path.exists(brain_extracted_T1_path):
+            cmd = f"mri_synth_strip -i {anat_path} -o {brain_extracted_T1_path} -m {brain_extracted_mask_path} "
+            import subprocess
+            process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, error = process.communicate()
+            print(output)
+            print(error)
+
+            if not os.path.exists(brain_extracted_T1_path):
+                print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                    "%d.%b %Y %H:%M:%S") + ": T1 Brain extraction failed for patient %s \n" % p)
+                # print to std err
+                print("T1 Brain extraction failed for patient %s" % p, file=sys.stderr)
+
     from dipy.io.image import load_nifti, save_nifti
     from dipy.segment.mask import median_otsu
     from dipy.denoise.localpca import mppca
@@ -1679,6 +1698,23 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
         f.close()
         # Read the moving image ====================================
         anat_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1.nii.gz'
+        if os.path.exists(anat_path):
+            brain_extracted_T1_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
+            brain_extracted_mask_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain_mask.nii.gz'
+            if not os.path.exists(brain_extracted_T1_path):
+                cmd = f"mri_synth_strip -i {anat_path} -o {brain_extracted_T1_path} -m {brain_extracted_mask_path} "
+                import subprocess
+                process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
+                output, error = process.communicate()
+                print(output)
+                print(error)
+
+                if not os.path.exists(brain_extracted_T1_path):
+                    print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                        "%d.%b %Y %H:%M:%S") + ": T1 Brain extraction failed for patient %s \n" % p)
+                    # print to std err
+                    print("T1 Brain extraction failed for patient %s" % p, file=sys.stderr)
 
         wm_log = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
 
@@ -1706,28 +1742,10 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
             input_bet_path = anat_path
 
         # anat_path = folder_path + '/anat/' + patient_path + '_T1.nii.gz'
-        bet_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
-        bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; bet ' + input_bet_path + ' ' + bet_path + ' -B'
-        if debug:
-            bashCommand = bashCommand + " -d"
-        bashcmd = bashCommand.split()
-
-        wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Bet launched for patient %s \n" % p + " with bash command " + bashCommand)
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": Bet launched for patient %s \n" % p + " with bash command " + bashCommand)
-
-        process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=wm_log,stderr=subprocess.STDOUT)
-        output, error = process.communicate()
-
-        wm_log.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": End of BET for patient %s \n" % p)
-        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-            "%d.%b %Y %H:%M:%S") + ": End of BET for patient %s \n" % p)
-
+        brain_extracted_T1_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain.nii.gz'
         wm_log.close()
 
-        moving_data, moving_affine = load_nifti(bet_path)
+        moving_data, moving_affine = load_nifti(brain_extracted_T1_path)
         moving = moving_data
         moving_grid2world = moving_affine
         # Read the static image ====================================
