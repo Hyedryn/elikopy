@@ -494,7 +494,7 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None,
 
 
     if longitudinal != False and longitudinal>0:
-        print("Start of getTransform for T1 to T1_ref")
+        print("[Longitudinal Registration] Start of getTransform for T1 to T1_ref")
         p_ref = get_patient_ref(root=folder_path, patient=p, suffix_length=longitudinal)
         T1_ref_subject = folder_path + '/subjects/' + p_ref + '/T1/' + p_ref + "_T1_brain.nii.gz"
 
@@ -507,9 +507,15 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None,
                     os.makedirs(reg_path)
                 except OSError:
                     print("Creation of the directory %s failed" % reg_path)
-            mapping_T1w_to_T1wRef = getTransform(T1_ref_subject, T1_subject, mask_file=mask_file,
-                                                         onlyAffine=False, diffeomorph=False,
-                                                         sanity_check=False, DWI=False)
+            if p == p_ref:
+                print("[Longitudinal Registration] Skipping, longitudinal registration with the same subject")
+                mapping_T1w_to_T1wRef = getTransform(T1_ref_subject, T1_subject, mask_file=mask_file,
+                                                             onlyAffine=True, diffeomorph=False,
+                                                             sanity_check=False, DWI=False)
+            else:
+                mapping_T1w_to_T1wRef = getTransform(T1_ref_subject, T1_subject, mask_file=mask_file,
+                                                             onlyAffine=False, diffeomorph=False,
+                                                             sanity_check=False, DWI=False)
             with open(reg_path + 'mapping_T1w_to_T1wRef.p', 'wb') as handle:
                 pickle.dump(mapping_T1w_to_T1wRef, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
