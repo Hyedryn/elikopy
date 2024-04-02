@@ -135,6 +135,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         b0_mask, mask = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass, vol_idx=range(0, np.shape(data)[3]), dilate=bet_dilate)
         mask = clean_mask(mask)
+        # Apply cleaned mask to b0_mask
+        b0_mask = b0_mask * mask[..., None]
 
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',mask.astype(np.float32), affine)
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_mask.nii.gz',b0_mask.astype(np.float32), affine)
@@ -144,7 +146,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         _, mask_nodilate = median_otsu(data, median_radius=bet_median_radius, numpass=bet_numpass,
                                     vol_idx=range(0, np.shape(data)[3]), dilate=None)
         mask_nodilate = clean_mask(mask_nodilate)
-
         save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
                    mask_nodilate.astype(np.float32), affine)
 
@@ -435,10 +436,20 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             data, affine = load_nifti(
                 folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + "_unwarped.nii.gz")
             b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
+            mask = clean_mask(mask)
+            # Apply cleaned mask to b0_mask
+            b0_mask = b0_mask * mask[..., None]
             save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
                        b0_mask.astype(np.float32), affine)
             save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz',
                        mask.astype(np.float32), affine)
+
+            _, mask_nodilate = median_otsu(data, median_radius=2, numpass=1,
+                                           vol_idx=range(0, np.shape(data)[3]), dilate=None)
+            mask_nodilate = clean_mask(mask_nodilate)
+            save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                       mask_nodilate.astype(np.float32), affine)
+
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
@@ -522,6 +533,15 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         data, affine = load_nifti(
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.nii.gz")
         b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
+        mask = clean_mask(mask)
+        # Apply cleaned mask to b0_mask
+        b0_mask = b0_mask * mask[..., None]
+
+        _, mask_nodilate = median_otsu(data, median_radius=2, numpass=1,
+                                       vol_idx=range(0, np.shape(data)[3]), dilate=None)
+        mask_nodilate = clean_mask(mask_nodilate)
+        save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                   mask_nodilate.astype(np.float32), affine)
 
         if not biasfield:
             save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
@@ -601,11 +621,19 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         data, affine = load_nifti(
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz')
         b0_mask, mask = median_otsu(data, median_radius=2, numpass=1, vol_idx=range(0, np.shape(data)[3]), dilate=2)
-
+        mask = clean_mask(mask)
+        # Apply cleaned mask to b0_mask
+        b0_mask = b0_mask * mask[..., None]
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
                        b0_mask.astype(np.float32), affine)
         save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz',
                    mask.astype(np.float32), affine)
+
+        _, mask_nodilate = median_otsu(data, median_radius=2, numpass=1,
+                                       vol_idx=range(0, np.shape(data)[3]), dilate=None)
+        mask_nodilate = clean_mask(mask_nodilate)
+        save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+                   mask_nodilate.astype(np.float32), affine)
 
         if not eddy:
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
@@ -962,6 +990,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         tenmodel = dti.TensorModel(gtab_raw)
         _, maskSNR = median_otsu(raw_data, vol_idx=[0])
+        maskSNR = clean_mask(maskSNR)
         tensorfit = tenmodel.fit(raw_data, mask=maskSNR)
 
         threshold = (0.5, 1, 0, 0.3, 0, 0.3)
