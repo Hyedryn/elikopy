@@ -5,6 +5,7 @@ import json
 import sys
 import numpy as np
 import math
+from scipy.ndimage.morphology import binary_dilation
 
 import subprocess
 from elikopy.utils import makedir
@@ -679,11 +680,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     mask = clean_mask(mask)
     save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_type-otsu_dilate-2_brainmask.nii.gz',
                mask.astype(np.float32), affine)
-    _, mask_nodilate = median_otsu(preproc, median_radius=2, numpass=1,
-                                   vol_idx=range(0, np.shape(preproc)[3]), dilate=None)
-    mask_nodilate = clean_mask(mask_nodilate)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_type-otsu_brainmask.nii.gz',
-               mask_nodilate.astype(np.float32), affine)
 
     # Step 4: Apply all masks to preprocess data
     dwi2mask_mask, _ = load_nifti(dwi2mask_path)
@@ -692,12 +688,20 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     all_mask = mask + dwi2mask_mask + mrisynthstrip_mask
     full_mask = np.zeros_like(all_mask)
     full_mask[all_mask >= 2] = 1
-    preproc_masked = preproc * full_mask[..., np.newaxis]
+    full_mask = clean_mask(full_mask)
+
+    full_mask_inclusive = np.logical_or(mask, np.logical_or(dwi2mask_mask, mrisynthstrip_mask))
+    full_mask_inclusive = clean_mask(full_mask_inclusive)
+    # dilate mask
+    full_mask_inclusive = binary_dilation(full_mask_inclusive, iterations=1)
+    preproc_masked = preproc * full_mask_inclusive[..., np.newaxis]
 
     save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
                preproc_masked.astype(np.float32), affine)
     save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
                full_mask.astype(np.float32), affine)
+    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz',
+               full_mask_inclusive.astype(np.float32), affine)
 
 
 
