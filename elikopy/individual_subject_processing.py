@@ -139,14 +139,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         mask = clean_mask(mask)
 
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz',mask.astype(np.float32), affine)
-        save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz',
-                   mask.astype(np.float32), affine)
-
-        _, mask_nodilate = median_otsu(curr_dmri, median_radius=bet_median_radius, numpass=bet_numpass,
-                                    vol_idx=range(0, np.shape(curr_dmri)[3]), dilate=None)
-        mask_nodilate = clean_mask(mask_nodilate)
-        save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
-                   mask_nodilate.astype(np.float32), affine)
 
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Brain extraction completed for patient %s \n" % p)
@@ -336,21 +328,20 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             # wait until topup finish
             output, error = process.communicate()
 
-            if not eddy:
-                inindex=""
-                first=True
-                for r in roi:
-                    if first:
-                        inindex = str(topup_index[r-1])
-                    else:
-                        inindex = inindex + "," + str(topup_index[r-1])
+            inindex=""
+            first=True
+            for r in roi:
+                if first:
+                    inindex = str(topup_index[r-1])
+                else:
+                    inindex = inindex + "," + str(topup_index[r-1])
 
-                bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex='+inindex+' --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+            bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex='+inindex+' --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
-                process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
-                                            stderr=subprocess.STDOUT)
-                # wait until apply topup finish
-                output, error = process2.communicate()
+            process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
+                                        stderr=subprocess.STDOUT)
+            # wait until apply topup finish
+            output, error = process2.communicate()
 
         else:
             f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
@@ -379,13 +370,12 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 synb0DisCo_starting_step = "topup"
             synb0DisCo(folder_path,topup_path,patient_path,starting_step=synb0DisCo_starting_step,topup=True,gpu=useGPUsynb0DisCo, static_files_path=static_files_path)
 
-            if not eddy:
-                bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+            bashCommand2 = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; applytopup --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --method=jac --interp=spline --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
-                process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
-                                            stderr=subprocess.STDOUT)
-                # wait until apply topup finish
-                output, error = process2.communicate()
+            process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
+                                        stderr=subprocess.STDOUT)
+            # wait until apply topup finish
+            output, error = process2.communicate()
 
 
         topup_log.close()
@@ -397,6 +387,76 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
         f.close()
 
+
+        ## Compute pre eddy/biasfield mask
+        gc.collect()
+        from elikopy.utils import clean_mask
+
+        topup_corr_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr.nii.gz'
+
+        topup_corr, affine = load_nifti(topup_corr_path)
+        topup_corr_b0_ref = topup_corr[..., 0]
+        dwiref_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr_dwiref.nii.gz'
+        save_nifti(dwiref_path, topup_corr_b0_ref.astype(np.float32), affine)
+        topup_corr_b0_ref = None
+        topup_corr = None
+        gc.collect()
+
+
+        # Step 1 : dwi2mask
+        bvec_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec'
+        bval_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval'
+        dwi2mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_space-dwi_type-dwi2mask_brainmask.nii.gz'
+        cmd = f"dwi2mask -fslgrad {bvec_path} {bval_path} {preproc_path} {dwi2mask_path}"
+        import subprocess
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": dwi2mask launched for patient %s \n" % p + " with bash command " + cmd)
+        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": dwi2mask launched for patient %s \n" % p + " with bash command " + cmd)
+        f.flush()
+        process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=f, stderr=subprocess.STDOUT)
+        # wait until dwi2mask finish
+        output, error = process.communicate()
+        f.flush()
+        f.close()
+
+        gc.collect()
+        # Step 2 : mri_synth_strip on dwiref
+        mrisynthstrip_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_space-dwi_type-mrisynthstrip_brainmask.nii.gz'
+        cmd = f"mri_synth_strip -i {dwiref_path} -m {mrisynthstrip_path}"
+        print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": mri_synth_strip launched for patient %s \n" % p + " with bash command " + cmd)
+        f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
+        f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+            "%d.%b %Y %H:%M:%S") + ": mri_synth_strip launched for patient %s \n" % p + " with bash command " + cmd)
+        f.flush()
+        process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=f, stderr=subprocess.STDOUT)
+        output, error = process.communicate()
+        f.flush()
+        f.close()
+
+        # Step 3 : median otsu on preprocess data
+        topup_corr, affine = load_nifti(topup_corr_path)
+        _, mask = median_otsu(topup_corr, median_radius=2, numpass=1, vol_idx=range(0, np.shape(topup_corr)[3]),
+                                           dilate=2)
+        mask = clean_mask(mask)
+        save_nifti(
+            folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_type-otsu_dilate-2_brainmask.nii.gz',
+            mask.astype(np.float32), affine)
+
+        # Step 4: Apply all masks to preprocess data
+        dwi2mask_mask, _ = load_nifti(dwi2mask_path)
+        mrisynthstrip_mask, _ = load_nifti(mrisynthstrip_path)
+
+        all_mask = mask + dwi2mask_mask + mrisynthstrip_mask
+        full_mask = np.zeros_like(all_mask)
+        full_mask[all_mask >= 2] = 1
+
+        topup_corr_full_mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_brain_mask.nii.gz'
+        save_nifti(topup_corr_full_mask_path,
+                   full_mask.astype(np.float32), affine)
+
         if not eddy and not biasfield:
             data, affine = load_nifti(
                 folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + "_unwarped.nii.gz")
@@ -405,6 +465,13 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+            save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz', full_mask.astype(np.float32), affine)
+
+    if topup:
+        topup_corr_full_mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_brain_mask.nii.gz'
+        processing_mask = topup_corr_full_mask_path
+    else:
+        processing_mask = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz'
 
     if eddy and starting_state!="biasfield" and starting_state!="report":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -426,32 +493,32 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             slspec_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'slspec.txt'
             if slspec_gc_path is not None and os.path.isdir(slspec_gc_path):
                 if gibbs:
-                    bashCommand = eddycmd + ' --imain="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
                 elif denoising:
-                    bashCommand = eddycmd + ' --imain="' + denoising_path + '/' + patient_path + denoising_ext + '" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + denoising_path + '/' + patient_path + denoising_ext + '" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
                 else:
-                    bashCommand = eddycmd + ' --imain="' + nifti_path + '" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + nifti_path + '" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --ge_slspecs="' + slspec_gc_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
             elif os.path.isfile(slspec_path):
                 if gibbs:
-                    bashCommand = eddycmd + ' --imain="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --slspec="' + slspec_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --slspec="' + slspec_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
                 elif denoising:
-                    bashCommand = eddycmd + ' --imain="' + denoising_path + '/' + patient_path + denoising_ext + '" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --slspec="' + slspec_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + denoising_path + '/' + patient_path + denoising_ext + '" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --slspec="' + slspec_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
                 else:
-                    bashCommand = eddycmd + ' --imain="' + nifti_path + '" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --slspec="' + slspec_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + nifti_path + '" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --slspec="' + slspec_path + '" --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
             else:
                 if gibbs:
-                    bashCommand = eddycmd + ' --imain="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
                 elif denoising:
-                    bashCommand = eddycmd + ' --imain="' + denoising_path + '/' + patient_path + denoising_ext + '" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + denoising_path + '/' + patient_path + denoising_ext + '" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
                 else:
-                    bashCommand = eddycmd + ' --imain="' + nifti_path + '" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                    bashCommand = eddycmd + ' --imain="' + nifti_path + '" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --mporder=' + str(s2v[0]) + ' --s2v_niter=' + str(s2v[1]) + ' --s2v_lambda=' + str(s2v[2]) + ' --s2v_interp=' + s2v[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
         else:
             if gibbs:
-                bashCommand = eddycmd + ' --imain="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                bashCommand = eddycmd + ' --imain="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/gibbs/' + patient_path + '_gibbscorrected.nii.gz" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
             elif denoising:
-                bashCommand = eddycmd + ' --imain="' + denoising_path + '/' + patient_path + denoising_ext + '" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                bashCommand = eddycmd + ' --imain="' + denoising_path + '/' + patient_path + denoising_ext + '" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
             else:
-                bashCommand = eddycmd + ' --imain="' + nifti_path + '" --mask="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/bet/' + patient_path + '_binary_mask.nii.gz" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
+                bashCommand = eddycmd + ' --imain="' + nifti_path + '" --mask="' + processing_mask + '" --acqp="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --index="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" --bvecs="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec" --bvals="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + '_eddy_corr" --verbose --cnr_maps --residuals --repol=' + str(olrep[0]) + ' --ol_nstd=' + str(olrep[1]) + ' --ol_nvox=' + str(olrep[2]) + ' --ol_type=' + olrep[3] + ' --fwhm=' + fwhm + ' --niter=' + str(niter) + ' --slm=linear'
 
         if topup:
             bashCommand = bashCommand + ' --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate"'
@@ -561,29 +628,17 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         f.write(output)
         f.truncate()
 
-    def calculate_iou(mask1, mask2):
-        """
-        Calculate the Intersection over Union (IoU) of two 3D masks.
-
-        Parameters:
-        - mask1: np.array, 3D array representing the first mask.
-        - mask2: np.array, 3D array representing the second mask.
-
-        Returns:
-        - iou: float, the Intersection over Union metric.
-        """
-        intersection = np.logical_and(mask1, mask2).sum()
-        union = np.logical_or(mask1, mask2).sum()
-        iou = intersection / union
-        return iou
-
     # Generate b0 ref:
     preproc, affine = load_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz')
     b0_ref = preproc[..., 0]
     save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dwiref.nii.gz', b0_ref.astype(np.float32), affine)
     save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz', preproc.astype(np.float32), affine)
 
+    preproc = None
+    b0_ref = None
+    gc.collect()
     #### Generate final mask ####
+    from elikopy.utils import clean_mask
 
     # Step 1 : dwi2mask
     preproc_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
@@ -592,59 +647,61 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     dwi2mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_space-dwi_type-dwi2mask_brainmask.nii.gz'
     cmd = f"dwi2mask -fslgrad {bvec_path} {bval_path} {preproc_path} {dwi2mask_path}"
     import subprocess
-    bashcmd = cmd.split()
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": dwi2mask launched for patient %s \n" % p + " with bash command " + cmd)
     f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": dwi2mask launched for patient %s \n" % p + " with bash command " + cmd)
-    process = subprocess.Popen(bashcmd, universal_newlines=True, shell=True, stdout=f, stderr=subprocess.STDOUT)
+    f.flush()
+    process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=f, stderr=subprocess.STDOUT)
     # wait until dwi2mask finish
     output, error = process.communicate()
+    f.flush()
     f.close()
 
     # Step 2 : mri_synth_strip on dwiref
     dwiref_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dwiref.nii.gz'
     mrisynthstrip_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_space-dwi_type-mrisynthstrip_brainmask.nii.gz'
     cmd = f"mri_synth_strip -i {dwiref_path} -m {mrisynthstrip_path}"
-    bashcmd = cmd.split()
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": mri_synth_strip launched for patient %s \n" % p + " with bash command " + cmd)
     f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": mri_synth_strip launched for patient %s \n" % p + " with bash command " + cmd)
-    process = subprocess.Popen(bashcmd, universal_newlines=True, shell=True, stdout=f, stderr=subprocess.STDOUT)
+    f.flush()
+    process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=f, stderr=subprocess.STDOUT)
     output, error = process.communicate()
+    f.flush()
     f.close()
 
     # Step 3 : median otsu on preprocess data
+    preproc, affine = load_nifti(
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz')
     preproc_masked, mask = median_otsu(preproc, median_radius=2, numpass=1, vol_idx=range(0, np.shape(preproc)[3]), dilate=2)
     mask = clean_mask(mask)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz',
+    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_type-otsu_dilate-2_brainmask.nii.gz',
                mask.astype(np.float32), affine)
-
-    # Step 4: Apply all masks to preprocess data
-    dwi2mask_mask, _ = load_nifti(dwi2mask_path)
-    preproc_masked = preproc_masked * mask[..., None]
-    if calculate_iou(mask, dwi2mask_mask) > 0.8:
-        preproc_masked = preproc_masked * dwi2mask_mask[..., None]
-        mask = np.logical_and(mask, dwi2mask_mask)
-    if os.path.exists(mrisynthstrip_path):
-        mrisynthstrip_mask, _ = load_nifti(mrisynthstrip_path)
-        if calculate_iou(mask, mrisynthstrip_mask) > 0.85:
-            preproc_masked = preproc_masked * mrisynthstrip_mask[..., None]
-            mask = np.logical_and(mask, mrisynthstrip_mask)
-
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
-               preproc_masked.astype(np.float32), affine)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_combinedbrainmask.nii.gz',
-               mask.astype(np.float32), affine)
-
     _, mask_nodilate = median_otsu(preproc, median_radius=2, numpass=1,
                                    vol_idx=range(0, np.shape(preproc)[3]), dilate=None)
     mask_nodilate = clean_mask(mask_nodilate)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_type-otsu_brainmask.nii.gz',
                mask_nodilate.astype(np.float32), affine)
+
+    # Step 4: Apply all masks to preprocess data
+    dwi2mask_mask, _ = load_nifti(dwi2mask_path)
+    mrisynthstrip_mask, _ = load_nifti(mrisynthstrip_path)
+
+    all_mask = mask + dwi2mask_mask + mrisynthstrip_mask
+    full_mask = np.zeros_like(all_mask)
+    full_mask[all_mask >= 2] = 1
+    preproc_masked = preproc * full_mask[..., np.newaxis]
+
+    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+               preproc_masked.astype(np.float32), affine)
+    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz',
+               full_mask.astype(np.float32), affine)
+
+
 
     if not report:
         return
