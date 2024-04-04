@@ -149,7 +149,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
     if not denoising and not eddy and not gibbs and not topup and not biasfield:
         save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz', curr_dmri.astype(np.float32), affine)
-        save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz', mask.astype(np.float32), affine)
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
                         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
@@ -732,7 +731,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
     preproc_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/'
     raw_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/'
-    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz'
+    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz'
     qc_path = preproc_path + 'quality_control'
     makedir(qc_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
@@ -1479,7 +1478,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     f.close()
 
 
-def dti_solo(folder_path, p, maskType="brain_mask_dilated",
+def dti_solo(folder_path, p, maskType="brain_mask",
              use_all_shells: bool = False, report=True):
     """
     Computes the DTI metrics for a single subject. The outputs are available in
@@ -1519,7 +1518,7 @@ def dti_solo(folder_path, p, maskType="brain_mask_dilated",
     if os.path.isfile(mask_path):
         mask, _ = load_nifti(mask_path)
     else:
-        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     bvals, bvecs = read_bvals_bvecs(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
@@ -1930,7 +1929,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
         # compute the white matter mask with the Anisotropic power map
         data, affine = load_nifti(
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
-        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
         bvals, bvecs = read_bvals_bvecs(
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
@@ -2151,7 +2150,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
     f.close()
 
 
-def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
+def noddi_solo(folder_path, p, maskType="brain_mask", lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
     """ Computes the NODDI metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
     :param folder_path: the path to the root directory.
@@ -2213,7 +2212,7 @@ def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.
         mask, _ = load_nifti(mask_path)
     else:
         mask, _ = load_nifti(
-            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     # transform the bval, bvecs in a form suited for NODDI
     from dipy.core.gradients import gradient_table
@@ -2399,7 +2398,7 @@ def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.
         f.close()
 
 
-def noddi_amico_solo(folder_path, p, maskType="brain_mask_dilated"):
+def noddi_amico_solo(folder_path, p, maskType="brain_mask"):
     """ Perform noddi amico on a single subject and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi_amico/.
 
     :param folder_path: the path to the root directory.
@@ -2429,7 +2428,7 @@ def noddi_amico_solo(folder_path, p, maskType="brain_mask_dilated"):
         mask, _ = load_nifti(mask_path)
     else:
         mask, _ = load_nifti(
-            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     import amico
     amico.core.setup()
@@ -2457,7 +2456,7 @@ def noddi_amico_solo(folder_path, p, maskType="brain_mask_dilated"):
     f.close()
 
 
-def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain_mask_dilated",customDiamond=""):
+def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain_mask",customDiamond=""):
     """Computes the DIAMOND metrics for a single subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
     :param folder_path: the path to the root directory.
@@ -2505,7 +2504,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
             "%d.%b %Y %H:%M:%S") + ": " + maskType + " is used \n")
         f.close()
     else:
-        mask = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz'
+        mask = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask.nii.gz'
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": dilated brain mask based on diffusion data is used \n")
         f = open(folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt", "a+")
@@ -2698,7 +2697,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
         f.close()
 
 
-def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated",
+def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask",
             report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD",
             mfdir=None, output_filename: str = ""):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
@@ -2759,7 +2758,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
         mask, _ = load_nifti(mask_path)
     else:
         mask, _ = load_nifti(
-            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     # compute numfasc and peaks
     if os.path.exists(diamond_path) and peaksType == "DIAMOND":
@@ -3088,7 +3087,7 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
                 "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
             f.close()
 
-def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=None, core_count=1, maskType="brain_mask_dilated", report=True, CSD_FA_treshold=0.7, return_odf=False):
+def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=None, core_count=1, maskType="brain_mask", report=True, CSD_FA_treshold=0.7, return_odf=False):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
     :param folder_path: the path to the root directory.
@@ -3134,7 +3133,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
         mask, _ = load_nifti(mask_path)
     else:
         mask, _ = load_nifti(
-            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     b0_threshold = np.min(bvals) + 10
     b0_threshold = max(50, b0_threshold)
@@ -3239,7 +3238,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     f.close()
 
 
-def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True, maskType="brain_mask_dilated"):
+def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True, maskType="brain_mask"):
     """Perform MSMT CSD odf computation and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
 
     :param folder_path: the path to the root directory.
@@ -3380,7 +3379,7 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
 
 
-def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9], maskType="brain_mask_dilated"):
+def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9], maskType="brain_mask"):
     """ Computes the IVIM metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/ivim/.
 
     :param folder_path: the path to the root directory.
@@ -3432,7 +3431,7 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
         mask, _ = load_nifti(mask_path)
     else:
         mask, _ = load_nifti(
-            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+            folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     # transform the bval, bvecs in a form suited for ivim
     from dipy.core.gradients import gradient_table
@@ -3623,7 +3622,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
         odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF_mrtrix.nii.gz"
         params['Local modeling']='CSD'
     tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
-    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz"
+    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz"
     dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
     
     output_file = tracking_path+patient_path+'_'+output_filename+'.tck'
@@ -3681,7 +3680,7 @@ def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
                          + "_CSD_SH_ODF_mrtrix.nii.gz")
 
     tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
-    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz"
+    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz"
     dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
 
     input_file = tracking_path+patient_path+'_'+input_filename+'.tck'
@@ -3753,7 +3752,7 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
     if os.path.isfile(wm_path):
         mask, _ = load_nifti(wm_path)
     else:
-        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz")
+        mask, _ = load_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz")
 
     # transform the bval, bvecs in a form suited for verdict
     from dipy.core.gradients import gradient_table
