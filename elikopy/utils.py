@@ -1695,7 +1695,7 @@ def clean_mask(mask):
     center = tuple([np.average(indices) for indices in np.where(mask == 1)])
     center = tuple([int(point) for point in center])
 
-    mask = flood(mask, center)
+    mask = flood(mask, center, connectivity=1)
     mask_cleaned = np.zeros((mask.shape))
     mask_cleaned[mask] = 1
 
