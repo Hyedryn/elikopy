@@ -407,7 +407,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         bvec_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec'
         bval_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval'
         dwi2mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_space-dwi_type-dwi2mask_brainmask.nii.gz'
-        cmd = f"dwi2mask -fslgrad {bvec_path} {bval_path} {topup_corr_path} {dwi2mask_path}"
+        cmd = f"dwi2mask -fslgrad {bvec_path} {bval_path} {topup_corr_path} {dwi2mask_path} -force "
         import subprocess
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": dwi2mask launched for patient %s \n" % p + " with bash command " + cmd)
@@ -449,9 +449,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         dwi2mask_mask, _ = load_nifti(dwi2mask_path)
         mrisynthstrip_mask, _ = load_nifti(mrisynthstrip_path)
 
-        all_mask = mask + dwi2mask_mask + mrisynthstrip_mask
-        full_mask = np.zeros_like(all_mask)
-        full_mask[all_mask >= 2] = 1
+        full_mask = np.logical_or(mask, np.logical_or(dwi2mask_mask, mrisynthstrip_mask))
+        full_mask = binary_dilation(full_mask, iterations=1)
 
         topup_corr_full_mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_brain_mask.nii.gz'
         save_nifti(topup_corr_full_mask_path,
@@ -644,7 +643,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     bvec_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.bvec'
     bval_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.bval'
     dwi2mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_space-dwi_type-dwi2mask_brainmask.nii.gz'
-    cmd = f"dwi2mask -fslgrad {bvec_path} {bval_path} {preproc_path} {dwi2mask_path}"
+    cmd = f"dwi2mask -fslgrad {bvec_path} {bval_path} {preproc_path} {dwi2mask_path} -force"
     import subprocess
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": dwi2mask launched for patient %s \n" % p + " with bash command " + cmd)
