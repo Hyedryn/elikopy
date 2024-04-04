@@ -728,7 +728,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     from dipy.align.transforms import RigidTransform3D
     from dipy.segment.mask import segment_from_cfa
     from dipy.segment.mask import bounding_box
-    from scipy.ndimage.morphology import binary_dilation
     from os.path import isdir
     from skimage import measure
     from fpdf import FPDF
