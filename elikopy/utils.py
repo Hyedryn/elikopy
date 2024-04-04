@@ -47,6 +47,7 @@ def submit_job(job_info):
         slurm_cmd.append("--%s=%s" % (key, value))
     if script:
         slurm_cmd.append(job_info["script"])
+    slurm_cmd.append("--hint=multithread")
     print("[INFO] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") +
           ": Generated slurm batch command: '%s'" % slurm_cmd)
 
