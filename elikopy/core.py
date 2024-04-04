@@ -652,7 +652,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": All the preprocessing operation are finished!\n")
         f.close()
 
-    def dti(self,folder_path=None, patient_list_m=None, maskType="brain_mask", use_all_shells: bool = False,
+    def dti(self,folder_path=None, patient_list_m=None, maskType="brain_mask_dilated", use_all_shells: bool = False,
             slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Computes the DTI metrics for each subject using Weighted Least-Squares. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/dti/.
 
@@ -660,7 +660,7 @@ class Elikopy:
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
-        :param maskType: Define which mask to use during processing. default="brain_mask"
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param use_all_shells: Boolean. DTI will use all shells available, not just
         shells <= 2000, this will cause a more defined white matter at the cost of
         an erronous estimation of the CSF. The default is False.
@@ -736,7 +736,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of DTI\n")
         f.close()
 
-    def fingerprinting(self, dictionary_path=None, folder_path=None, peaksType="MSMT-CSD", maskType="brain_mask", csf_mask=True, ear_mask=False, mfdir=None, output_filename:str="",
+    def fingerprinting(self, dictionary_path=None, folder_path=None, peaksType="MSMT-CSD", maskType="brain_mask_dilated", csf_mask=True, ear_mask=False, mfdir=None, output_filename:str="",
                        slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the Microstructure Fingerprinting metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
@@ -744,7 +744,7 @@ class Elikopy:
 
         :param folder_path: the path to the root directory. default=study_folder
         :param dictionary_path: Path to the dictionary of fingerprints (mandatory).
-        :param maskType: Define which mask to use during processing. default="brain_mask"
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
@@ -825,14 +825,14 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of microstructure fingerprinting\n")
         f.close()
 
-    def odf_csd(self, folder_path=None, CSD_bvalue = None, maskType="brain_mask", CSD_FA_treshold=0.7,  num_peaks = 2, peaks_threshold=.25, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def odf_csd(self, folder_path=None, CSD_bvalue = None, maskType="brain_mask_dilated", CSD_FA_treshold=0.7,  num_peaks = 2, peaks_threshold=.25, slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the odf using CSD for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/ODF/CSD/.
 
         example : study.odf_csd()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param CSD_bvalue: If the DIAMOND outputs are not available, the fascicles directions are estimated using a CSD with the images at the b-values specified in this argument. default=None
-        :param maskType: Define which mask to use during processing. default="brain_mask"
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
@@ -908,7 +908,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of ODF CSD\n")
         f.close()
 
-    def odf_msmtcsd(self, folder_path=None, num_peaks = 2, peaks_threshold=0.25, maskType="brain_mask", slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def odf_msmtcsd(self, folder_path=None, num_peaks = 2, peaks_threshold=0.25, maskType="brain_mask_dilated", slurm=None, patient_list_m=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the odf using MSMT-CSD for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
 
         example : study.odf_msmtcsd()
@@ -1235,14 +1235,14 @@ class Elikopy:
         f.write("[White mask] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of White mask\n")
         f.close()
 
-    def noddi(self, folder_path=None, patient_list_m=None, maskType="brain_mask", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9):
+    def noddi(self, folder_path=None, patient_list_m=None, maskType="brain_mask_dilated", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9):
         """Computes the NODDI metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
         example : study.noddi()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
-        :param maskType: Define which mask to use during processing. default="brain_mask"
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
@@ -1320,14 +1320,14 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI\n")
         f.close()
 
-    def noddi_amico(self, folder_path=None, patient_list_m=None, maskType="brain_mask", slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
+    def noddi_amico(self, folder_path=None, patient_list_m=None, maskType="brain_mask_dilated", slurm=None, slurm_email=None, slurm_timeout=None, slurm_cpus=None, slurm_mem=None):
         """Computes the NODDI amico metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
 
         example : study.noddi_amico()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
-        :param maskType: Define which mask to use during processing. default="brain_mask"
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 10h by a custom timeout.
@@ -1400,14 +1400,14 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of NODDI AMICO\n")
         f.close()
 
-    def diamond(self, folder_path=None, patient_list_m=None, reportOnly=False, maskType="brain_mask", customDiamond="", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
+    def diamond(self, folder_path=None, patient_list_m=None, reportOnly=False, maskType="brain_mask_dilated", customDiamond="", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """Computes the DIAMOND metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/diamond/.
 
         example : study.diamond()
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
-        :param maskType: Define which mask to use during processing. default="brain_mask"
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
         :param slurm_timeout: Replace the default slurm timeout of 14h by a custom timeout.
@@ -1484,7 +1484,7 @@ class Elikopy:
         f.close()
 
 
-    def ivim(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9],maskType="brain_mask"):
+    def ivim(self, folder_path=None, patient_list_m=None, slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, G1Ball_2_lambda_iso=7e-9, G1Ball_1_lambda_iso=[.5e-9, 6e-9],maskType="brain_mask_dilated"):
         """Computes the IVIM metrics for each subject. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/ivim/.
 
         example : study.ivim()
@@ -2112,7 +2112,7 @@ class Elikopy:
             "[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": End of randomise_all\n")
         f.close()
 
-    def vbm(self, folder_path=None, grp1=None, grp2=None, randomise_numberofpermutation=5000,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},maskType="brain_mask",
+    def vbm(self, folder_path=None, grp1=None, grp2=None, randomise_numberofpermutation=5000,metrics_dic={'FA':'dti','_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'},maskType="brain_mask_dilated",
                slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None):
         """ Performs Voxel Based Morphometry 
 
@@ -2120,7 +2120,7 @@ class Elikopy:
         :param randomise_numberofpermutation: Define the number of permutations. default=5000
         :param grp1: Define the first group of subjects.
         :param grp2: Define the second group of subjects.
-        :param maskType: Define the mask type to use for the analysis. default=brain_mask
+        :param maskType: Define the mask type to use for the analysis. default=brain_mask_dilated
         :param metrics_dic: Dictionnary containing the diffusion metrics to register in a common space. For each diffusion metric, the metric name is the key and the metric's folder is the value. default={'_noddi_odi':'noddi','_mf_fvf_tot':'mf','_diamond_kappa':'diamond'}
         :param slurm: Whether to use the Slurm Workload Manager or not (for computer clusters). default=value_during_init
         :param slurm_email: Email adress to send notification if a task fails. default=None
@@ -2188,14 +2188,14 @@ class Elikopy:
         f.close()
 
     def noddi_fix_icvf_thresholding(self, folder_path=None, patient_list_m=None, fintra_threshold=0.99, fbundle_threshold=0.05,
-                 maskType="brain_mask"):
+                 maskType="brain_mask_dilated"):
         """ A function to quickly change the treshold value applied on the icvf metric of noddi without the needs of executing again the full noddi core function.
 
         :param folder_path: the path to the root directory. default=study_folder
         :param patient_list_m: Define a subset of subjects to process instead of all the available subjects. example : ['patientID1','patientID2','patientID3']. default=None
         :param fintra_threshold: Threshold applied on the fintra. default=0.99
         :param fbundle_threshold: Threshold applied on the fbundle. default=0.05
-        :param maskType: Define which mask to use during processing. default="brain_mask"
+        :param maskType: Define which mask to use during processing. default="brain_mask_dilated"
         """
         import numpy as np
         from dipy.io.image import load_nifti, save_nifti
@@ -2223,7 +2223,7 @@ class Elikopy:
             fintra_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_fintra.nii.gz"
             fbundle_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_fbundle.nii.gz"
 
-            brain_mask_path = folder_path + "/subjects/" + p + "/masks/" + p + "_brain_mask.nii.gz"
+            brain_mask_path = folder_path + "/subjects/" + p + "/masks/" + p + "_brain_mask_dilated.nii.gz"
             mask_path = folder_path + "/subjects/" + p + "/masks/" + p + '_' + maskType + '.nii.gz'
 
             icvf_path = folder_path + "/subjects/" + p + "/dMRI/microstructure/noddi/" + p + "_noddi_icvf.nii.gz"

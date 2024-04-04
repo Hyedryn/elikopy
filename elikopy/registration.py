@@ -432,7 +432,7 @@ def regToT1fromAP(reg_path, T1_subject, AP_subject, mask_file, metrics_dic, fold
                                             mask_static=mask_static, static_fa_file=FA_MNI)
 
 
-def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType=None, T1_filepath=None, T1wCommonSpace_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz", T1wCommonSpaceMask_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain_mask.nii.gz", metrics_dic={'_FA': 'dti', 'RD': 'dti', 'AD': 'dti', 'MD': 'dti'}, longitudinal=False):
+def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="AP", maskType="brain_mask", T1_filepath=None, T1wCommonSpace_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz", T1wCommonSpaceMask_filepath="${FSLDIR}/data/standard/MNI152_T1_1mm_brain_mask.nii.gz", metrics_dic={'_FA': 'dti', 'RD': 'dti', 'AD': 'dti', 'MD': 'dti'}, longitudinal=False):
     preproc_folder = folder_path + '/subjects/' + p + '/dMRI/preproc/'
     T1_CommonSpace = os.path.expandvars(T1wCommonSpace_filepath)
     FA_MNI = os.path.expandvars('${FSLDIR}/data/standard/FSL_HCP1065_FA_1mm.nii.gz')
