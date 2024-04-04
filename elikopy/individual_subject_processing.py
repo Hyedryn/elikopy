@@ -148,7 +148,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         f.close()
 
     if not denoising and not eddy and not gibbs and not topup and not biasfield:
-        save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', curr_dmri.astype(np.float32), affine)
+        save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz', curr_dmri.astype(np.float32), affine)
         save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz', mask.astype(np.float32), affine)
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
                         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
@@ -193,7 +193,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         curr_dmri = denoised
 
         if not eddy and not gibbs and not topup and not biasfield:
-            save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+            save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz',
                        curr_dmri.astype(np.float32), affine)
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
@@ -218,7 +218,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         curr_dmri = data
         if not eddy and not topup and not biasfield:
-            save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+            save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz',
                        curr_dmri.astype(np.float32), affine)
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
@@ -460,7 +460,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         if not eddy and not biasfield:
             data, affine = load_nifti(
                 folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + "_unwarped.nii.gz")
-            save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz', data.astype(np.float32), affine)
+            save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz', data.astype(np.float32), affine)
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
                             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval")
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bvec",
@@ -551,7 +551,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         if not biasfield:
             data, affine = load_nifti(
                 folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.nii.gz")
-            save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz',
+            save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz',
                        data.astype(np.float32), affine)
 
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
@@ -603,7 +603,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         biasfield_log.close()
 
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz',
-            folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz')
+            folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz')
 
 
         if not eddy:
@@ -629,10 +629,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         f.truncate()
 
     # Generate b0 ref:
-    preproc, affine = load_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz')
+    preproc, affine = load_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz')
     b0_ref = preproc[..., 0]
     save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dwiref.nii.gz', b0_ref.astype(np.float32), affine)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz', preproc.astype(np.float32), affine)
 
     preproc = None
     b0_ref = None
@@ -641,7 +640,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     from elikopy.utils import clean_mask
 
     # Step 1 : dwi2mask
-    preproc_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
+    preproc_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz'
     bvec_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.bvec'
     bval_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.bval'
     dwi2mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_space-dwi_type-dwi2mask_brainmask.nii.gz'
@@ -676,7 +675,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
     # Step 3 : median otsu on preprocess data
     preproc, affine = load_nifti(
-        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz')
+        folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz')
     preproc_masked, mask = median_otsu(preproc, median_radius=2, numpass=1, vol_idx=range(0, np.shape(preproc)[3]), dilate=2)
     mask = clean_mask(mask)
     save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_type-otsu_dilate-2_brainmask.nii.gz',
@@ -754,8 +753,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         reslice_data, reslice_affine = load_nifti(preproc_path + "reslice/" + patient_path + "_reslice.nii.gz")
 
     # bet data (stage to compare with final)
-    bet_data, bet_affine = load_nifti(preproc_path + "bet/" + patient_path + "_mask.nii.gz")
     mask_raw, mask_raw_affine = load_nifti(preproc_path + "bet/" + patient_path + "_binary_mask.nii.gz")
+    bet_data = raw_data * mask_raw[..., np.newaxis]
+    bet_affine = raw_affine
 
     # mppca data
     bool_mppca = isdir(os.path.join(preproc_path, "mppca"))
