@@ -679,8 +679,7 @@ def synb0DisCo(folder_path, topuppath, patient_path, static_files_path=None, sta
 
         # Skull strip T1
 
-        bet = "bet " + synb0path + "/T1.nii.gz " + synb0path + \
-            "/T1_mask.nii.gz -R"  # + " -f 0.4 -g -0.2"
+        bet = shutil.copyfile(os.path.join(folder_path,"subjects",patient_path,"T1",f"{patient_path}_T1_brain.nii.gz"), synb0path + "/T1_mask.nii.gz")
 
         # epi_reg distorted b0 to T1; wont be perfect since B0 is distorted
 
@@ -693,7 +692,7 @@ def synb0DisCo(folder_path, topuppath, patient_path, static_files_path=None, sta
             "/b0.nii.gz " + synb0path + "/epi_reg_d.mat -fsl2ras -oitk " + \
             synb0path + "/epi_reg_d_ANTS.txt"
 
-        # ANTs register T1 to atla
+        # ANTs register T1 to atlas
         antsRegistrationSyNQuick = "antsRegistrationSyNQuick.sh -d 3 -f " + static_files_path + \
             "/atlases/mni_icbm152_t1_tal_nlin_asym_09c.nii.gz -m " + \
             synb0path + "/T1.nii.gz -o " + synb0path + "/ANTS"
