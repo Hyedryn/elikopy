@@ -519,7 +519,7 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="B0FSL", maskType="b
     assert maskType in ["brain_mask_dilated","brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
                     "wm_mask_Freesurfer_T1", None], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1, None"
 
-    assert DWI_type in ["AP", "WMFOD", "BO"], "The DWI_type parameter must be one of the following : AP, WMFOD, BO"
+    assert DWI_type in ["AP", "WMFOD", "B0", "B0FSL"], "The DWI_type parameter must be one of the following : AP, WMFOD, B0, B0FSL"
 
     mask_path = ""
     if maskType is not None and os.path.isfile(folder_path + '/subjects/' + p + "/masks/" + p + '_' + maskType + '.nii.gz'):
