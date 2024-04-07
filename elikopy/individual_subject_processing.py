@@ -755,8 +755,12 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
     # bet data (stage to compare with final)
     mask_raw, mask_raw_affine = load_nifti(preproc_path + "bet/" + patient_path + "_binary_mask.nii.gz")
-    bet_data = raw_data * mask_raw[..., np.newaxis]
-    bet_affine = raw_affine
+    if bool_reslice:
+        bet_data = reslice_data * mask_raw[..., np.newaxis]
+        bet_affine = reslice_affine
+    else:
+        bet_data = raw_data * mask_raw[..., np.newaxis]
+        bet_affine = raw_affine
 
     # mppca data
     bool_mppca = isdir(os.path.join(preproc_path, "mppca"))
