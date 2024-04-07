@@ -263,13 +263,13 @@ def regToT1fromB0FSL(reg_path, T1_subject, DWI_subject, mask_file, metrics_dic, 
         b0fsl_reg_path = os.path.join(folderpath, 'subjects', p, 'reg', 'B0FSL_to_T1')
         os.makedirs(b0fsl_reg_path, exist_ok=True)
         cmd = f"epi_reg --epi={DWI_B0_subject} --t1={T1_subject_raw} --t1brain={T1_brain_subject} --out={b0fsl_reg_path}/{p}_B0toT1 "
-        cmd_part2 = f"c3d_affine_tool -ref {T1_subject_raw} -src {DWI_B0_subject} {b0fsl_reg_path}/{p}_B0toT1.mat -fsl2ras -oitk {b0fsl_reg_path}/{p}_B0toT1_ANTS.txt"
+        cmd_part2 = f"c3d_affine_tool -ref {T1_subject_raw} -src {DWI_B0_subject} {b0fsl_reg_path}/{p}_B0toT1.mat -fsl2ras -oitk {b0fsl_reg_path}/{p}_B0toT1_ANTS.txt -o {b0fsl_reg_path}/{p}_B0toT1_ANTS.mat"
         cmd += " && " + cmd_part2
         import subprocess
         process = subprocess.Popen(cmd, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = process.communicate()
 
-        affine_map_fslb0 = np.loadtxt(f"{b0fsl_reg_path}/{p}_B0toT1.mat")
+        affine_map_fslb0 = np.loadtxt(f"{b0fsl_reg_path}/{p}_B0toT1_ANTS.mat")
         mapping_DWI_to_T1 = getTransform(T1_subject, DWI_subject, mask_file=mask_file, onlyAffine=True, diffeomorph=False, sanity_check=False, DWI=True, affine_map=affine_map_fslb0)
         with open(reg_path + 'mapping_DWI_B0FSL_to_T1.p', 'wb') as handle:
             pickle.dump(mapping_DWI_to_T1, handle, protocol=pickle.HIGHEST_PROTOCOL)
