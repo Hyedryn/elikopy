@@ -245,7 +245,7 @@ def applyTransformToAllMapsInFolder(input_folder, output_folder, mapping, mappin
 
 
 
-def regToT1fromB0FSL(reg_path, T1_subject, DWI_subject, mask_file, metrics_dic, folderpath, p, mapping_T1_to_T1MNI, T1_MNI,
+def regToT1fromB0FSL(reg_path, T1_subject, DWI_B0_subject, mask_file, metrics_dic, folderpath, p, mapping_T1_to_T1MNI, T1_MNI,
                   mask_static, FA_MNI, longitudinal_transform=None):
     if os.path.exists(reg_path + 'mapping_DWI_B0FSL_to_T1.p'):
         with open(reg_path + 'mapping_DWI_B0FSL_to_T1.p', 'rb') as handle:
@@ -257,7 +257,6 @@ def regToT1fromB0FSL(reg_path, T1_subject, DWI_subject, mask_file, metrics_dic, 
             except OSError:
                 print("Creation of the directory %s failed" % reg_path)
 
-        DWI_B0_subject = os.path.join(folderpath, 'subjects', p, 'dMRI', 'preproc', p + '_dwiref.nii.gz')
         T1_subject_raw = os.path.join(folderpath, 'subjects', p, 'T1', p + '_T1.nii.gz')
         T1_brain_subject = os.path.join(folderpath, 'subjects', p, 'T1', p + '_T1_brain.nii.gz')
         b0fsl_reg_path = os.path.join(folderpath, 'subjects', p, 'reg', 'B0FSL_to_T1')
@@ -270,7 +269,7 @@ def regToT1fromB0FSL(reg_path, T1_subject, DWI_subject, mask_file, metrics_dic, 
         out, err = process.communicate()
 
         affine_map_fslb0 = np.loadtxt(f"{b0fsl_reg_path}/{p}_B0toT1_ANTS.mat")
-        mapping_DWI_to_T1 = getTransform(T1_subject, DWI_subject, mask_file=mask_file, onlyAffine=True, diffeomorph=False, sanity_check=False, DWI=True, affine_map=affine_map_fslb0)
+        mapping_DWI_to_T1 = getTransform(T1_subject, DWI_B0_subject, mask_file=mask_file, onlyAffine=True, diffeomorph=False, sanity_check=False, DWI=False, affine_map=affine_map_fslb0)
         with open(reg_path + 'mapping_DWI_B0FSL_to_T1.p', 'wb') as handle:
             pickle.dump(mapping_DWI_to_T1, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -542,6 +541,7 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="B0FSL", maskType="b
     DWI_subject = preproc_folder + p + "_dmri_preproc.nii.gz"
     AP_subject = folder_path + '/subjects/' + p + '/masks/' + p + '_ap.nii.gz'
     WM_FOD_subject = folder_path + '/subjects/' + p + '/dMRI/ODF/MSMT-CSD/' + p + "_MSMT-CSD_WM_ODF.nii.gz"
+    DWI_B0_subject = os.path.join(folder_path, 'subjects', p, 'dMRI', 'preproc', p + '_dwiref.nii.gz')
 
     reg_path = folder_path + '/subjects/' + p + '/reg/'
     if not(os.path.exists(reg_path)):
@@ -626,7 +626,7 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="B0FSL", maskType="b
     elif DWI_type == "AP":
         regToT1fromAP(reg_path, T1_subject, AP_subject, mask_path, metrics_dic, folder_path, p, mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI, longitudinal_transform=mapping_T1w_to_T1wRef)
     elif DWI_type == "B0FSL":
-        regToT1fromB0FSL(reg_path, T1_subject, AP_subject, mask_path, metrics_dic, folder_path, p,
+        regToT1fromB0FSL(reg_path, T1_subject, DWI_B0_subject, mask_path, metrics_dic, folder_path, p,
                       mapping_T1w_to_T1wCommonSpace, T1_CommonSpace, mask_static, FA_MNI,
                       longitudinal_transform=mapping_T1w_to_T1wRef)
 
