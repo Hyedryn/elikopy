@@ -3591,7 +3591,7 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
 
 def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
                   max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True,
-                  output_filename:str='tractogram',core_count:int=1):
+                  output_filename:str='tractogram',core_count:int=1, save_as_trk=False):
     """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
     :param folder_path: the path to the root directory.
@@ -3651,9 +3651,10 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
 
     tracking_log.close()
     
-    tract = load_tractogram(output_file, dwi_path)
-
-    save_trk(tract, output_file[:-3]+'trk')
+    if save_as_trk:
+        tract = load_tractogram(output_file, dwi_path)
+    
+        save_trk(tract, output_file[:-3]+'trk')
     
     with open(output_file[:-3]+'json', 'w') as outfile:
         json.dump(params, outfile)
@@ -3661,7 +3662,7 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
         
 def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
               msmtCSD: bool = True, input_filename: str = 'tractogram',
-              core_count: int = 1):
+              core_count: int = 1, save_as_trk=False):
     """ Computes the sifted whole brain tractogram of a single patient based on
     the fod obtained from msmt-CSD.
 
@@ -3705,8 +3706,9 @@ def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
     process.communicate()
     sift_log.close()
 
-    tract = load_tractogram(output_file, dwi_path)
-    save_trk(tract, output_file[:-3]+'trk')
+    if save_as_trk:
+        tract = load_tractogram(output_file, dwi_path)
+        save_trk(tract, output_file[:-3]+'trk')
 
 
 def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.035, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
