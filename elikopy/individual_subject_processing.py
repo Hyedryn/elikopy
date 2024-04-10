@@ -1946,7 +1946,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
         qball_model = shm.QballModel(gtab, 8)
         if core_count > 1:
             peaks = dp.peaks_from_model(model=qball_model, data=data, relative_peak_threshold=.5, min_separation_angle=25,
-                                    sphere=sphere, mask=mask, parallel=True, nbr_processes=core_count)
+                                    sphere=sphere, mask=mask, parallel=True, num_processes=core_count)
         else:
             peaks = dp.peaks_from_model(model=qball_model, data=data, relative_peak_threshold=.5,
                                         min_separation_angle=25,
