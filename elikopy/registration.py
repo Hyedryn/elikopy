@@ -165,9 +165,10 @@ def applyTransform(file_path, mapping, mapping_2=None, mapping_3=None, mask_file
         DESCRIPTION.
 
     '''
-
+    print("Applying transform to", file_path)
     moving = nib.load(file_path)
     moving_data = moving.get_fdata()
+    print("Moving data shape:", moving_data.shape)
 
     if mask_file is not None:
         mask, mask_affine = load_nifti(mask_file)
@@ -195,13 +196,9 @@ def applyTransform(file_path, mapping, mapping_2=None, mapping_3=None, mask_file
         transformed[transformed <= .5] = 0
 
     if len(output_path) > 0:
-        print("OUT", output_path)
         static = nib.load(static_file)
 
         static_fa = nib.load(static_fa_file)
-
-        print(static_fa.header)
-        print(static.header)
 
         if mask_static is not None:
             mask_static_data, mask_static_affine = load_nifti(mask_static)
