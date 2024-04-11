@@ -231,7 +231,17 @@ def applyTransformToAllMapsInFolder(input_folder, output_folder, mapping, mappin
     '''
 
     for filename in os.listdir(input_folder):
-        if all(keyword in filename for keyword in keywordList):
+
+        curr_filename = filename
+        valid = True
+        for keyword in keywordList:
+            if keyword in curr_filename:
+                curr_filename = curr_filename.replace(keyword, '')
+            else:
+                valid = False
+                break
+
+        if valid and all(keyword in filename for keyword in keywordList):
             # print(filename)
             try:
                 applyTransform(input_folder + filename, mapping, mapping_2=mapping_2, mapping_3=mapping_3, static_file=static_file,
