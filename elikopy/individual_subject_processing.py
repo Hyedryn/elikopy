@@ -3591,7 +3591,8 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
 
 def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
                   max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True,
-                  output_filename:str='tractogram',core_count:int=1, save_as_trk=False):
+                  output_filename:str='tractogram',core_count:int=1,
+                  maskType:str="brain_mask",save_as_trk=False):
     """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
     :param folder_path: the path to the root directory.
@@ -3601,16 +3602,19 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
     :param cutoff: Value below which streamlines do not propagate. default=0.1
     :param msmtCSD: boolean. If True then uses ODF from msmt-CSD, if False from CSD. default=True
     :param output_filename: str. Specify output filename for tractogram.
+    :param maskType: str. Specify a masking region of interest, streamlines exiting the mask will be truncated.
     """
-    
+
+    assert maskType in ["brain_mask_dilated","brain_mask"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask"
+
     import nibabel as nib
     from elikopy.utils import dipy_fod_to_mrtrix
     from dipy.io.streamline import load_tractogram, save_trk
-    
+
     patient_path = p
-    
-    params={'Number of streamlines':streamline_number, 'Maximum angle':max_angle,
-            'Cutoff value':cutoff}
+
+    params={'Number of streamlines': streamline_number, 'Maximum angle': max_angle,
+            'Cutoff value': cutoff, 'Mask type': maskType}
 
     if msmtCSD:
         if not os.path.isdir(folder_path + '/subjects/' + patient_path + "/dMRI/ODF/MSMT-CSD/"):
@@ -3628,38 +3632,40 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
         odf_file_path = folder_path + '/subjects/' + patient_path + "/dMRI/ODF/CSD/"+patient_path + "_CSD_SH_ODF_mrtrix.nii.gz"
         params['Local modeling']='CSD'
     tracking_path = folder_path + '/subjects/' + patient_path + "/dMRI/tractography/"
-    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask_dilated.nii.gz"
+    seed_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + "_brain_mask.nii.gz"
+    mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_' + maskType + '.nii.gz'
     dwi_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.nii.gz'
     
     output_file = tracking_path+patient_path+'_'+output_filename+'.tck'
-    
+
     if not os.path.isdir(tracking_path):
         os.mkdir(tracking_path)
-    
+
     bashCommand=('tckgen -nthreads ' + str(core_count) + ' ' + odf_file_path +' '+ output_file+
-                 ' -seed_image ' +mask_path+
+                 ' -seed_image ' +seed_path+
                  ' -select ' +str(streamline_number)+
                  ' -angle ' +str(max_angle)+
                  ' -cutoff ' +str(cutoff)+
+                 ' -mask ' +mask_path+
                  ' -force')
-    
+
     tracking_log = open(tracking_path+"tractography_logs.txt", "a+")
-    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=tracking_log,
-                               stderr=subprocess.STDOUT)
+    process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True,
+                               stdout=tracking_log, stderr=subprocess.STDOUT)
 
     process.communicate()
 
     tracking_log.close()
-    
+
     if save_as_trk:
         tract = load_tractogram(output_file, dwi_path)
-    
+
         save_trk(tract, output_file[:-3]+'trk')
-    
+
     with open(output_file[:-3]+'json', 'w') as outfile:
         json.dump(params, outfile)
-        
-        
+
+
 def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
               msmtCSD: bool = True, input_filename: str = 'tractogram',
               core_count: int = 1, save_as_trk=False):
