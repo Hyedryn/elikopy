@@ -8,7 +8,7 @@ import math
 from scipy.ndimage.morphology import binary_dilation
 
 import subprocess
-from elikopy.utils import makedir
+from elikopy.utils import makedir, update_status
 
 import functools
 print = functools.partial(print, flush=True)
@@ -705,6 +705,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
 
     if not report:
+        update_status(folder_path, patient_path, "preproc")
         return
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -1483,6 +1484,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
+    update_status(folder_path, patient_path, "preproc")
+
 
 def dti_solo(folder_path, p, maskType="brain_mask_dilated",
              use_all_shells: bool = False, report=True):
@@ -1734,6 +1737,8 @@ def dti_solo(folder_path, p, maskType="brain_mask_dilated",
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
             f.close()
+
+    update_status(folder_path, patient_path, "dti")
 
 
 def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, debug=False):
@@ -2155,6 +2160,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
 
+    update_status(folder_path, patient_path, maskType)
 
 def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
     """ Computes the NODDI metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
@@ -2403,6 +2409,7 @@ def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
+    update_status(folder_path, patient_path, "noddi")
 
 def noddi_amico_solo(folder_path, p, maskType="brain_mask_dilated"):
     """ Perform noddi amico on a single subject and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi_amico/.
@@ -2460,6 +2467,8 @@ def noddi_amico_solo(folder_path, p, maskType="brain_mask_dilated"):
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f.close()
+
+    update_status(folder_path, patient_path, "noddi_amico")
 
 
 def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain_mask_dilated",customDiamond=""):
@@ -2702,6 +2711,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
+    update_status(folder_path, patient_path, "diamond")
 
 def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated",
             report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD",
@@ -3093,6 +3103,9 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
                 "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
             f.close()
 
+
+    update_status(folder_path, patient_path, "fingerprinting")
+
 def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=None, core_count=1, maskType="brain_mask_dilated", report=True, CSD_FA_treshold=0.7, return_odf=False):
     """Perform microstructure fingerprinting and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/mf/.
 
@@ -3243,6 +3256,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
     f.close()
 
+    update_status(folder_path, patient_path, "odf_csd")
 
 def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True, maskType="brain_mask_dilated"):
     """Perform MSMT CSD odf computation and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
@@ -3382,6 +3396,8 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
 
     f.close()
+
+    update_status(folder_path, patient_path, "odf_msmtcsd")
 
 
 
@@ -3589,6 +3605,9 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
 
+    update_status(folder_path, patient_path, "ivim")
+
+
 def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
                   max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True,
                   output_filename:str='tractogram',core_count:int=1,
@@ -3665,6 +3684,8 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
     with open(output_file[:-3]+'json', 'w') as outfile:
         json.dump(params, outfile)
 
+    update_status(folder_path, patient_path, "tracking")
+
 
 def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
               msmtCSD: bool = True, input_filename: str = 'tractogram',
@@ -3715,6 +3736,8 @@ def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
     if save_as_trk:
         tract = load_tractogram(output_file, dwi_path)
         save_trk(tract, output_file[:-3]+'trk')
+
+    update_status(folder_path, patient_path, "siftComputation")
 
 
 def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.035, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
@@ -3919,6 +3942,8 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
         f.close()
+
+    update_status(folder_path, patient_path, "verdict")
 
 def report_solo(folder_path,patient_path, slices=None, short=False):
     """ Legacy report function.

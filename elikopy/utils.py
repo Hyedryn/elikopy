@@ -1966,3 +1966,15 @@ def get_patient_ref(root:str, patient:str, suffix_length:int=2):
     ref_idx=np.max(p)
     ref=patient_list[i+ref_idx]
     return ref
+
+def update_status(folder_path, p, step):
+    json_status_file = os.path.join(folder_path, "subjects", p, f"{p}_status.json")
+    if os.path.exists(json_status_file):
+        with open(json_status_file, "r") as f:
+            patient_status = json.load(f)
+    else:
+        patient_status = {}
+    patient_status[step] = True
+
+    with open(json_status_file, "w") as f:
+        json.dump(patient_status, f, indent=6)

@@ -18,7 +18,7 @@ from dipy.align.metrics import CCMetric
 
 import pickle
 
-from elikopy.utils import get_patient_ref
+from elikopy.utils import get_patient_ref, update_status
 
 
 def getTransform(static_volume_file, moving_volume_file, mask_file=None, onlyAffine=False,
@@ -641,6 +641,9 @@ def regallDWIToT1wToT1wCommonSpace(folder_path, p, DWI_type="B0FSL", maskType="b
         print("DWI_type not recognized")
 
     print("End of DWI registration")
+
+    longitudinal_txt = "" if not longitudinal else "_longitudinal"
+    update_status(folder_path, p, f'regallDWIToT1wToT1wCommonSpace_{DWI_type}{longitudinal_txt}')
 
 
 def regallFAToMNI(folderpath, p, metrics_dic={'_FA': 'dti', 'RD': 'dti', 'AD': 'dti', 'MD': 'dti'}):
