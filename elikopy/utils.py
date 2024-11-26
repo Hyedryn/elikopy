@@ -1952,20 +1952,57 @@ def vbm(folder_path, grp1, grp2, randomise_numberofpermutation=5000, metrics_dic
     vbm_log.close()
 
 
-def get_patient_ref(root:str, patient:str, suffix_length:int=2):
-    patient_list=json.load(open(root+'subjects/subj_list.json', "r"))
-    patient_list.sort()
-    i=np.argwhere(np.array(patient_list)==patient)[0,0]
-    names = []
-    for p in patient_list:
-        names.append(p[:-suffix_length])
-    pat_array=np.array(names)
-    _,idx=np.unique(pat_array,return_index=True)
-    p=idx-i
-    p[p>0]=-len(patient_list)
-    ref_idx=np.max(p)
-    ref=patient_list[i+ref_idx]
-    return ref
+def get_patient_ref(root: str, patient: str, suffix_length: int = 2):
+    """
+    Retrieve the reference patient from the patient list based on input patient ID.
+
+    Args:
+        root (str): Root directory containing the patient list JSON file.
+        patient (str): Patient ID.
+        suffix_length (int): Number of characters to trim from the patient ID for non-BIDS matching.
+
+    Returns:
+        str: Reference patient ID.
+    """
+    # Load patient list
+    patient_list_path = os.path.join(root, 'subjects', 'subj_list.json')
+    with open(patient_list_path, 'r') as f:
+        patient_list = json.load(f)
+
+    # Determine if the input patient uses BIDS format
+    is_bids = "sub-" in patient and "ses-" in patient
+
+    # Extract ses attributes for sorting
+    def extract_ses(patient_id):
+        ses_attr = next((attr for attr in patient_id.split("_") if "ses-" in attr), "")
+        return ses_attr
+
+    if is_bids:
+        # Sort patient list by ses attribute
+        patient_list.sort(key=extract_ses)
+        patient_sub = next((patient_attr for patient_attr in patient.split("_") if "sub-" in patient_attr), None)
+        # Process BIDS patient
+        for p in patient_list:
+            curr_patient_sub = next((patient_attr for patient_attr in p.split("_") if "sub-" in patient_attr), None)
+            if patient_sub == curr_patient_sub:  # Match exact BIDS ID
+                return p
+        raise ValueError(f"No reference found for BIDS patient {patient}.")
+    else:
+        # Sort the patient list
+        patient_list.sort()
+
+        # Find the index of the patient in the list
+        patient_index = patient_list.index(patient)
+        # Process non-BIDS patient
+        trimmed_names = [p[:-suffix_length] if len(p) > suffix_length else p for p in patient_list]
+
+        unique_names, unique_indices = np.unique(trimmed_names, return_index=True)
+
+        relative_positions = unique_indices - patient_index
+        relative_positions[relative_positions > 0] -= len(patient_list)
+        ref_idx = np.max(relative_positions)
+        ref_index = (patient_index + ref_idx) % len(patient_list)
+        return patient_list[ref_index]
 
 def update_status(folder_path, p, step):
     json_status_file = os.path.join(folder_path, "subjects", p, f"{p}_status.json")
