@@ -321,7 +321,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
-            f.close()
+            
 
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=topup_log,
                                        stderr=subprocess.STDOUT)
@@ -335,7 +335,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                     inindex = str(topup_index[r-1])
                 else:
                     inindex = inindex + "," + str(topup_index[r-1])
-            
+
             # Identify AP and PA Volumes
             vols_p1 = [i for i, val in enumerate(topup_index) if val == 1]
             vols_p2 = [i for i, val in enumerate(topup_index) if val == 2]
