@@ -335,9 +335,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                     inindex = str(topup_index[r-1])
                 else:
                     inindex = inindex + "," + str(topup_index[r-1])
-
-            imain_tot_merged = # TODO merge with fslmerge to separate ap from pa
-
+            
             # Identify AP and PA Volumes
             vols_p1 = [i for i, val in enumerate(topup_index) if val == 1]
             vols_p2 = [i for i, val in enumerate(topup_index) if val == 2]
