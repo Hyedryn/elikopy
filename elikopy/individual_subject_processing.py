@@ -336,7 +336,38 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 else:
                     inindex = inindex + "," + str(topup_index[r-1])
 
-            bashCommand2 = 'applytopup --imain="' + imain_tot + '" --inindex='+inindex+' --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+            imain_tot_merged = # TODO merge with fslmerge to separate ap from pa
+
+            # Identify AP and PA Volumes
+            vols_p1 = [i for i, val in enumerate(topup_index) if val == 1]
+            vols_p2 = [i for i, val in enumerate(topup_index) if val == 2]
+
+            # Define file paths for the split parts
+            file_p1 = topup_path + "/part_1.nii.gz"
+            file_p2 = topup_path + "/part_2.nii.gz"
+
+            # Extract AP and PA Volumes
+            cmd_p1 = f"fslroi {imain_tot} {file_p1} {vols_p1[0]} {len(vols_p1)}"
+            cmd_p2 = f"fslroi {imain_tot} {file_p2} {vols_p2[0]} {len(vols_p2)}"
+
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": Extracting AP and PA volumes for patient %s \n" % p + cmd_p1 + "\n" + cmd_p2)
+
+            # Run extraction commands
+            subprocess.run(cmd_p1, shell=True, stdout=topup_log, stderr=subprocess.STDOUT)
+            subprocess.run(cmd_p2, shell=True, stdout=topup_log, stderr=subprocess.STDOUT)
+
+            # Merge the two parts if necessary (optional)
+            imain_tot_merged = f"{file_p1},{file_p2}"
+
+            bashCommand2 = 'applytopup --imain="' + imain_tot_merged + '" --inindex=1,2 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+
+            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": applytopup launched for patient %s \n" % p + " with bash command " + bashCommand2)
+
+            f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
+                "%d.%b %Y %H:%M:%S") + ": applytopup launched for patient %s \n" % p + " with bash command " + bashCommand2)
+            f.close()
 
             process2 = subprocess.Popen(bashCommand2, universal_newlines=True, shell=True, stdout=topup_log,
                                         stderr=subprocess.STDOUT)
