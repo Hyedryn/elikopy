@@ -557,8 +557,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         # Step 3 : median otsu on preprocess data
         topup_corr, affine = load_nifti(topup_corr_path)
-        _, mask = median_otsu(topup_corr, median_radius=2, numpass=1, vol_idx=range(0, np.shape(topup_corr)[3]),
-                                           dilate=2)
+
 
 
         # Step 4: Apply all masks to preprocess data
@@ -568,6 +567,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         if topup and multiple_encoding and not forceSynb0DisCo:
             full_mask = np.logical_or(dwi2mask_mask, mrisynthstrip_mask)
         else:
+            _, mask = median_otsu(topup_corr, median_radius=2, numpass=1, vol_idx=range(0, np.shape(topup_corr)[3]),
+                                  dilate=2)
             mask = clean_mask(mask)
             save_nifti(
                 folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_type-otsu_dilate-2_brainmask.nii.gz',
