@@ -455,7 +455,7 @@ class Elikopy:
 
                             original_acq.append([reverse_acq[0][0], reverse_acq[0][1], reverse_acq[0][2], reverse_acq[0][3]])
 
-                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt', 'w') as file:
+                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams_all.txt', 'w') as file:
                                 file.writelines(' '.join(str(j) for j in i) + '\n' for i in original_acq)
                             print(original_acq)
 
