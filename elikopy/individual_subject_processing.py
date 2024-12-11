@@ -433,8 +433,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                                        stderr=subprocess.STDOUT)
 
             # wait until apply topup finish
-            output, error = process2.communicate()
-            
+            output, error = process.communicate()
+
             bashCommand2 = 'applytopup --method=jac --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
