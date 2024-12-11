@@ -392,8 +392,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 exit()
 
             # Generate acqparams_alL.txt file
-            with open(folder_path + "/subjects/" + patient_path + '/dMRI/raw/' + 'acqparams_original.txt') as f:
-                original_acq = [[float(x) for x in line2.split()] for line2 in f]
+            with open(folder_path + "/subjects/" + patient_path + '/dMRI/raw/' + 'acqparams_original.txt') as f1:
+                original_acq = [[float(x) for x in line2.split()] for line2 in f1]
 
             with open(folder_path + "/subjects/" + patient_path + '/dMRI/raw/' + 'acqparams_reverse.txt') as f2:
                 reverse_acq = [[float(x) for x in line2.split()] for line2 in f2]
@@ -407,8 +407,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             for i in range(b0_num_reverse):
                 original_acq.append([reverse_acq[0][0], reverse_acq[0][1], reverse_acq[0][2], reverse_acq[0][3]])
 
-            with open(f"{topup_path}/acqparams_all.txt", "w") as f2:
-                f2.writelines(' '.join(str(j) for j in i) + '\n' for i in original_acq)
+            with open(f"{topup_path}/acqparams_all.txt", "w") as f4:
+                f4.writelines(' '.join(str(j) for j in i) + '\n' for i in original_acq)
 
             bashCommand = ('export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+
                            ' ; topup --imain="' + topup_path + '/b0.nii.gz" --config="' + topupConfig +
