@@ -381,8 +381,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             if os.path.exists(f"{topup_path}/b0.nii.gz"):
                 os.remove(f"{topup_path}/b0.nii.gz")
             b0_path = f"{topup_path}/b0.nii.gz"
-            merge_b0_cmd = f"fslmerge -t {b0_part1_path} {b0_part2_path} {b0_path}"
+            merge_b0_cmd = f"fslmerge -t {b0_path} {b0_part1_path} {b0_part2_path} "
             try:
+                print(merge_b0_cmd)
                 output = subprocess.check_output(merge_b0_cmd, universal_newlines=True, shell=True,
                                                  stderr=subprocess.STDOUT)
                 print(output)
