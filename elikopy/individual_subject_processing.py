@@ -431,24 +431,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=topup_log,
                                        stderr=subprocess.STDOUT)
-            # wait until topup finish
-            output, error = process.communicate()
 
-            b0_part1_0_path = f"{folder_path}/subjects/{patient_path}/dMRI/preproc/topup/b0_part1_0.nii.gz"
-            b0_part2_0_path = f"{folder_path}/subjects/{patient_path}/dMRI/preproc/topup/b0_part2_0.nii.gz"
-            fslroi_cmd = f"fslroi {b0_part1_path} {b0_part1_0_path} 0 1 ; fslroi {b0_part2_path} {b0_part2_0_path} 0 1"
-            try:
-                output = subprocess.check_output(fslroi_cmd, universal_newlines=True,
-                                                 shell=True, stderr=subprocess.STDOUT)
-                print(output)
-            except subprocess.CalledProcessError as e:
-                print(f"Error extracting b0 volume at index 0")
-                exit()
 
-            # Merge the two parts if necessary (optional)
-            imain_tot_merged = f"{b0_part1_0_path},{b0_part2_0_path}"
-
-            bashCommand2 = 'applytopup --imain="' + imain_tot_merged + '" --inindex=1,2 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams_all.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
+            bashCommand2 = 'applytopup --method=jac --imain="' + imain_tot + '" --inindex=1 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": applytopup launched for patient %s \n" % p + " with bash command " + bashCommand2)
