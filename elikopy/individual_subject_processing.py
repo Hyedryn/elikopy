@@ -276,8 +276,12 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             line = " ".join(line.split())
             topup_index = [int(s) for s in line.split(' ')]
 
-        with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
-            topup_acq = [[float(x) for x in line2.split()] for line2 in f]
+        if os.path.exists(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams_all.txt'):
+            with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams_all.txt') as f:
+                topup_acq = [[float(x) for x in line2.split()] for line2 in f]
+        else:
+            with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
+                topup_acq = [[float(x) for x in line2.split()] for line2 in f]
 
         #Find all the b0 to extract.
         current_index = 0
