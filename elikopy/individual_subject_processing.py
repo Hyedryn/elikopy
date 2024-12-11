@@ -559,20 +559,16 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         topup_corr, affine = load_nifti(topup_corr_path)
         _, mask = median_otsu(topup_corr, median_radius=2, numpass=1, vol_idx=range(0, np.shape(topup_corr)[3]),
                                            dilate=2)
-
+        mask = clean_mask(mask)
+        save_nifti(
+            folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_type-otsu_dilate-2_brainmask.nii.gz',
+            mask.astype(np.float32), affine)
 
         # Step 4: Apply all masks to preprocess data
         dwi2mask_mask, _ = load_nifti(dwi2mask_path)
         mrisynthstrip_mask, _ = load_nifti(mrisynthstrip_path)
 
-        if topup and multiple_encoding and not forceSynb0DisCo:
-            full_mask = np.logical_or(dwi2mask_mask, mrisynthstrip_mask)
-        else:
-            mask = clean_mask(mask)
-            save_nifti(
-                folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_type-otsu_dilate-2_brainmask.nii.gz',
-                mask.astype(np.float32), affine)
-            full_mask = np.logical_or(mask, np.logical_or(dwi2mask_mask, mrisynthstrip_mask))
+        full_mask = np.logical_or(mask, np.logical_or(dwi2mask_mask, mrisynthstrip_mask))
         full_mask = binary_dilation(full_mask, iterations=1)
 
         topup_corr_full_mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_brain_mask.nii.gz'
