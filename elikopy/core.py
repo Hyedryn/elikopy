@@ -339,94 +339,116 @@ class Elikopy:
                             dw_mri_path = folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz"
                             b0_path = folder_path + "/subjects/" + name + "/dMRI/raw/" + name +"_b0_reverse.nii.gz"
 
-                            #Copy b0 to patient path:
-                            fslroi = "fslroi " + reverse_path + " " + b0_path + " 0 1"
-                            reverse_log = open(folder_path + "/logs.txt","a+")
+                            # Read bval file directly
+                            with open(reverse_path_bval, "r") as bval_file:
+                                bvals = list(map(float, bval_file.read().strip().split()))
+
+                            # Identify indices of b0 volumes
+                            b0_indices = [idx for idx, bval in enumerate(bvals) if bval == 0]
+
+                            if not b0_indices:
+                                print("No b0 volumes found in reverse encoding.")
+                                b0_indices = [0]
+
+                            # Extract and concatenate non-sequential b0 volumes
+                            temp_b0_files = []
+                            for i, b0_idx in enumerate(b0_indices):
+                                temp_b0_file = f"{folder_path}/subjects/{name}/dMRI/raw/temp_b0_{i}.nii.gz"
+                                temp_b0_files.append(temp_b0_file)
+                                fslroi_cmd = f"fslroi {reverse_path} {temp_b0_file} {b0_idx} 1"
+                                try:
+                                    output = subprocess.check_output(fslroi_cmd, universal_newlines=True,
+                                                                     shell=True, stderr=subprocess.STDOUT)
+                                    print(output)
+                                except subprocess.CalledProcessError as e:
+                                    print(f"Error extracting b0 volume at index {b0_idx}")
+                                    exit()
+
+                            # Merge all temporary b0 files into a single file
+                            merge_b0_cmd = f"fslmerge -t {b0_path} " + " ".join(temp_b0_files)
                             try:
-                                output = ""
-                                output = subprocess.check_output(fslroi, universal_newlines=True, shell=True, stderr=subprocess.STDOUT)
-                            except subprocess.CalledProcessError as e:
-                                print("Error when calling fslroi, no reverse direction will be available")
-                                reverse_log.write("Error when calling fslroi, no reverse direction will be available\n")
-                                print(e.returncode)
-                                print(e.cmd)
-                                print(e.output)
-                                reverse_log.write(e.output + "\n")
-                            finally:
+                                output = subprocess.check_output(merge_b0_cmd, universal_newlines=True, shell=True,
+                                                                 stderr=subprocess.STDOUT)
                                 print(output)
-                                reverse_log.write(output)
-                            #print(error_log)
-
-
-                            #Merge b0 with original DW-MRI:
-                            merge_b0 = "fslmerge -t " + dw_mri_path + " " + dw_mri_path + " " + b0_path + " "
-                            try:
-                                output = ""
-                                output = subprocess.check_output(merge_b0, universal_newlines=True, shell=True, stderr=subprocess.STDOUT)
                             except subprocess.CalledProcessError as e:
-                                print("Error when calling fslmerge, no reverse direction will be available")
-                                reverse_log.write("Error when calling fslmerge, no reverse direction will be available\n")
-                                print(e.returncode)
-                                print(e.cmd)
-                                print(e.output)
-                                reverse_log.write(e.output + "\n")
-                            finally:
-                                print(output)
-                                reverse_log.write(output)
+                                print("Error when merging b0 volumes")
+                                exit()
 
-                            #Edit bvec:
-                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object:
-                                lines = file_object.readlines()
-                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec", "r") as file_object2:
-                                nlines = file_object2.read().count('\n')
+                            # Cleanup temporary files
+                            for temp_file in temp_b0_files:
+                                os.remove(temp_file)
 
-                            if nlines > 4:
-                                lines.append("1 0 0\n")
-                                with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec",
-                                          "w") as f:
-                                    for line in lines:
-                                        f.write(line)
-                            else:
-                                with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bvec",
-                                          "w") as f:
-                                    i = 0
-                                    for line in lines:
-                                        if i==0:
-                                            f.write(line.rstrip().rstrip("\n") + " 1\n")
-                                        elif i==1:
-                                            f.write(line.rstrip().rstrip("\n") + " 0\n")
-                                        elif i==2:
-                                            f.write(line.rstrip().rstrip("\n") + " 0\n")
-                                        else:
-                                            f.write(line)
-                                        i = i + 1
+                            # Merge extracted b0 volumes with the original DW-MRI file
+                            #merge_b0_cmd = f"fslmerge -t {dw_mri_path} {dw_mri_path} {b0_path}"
+                            #try:
+                            #    output = subprocess.check_output(merge_b0_cmd, universal_newlines=True, shell=True,
+                            #                                     stderr=subprocess.STDOUT)
+                            #    print(output)
+                            #except subprocess.CalledProcessError as e:
+                            #    print("Error when merging b0 volumes with the original DW-MRI")
+                            #    exit()
 
-                            #Edit bval
-                            with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "r") as file_object:
-                                file_object=file_object.read().rstrip().rstrip("\n")
+                            # Update bvec
+                            bvec_path = f"{folder_path}/subjects/{name}/dMRI/raw/{name}_raw_dmri.bvec"
+                            # Read existing bvec file
+                            with open(bvec_path, "r") as bvec_file:
+                                lines = bvec_file.readlines()
 
-                            nlines = file_object.count('\n')
-                            if nlines > 4:
-                                with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
-                                    myfile.write(file_object + "\n0"+ "\n")
-                            else:
-                                with open(folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.bval", "w") as myfile:
-                                    myfile.write(file_object + " 0"+ "\n")
+                            # Check if the bvec file is formatted with multiple lines or a single line
+                            if len(lines) >= 3:  # Multi-line format
+                                lines_reverse = ["0","0","0"]
+                                for _ in range(len(b0_indices)-1):
+                                    lines_reverse[0] = lines_reverse[0].strip() + " 0"
+                                    lines_reverse[1] = lines_reverse[1].strip() + " 0"
+                                    lines_reverse[2] = lines_reverse[2].strip() + " 0"
+                                lines_reverse[0] = lines_reverse[0].strip() + "\n"
+                                lines_reverse[1] = lines_reverse[1].strip() + "\n"
+                                lines_reverse[2] = lines_reverse[2].strip() + "\n"
+                            else:  # Single-line format
+                                lines_reverse = ["0","0","0"]
 
-                            #Edit index:
-                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', "r") as f0:
-                                line = f0.read()
-                                line = " ".join(line.split())
-                                original_index = [int(s) for s in line.split(' ')]
-                            original_index.append(original_index[-1]+1)
+                            bvec_reverse_path = f"{folder_path}/subjects/{name}/dMRI/raw/{name}_raw_dmri_reverse.bvec"
+                            # Write updated bvec file
+                            with open(bvec_reverse_path, "w") as bvec_file:
+                                bvec_file.writelines(lines_reverse)
 
-                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', "w") as myfile:
-                                new_index = ''.join(str(j) + " " for j in original_index).rstrip() + "\n"
-                                myfile.write(new_index)
+                            # Edit bval
+                            bval_path = f"{folder_path}/subjects/{name}/dMRI/raw/{name}_raw_dmri.bval"
+                            bval_reverse_path = f"{folder_path}/subjects/{name}/dMRI/raw/{name}_raw_dmri_reverse.bval"
+                            # Read existing bval file
+                            with open(bval_path, "r") as bval_file:
+                                bval_content = bval_file.read().strip()
+
+                            # Check if the bval file is formatted with multiple lines or a single line
+                            if "\n" in bval_content:  # Multi-line format
+                                reverse_bval_lines = []
+                                for _ in b0_indices:
+                                    reverse_bval_lines.append("0")
+                                # Write updated bval file
+                                with open(bval_reverse_path, "w") as reverse_bval_file:
+                                    reverse_bval_file.write("\n".join(reverse_bval_lines) + "\n")
+                            else:  # Single-line format
+                                # Append zeroes for each b0 volume found
+                                reverse_bval_content = " ".join(["0"] * len(b0_indices))
+                                # Write updated bval file
+                                with open(bval_reverse_path, "w") as reverse_bval_file:
+                                    reverse_bval_file.write(reverse_bval_content + "\n")
+
+
+                            # Update index file
+                            with open(f"{folder_path}/subjects/{name}/dMRI/raw/index.txt", "r") as idx_file:
+                                original_index = list(map(int, idx_file.read().strip().split()))
+
+                            new_indices = [original_index[-1] + 1 for i in range(len(b0_indices))]
+                            with open(f"{folder_path}/subjects/{name}/dMRI/raw/index_reverse.txt", "w") as idx_file:
+                                idx_file.write(" ".join(map(str, new_indices)) + "\n")
 
                             #Edit acqparameters:
                             with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt') as f:
                                 original_acq = [[float(x) for x in line2.split()] for line2 in f]
+
+                            shutil.copyfile(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt', folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams_original.txt')
+                            shutil.copyfile(reverse_path_acqparameters, folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams_reverse.txt')
 
                             with open(reverse_path_acqparameters) as f2:
                                 reverse_acq = [[float(x) for x in line2.split()] for line2 in f2]
@@ -436,9 +458,6 @@ class Elikopy:
                             with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt', 'w') as file:
                                 file.writelines(' '.join(str(j) for j in i) + '\n' for i in original_acq)
                             print(original_acq)
-
-
-                            reverse_log.close()
 
         error = list(dict.fromkeys(error))
         success = list(dict.fromkeys(success))

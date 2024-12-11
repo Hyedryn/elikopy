@@ -179,6 +179,17 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                                    stderr=subprocess.STDOUT)
 
         output, error = process.communicate()
+
+        b0_reverse_raw_path= os.path.join(folder_path, 'subjects', patient_path, 'dMRI', 'raw', patient_path + '_b0_reverse.nii.gz')
+        if os.path.exists(b0_reverse_raw_path):
+            bashCommand = "dwidenoise -nthreads " + str(core_count) + " " + b0_reverse_raw_path + \
+                          " " + denoising_path + '/' + patient_path + '_b0_reverse_mppca.nii.gz' + \
+                          " -noise " + denoising_path + '/' + patient_path + '_b0_reverse_sigmaNoise.nii.gz -force'
+
+            process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=f,
+                                       stderr=subprocess.STDOUT)
+
+            output, error = process.communicate()
         denoised, _ = load_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz')
 
 
@@ -252,6 +263,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         else:
             imain_tot = nifti_path
 
+        if denoising:
+            b0_reverse_path = denoising_path + '/' + patient_path + '_b0_reverse_mppca.nii.gz'
+        else:
+            b0_reverse_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_b0_reverse.nii.gz'
+
         multiple_encoding=False
         topup_log = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/topup/topup_logs.txt", "a+")
 
@@ -263,7 +279,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
             topup_acq = [[float(x) for x in line2.split()] for line2 in f]
 
-        #Find all the bo to extract.
+        #Find all the b0 to extract.
         current_index = 0
         all_index ={}
         i=1
@@ -314,49 +330,107 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Patient %s \n" % p + " has multiple direction of gradient encoding, launching topup directly ")
             topupConfig = 'b02b0.cnf' if topupConfig is None else topupConfig
-            bashCommand = 'export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+' ; topup --imain="' + topup_path + '/b0.nii.gz" --config="' + topupConfig + '" --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --fout="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_fout_estimate" --iout="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_iout_estimate" --verbose'
+
+
+            # Extract b0s from main file:
+
+            # Read bval file directly
+            path_bval = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval"
+            with open(path_bval, "r") as bval_file:
+                bvals = list(map(float, bval_file.read().strip().split()))
+
+            # Identify indices of b0 volumes
+            b0_indices = [idx for idx, bval in enumerate(bvals) if bval == 0]
+
+            if not b0_indices:
+                print("No b0 volumes found in dMRI.")
+                b0_indices = [0]
+
+            # Extract and concatenate non-sequential b0 volumes
+            temp_b0_files = []
+            for i, b0_idx in enumerate(b0_indices):
+                temp_b0_file = f"{folder_path}/subjects/{patient_path}/dMRI/preproc/topup/temp_b0_{i}.nii.gz"
+                temp_b0_files.append(temp_b0_file)
+                fslroi_cmd = f"fslroi {imain_tot} {temp_b0_file} {b0_idx} 1"
+                try:
+                    output = subprocess.check_output(fslroi_cmd, universal_newlines=True,
+                                                     shell=True, stderr=subprocess.STDOUT)
+                    print(output)
+                except subprocess.CalledProcessError as e:
+                    print(f"Error extracting b0 volume at index {b0_idx}")
+                    exit()
+
+            # Merge all temporary b0 files into a single file
+            b0_part1_path = f"{topup_path}/b0_part1.nii.gz"
+            b0_part2_path = f"{topup_path}/b0_part2.nii.gz"
+            shutil.copyfile(b0_reverse_path, b0_part2_path)
+            merge_b0_cmd = f"fslmerge -t {b0_part1_path} " + " ".join(temp_b0_files)
+            try:
+                output = subprocess.check_output(merge_b0_cmd, universal_newlines=True, shell=True,
+                                                 stderr=subprocess.STDOUT)
+                print(output)
+            except subprocess.CalledProcessError as e:
+                print("Error when merging b0 volumes")
+                exit()
+
+            # Cleanup temporary files
+            for temp_file in temp_b0_files:
+                os.remove(temp_file)
+
+            #  Merge extracted b0 volumes with the original DW-MRI file
+            if os.path.exists(f"{topup_path}/b0.nii.gz"):
+                os.remove(f"{topup_path}/b0.nii.gz")
+            b0_path = f"{topup_path}/b0.nii.gz"
+            merge_b0_cmd = f"fslmerge -t {b0_part1_path} {b0_part2_path} {b0_path}"
+            try:
+                output = subprocess.check_output(merge_b0_cmd, universal_newlines=True, shell=True,
+                                                 stderr=subprocess.STDOUT)
+                print(output)
+            except subprocess.CalledProcessError as e:
+                print("Error when merging b0 volumes with the original DW-MRI")
+                exit()
+
+            # Generate acqparams_alL.txt file
+            with open(folder_path + "/subjects/" + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
+                original_acq = [[float(x) for x in line2.split()] for line2 in f]
+
+            with open(folder_path + "/subjects/" + patient_path + '/dMRI/raw/' + 'acqparams_reverse.txt') as f2:
+                reverse_acq = [[float(x) for x in line2.split()] for line2 in f2]
+
+            # Get number of b0 in b0_part2 using index_reverse.txt
+            with open(folder_path + "/subjects/" + patient_path + '/dMRI/raw/' + 'index_reverse.txt') as f3:
+                b0_num_reverse = len([int(x) for x in f3.read().strip().split()])
+
+            for i in range(len(b0_indices)):
+                original_acq.append([original_acq[0][0], original_acq[0][1], original_acq[0][2], original_acq[0][3]])
+            for i in range(b0_num_reverse):
+                original_acq.append([reverse_acq[0][0], reverse_acq[0][1], reverse_acq[0][2], reverse_acq[0][3]])
+
+            with open(f"{topup_path}/acqparams_all.txt", "w") as f:
+                f.writelines(' '.join(str(j) for j in i) + '\n' for i in original_acq)
+
+            bashCommand = ('export OMP_NUM_THREADS='+str(core_count)+' ; export FSLPARALLEL='+str(core_count)+
+                           ' ; topup --imain="' + topup_path + '/b0.nii.gz" --config="' + topupConfig +
+                           '" --datain="' + topup_path + '/acqparams_all.txt" '+
+                           '--out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" '+
+                           '--fout="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_fout_estimate" '+
+                           '--iout="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_iout_estimate" '+
+                           '--verbose')
             bashcmd = bashCommand.split()
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
 
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Topup launched for patient %s \n" % p + " with bash command " + bashCommand)
-            
+
 
             process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=topup_log,
                                        stderr=subprocess.STDOUT)
             # wait until topup finish
             output, error = process.communicate()
 
-            inindex=""
-            first=True
-            for r in roi:
-                if first:
-                    inindex = str(topup_index[r-1])
-                else:
-                    inindex = inindex + "," + str(topup_index[r-1])
-
-            # Identify AP and PA Volumes
-            vols_p1 = [i for i, val in enumerate(topup_index) if val == 1]
-            vols_p2 = [i for i, val in enumerate(topup_index) if val == 2]
-
-            # Define file paths for the split parts
-            file_p1 = topup_path + "/part_1.nii.gz"
-            file_p2 = topup_path + "/part_2.nii.gz"
-
-            # Extract AP and PA Volumes
-            cmd_p1 = f"fslroi {imain_tot} {file_p1} {vols_p1[0]} {len(vols_p1)}"
-            cmd_p2 = f"fslroi {imain_tot} {file_p2} {vols_p2[0]} {len(vols_p2)}"
-
-            print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                "%d.%b %Y %H:%M:%S") + ": Extracting AP and PA volumes for patient %s \n" % p + cmd_p1 + "\n" + cmd_p2)
-
-            # Run extraction commands
-            subprocess.run(cmd_p1, shell=True, stdout=topup_log, stderr=subprocess.STDOUT)
-            subprocess.run(cmd_p2, shell=True, stdout=topup_log, stderr=subprocess.STDOUT)
-
             # Merge the two parts if necessary (optional)
-            imain_tot_merged = f"{file_p1},{file_p2}"
+            imain_tot_merged = f"{imain_tot},{b0_part2_path}"
 
             bashCommand2 = 'applytopup --imain="' + imain_tot_merged + '" --inindex=1,2 --datain="' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate" --out="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_corr"'
 
