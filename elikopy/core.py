@@ -276,7 +276,7 @@ class Elikopy:
                         else:
                             print('WARNING: acqparam missing, generating a default one')
                             with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt','w') as f:
-                                f.writelines([[0], [1], [0], [0.0779]])
+                                f.write("0 1 0 0.0779\n")
 
                         if os.path.exists(folder_path + typeFolderName + "index.txt"):
                             shutil.copyfile(folder_path + typeFolderName + "index.txt",
