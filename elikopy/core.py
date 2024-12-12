@@ -286,8 +286,8 @@ class Elikopy:
                             #Count number of volumes using fslval command
                             cmd = "fslval " + folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz" + " dim4"
                             process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-                            output, error = process.communicate()
-                            n = int(output.decode('utf-8'))
+                            output_proc, error_proc = process.communicate()
+                            n = int(output_proc.decode('utf-8'))
                             #Create index file
                             with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', 'w') as file:
                                 # write a line composed of n 1s
