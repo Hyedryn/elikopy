@@ -275,7 +275,20 @@ class Elikopy:
                             shutil.copyfile(folder_path + typeFolderName + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
                             shutil.copyfile(folder_path + typeFolderName + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
                         except:
-                            print('WARNING: acqparam or index missing, you will get error trying to run EDDY correction')
+                            print('WARNING: acqparam or index missing, generating a default one')
+                            # TODO generate index and acqparams files
+                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt') as f:
+                                f.writelines([[0], [1], [0], [0.0779]])
+
+                            #Count number of volumes using fslval command
+                            cmd = "fslval " + folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz" + " dim4"
+                            process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+                            output, error = process.communicate()
+                            n = int(output.decode('utf-8'))
+                            #Create index file
+                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'index.txt', 'w') as file:
+                                # write a line composed of n 1s
+                                file.write(" ".join(["1"]*n) + "\n")
 
                         try:
                             shutil.copyfile(folder_path + typeFolderName + "slspec.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "slspec.txt")
@@ -478,7 +491,7 @@ class Elikopy:
         f.write("["+log_prefix+"] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Patient list generated\n")
         f.close()
 
-    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=False, gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, static_files_path=None, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], eddy_additional_arg="", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=True, niter=5, slspec_gc_path=None, report=True):
+    def preproc(self, folder_path=None, reslice=False, reslice_addSlice=False, denoising=True, gibbs=False, topup=True, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=True, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], patient_list_m=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, static_files_path=None, cuda=None, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], eddy_additional_arg="", slurm=None, slurm_email=None, slurm_timeout=None, cpus=None, slurm_mem=None, qc_reg=False, niter=5, slspec_gc_path=None, report=True):
         """ Performs data preprocessing. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
         denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
         The results are stored in the preprocessing subfolder of each study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
