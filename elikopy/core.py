@@ -271,15 +271,18 @@ class Elikopy:
                         except:
                             print('WARNING: JSON missing for patient', name)
 
-                        try:
-                            shutil.copyfile(folder_path + typeFolderName + "index.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                        if os.path.exists(folder_path + typeFolderName + "acqparams.txt"):
                             shutil.copyfile(folder_path + typeFolderName + "acqparams.txt",folder_path + "/subjects/" + name + "/dMRI/raw/" + "acqparams.txt")
-                        except:
-                            print('WARNING: acqparam or index missing, generating a default one')
-                            # TODO generate index and acqparams files
-                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt') as f:
+                        else:
+                            print('WARNING: acqparam missing, generating a default one')
+                            with open(folder_path + "/subjects/" + name + '/dMRI/raw/' + 'acqparams.txt','w') as f:
                                 f.writelines([[0], [1], [0], [0.0779]])
 
+                        if os.path.exists(folder_path + typeFolderName + "index.txt"):
+                            shutil.copyfile(folder_path + typeFolderName + "index.txt",
+                                            folder_path + "/subjects/" + name + "/dMRI/raw/" + "index.txt")
+                        else:
+                            print('WARNING: index missing, generating a default one')
                             #Count number of volumes using fslval command
                             cmd = "fslval " + folder_path + "/subjects/" + name + "/dMRI/raw/" + name + "_raw_dmri.nii.gz" + " dim4"
                             process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
