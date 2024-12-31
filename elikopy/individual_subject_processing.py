@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import math
 from scipy.ndimage.morphology import binary_dilation
-
+from dipy.align.transforms import RigidTransform3D
 import subprocess
 from elikopy.utils import makedir, update_status
 
