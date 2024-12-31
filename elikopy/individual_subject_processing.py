@@ -335,6 +335,10 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
             f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": Patient %s \n" % p + " has multiple direction of gradient encoding, launching topup directly ")
+
+            # If any of the 3D dimension is an odd number, use b02b0_1.cnf as topup config
+            if np.any([x%2!=0 for x in curr_dmri.shape[:3]]) and topupConfig is None:
+                topupConfig = 'b02b0_1.cnf'
             topupConfig = 'b02b0.cnf' if topupConfig is None else topupConfig
 
 
