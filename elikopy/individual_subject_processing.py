@@ -914,6 +914,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     # eddy data (=preproc total)
     bool_eddy = isdir(os.path.join(preproc_path, "eddy"))
     preproc_data, preproc_affine = load_nifti(preproc_path + patient_path + "_dmri_preproc.nii.gz")
+    preproc_nomask_data, preproc_nomask_affine = load_nifti(preproc_path + patient_path + "_dmri_preproc_nomask.nii.gz")
     mask_preproc, mask_preproc_affine = load_nifti(mask_path)
     bvals, bvecs = read_bvals_bvecs(preproc_path + patient_path + "_dmri_preproc.bval",
                                     preproc_path + patient_path + "_dmri_preproc.bvec")
@@ -1401,8 +1402,8 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         transform = RigidTransform3D()
 
         # ===========================================================
-        S0s_raw = bet_data[:, :, :, gtab_raw.b0s_mask]
-        S0s_preproc = preproc_data[:, :, :, gtab_preproc.b0s_mask]
+        S0s_raw = raw_data[:, :, :, gtab_raw.b0s_mask]
+        S0s_preproc = preproc_nomask_data[:, :, :, gtab_preproc.b0s_mask]
         volume = []
         motion_raw = []
         motion_proc = []
@@ -1425,9 +1426,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                     motion_transform_wrapper,
                     volume,
                     [S0s_raw[..., 0]] * len(volume),
-                    [bet_data] * len(volume),
+                    [raw_data] * len(volume),
                     [params0] * len(volume),
-                    [bet_affine] * len(volume),
+                    [raw_affine] * len(volume),
                     [affreg] * len(volume)
                 ))
 
@@ -1445,9 +1446,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                     motion_transform_wrapper,
                     volume,
                     [S0s_preproc[..., 0]] * len(volume),
-                    [preproc_data] * len(volume),
+                    [preproc_nomask_data] * len(volume),
                     [params0] * len(volume),
-                    [preproc_affine] * len(volume),
+                    [preproc_nomask_affine] * len(volume),
                     [affreg] * len(volume)
                 ))
 
@@ -1468,20 +1469,20 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 #print('current iteration : ', i, end="\r")
                 volume.append(i)
 
-                rigid = affreg.optimize(np.copy(S0s_raw[..., 0]), np.copy(bet_data[..., i]), transform, params0, bet_affine,
-                                        bet_affine, ret_metric=True)
+                rigid = affreg.optimize(np.copy(S0s_raw[..., 0]), np.copy(raw_data[..., i]), transform, params0, raw_affine,
+                                        raw_affine, ret_metric=True)
                 motion_raw.append(rigid[1])
 
-                rigid = affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_data[..., i]), transform, params0,
-                                        preproc_affine, preproc_affine, ret_metric=True)
+                rigid = affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_nomask_data[..., i]), transform, params0,
+                                        preproc_nomask_affine, preproc_nomask_affine, ret_metric=True)
                 motion_proc.append(rigid[1])
 
-                if int(i/np.shape(preproc_data)[3])%5==0:
+                if int(i/np.shape(preproc_nomask_data)[3])%5==0:
                     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                        "%d.%b %Y %H:%M:%S") + ": Eddy QC_REG : Volume " + str(i) + "/" + str(np.shape(preproc_data)[3]) + " \n")
+                        "%d.%b %Y %H:%M:%S") + ": Eddy QC_REG : Volume " + str(i) + "/" + str(np.shape(preproc_nomask_data)[3]) + " \n")
                     f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
                     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
-                        "%d.%b %Y %H:%M:%S") + ": Eddy QC_REG : Volume " + str(i) + "/" + str(np.shape(preproc_data)[3]) + " \n")
+                        "%d.%b %Y %H:%M:%S") + ": Eddy QC_REG : Volume " + str(i) + "/" + str(np.shape(preproc_nomask_data)[3]) + " \n")
                     f.close()
         # ============================================================
 
