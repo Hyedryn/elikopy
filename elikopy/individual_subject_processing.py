@@ -14,7 +14,11 @@ import functools
 print = functools.partial(print, flush=True)
 
 
-def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, gibbs=False, topup=False, topupConfig=None, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], static_files_path=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], eddy_additional_arg="", qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
+def motion_transform(S0s, data_i, transform, params0, affine, affreg):
+    return affreg.optimize(np.copy(S0s), np.copy(data_i), transform, params0,
+                           affine, affine, ret_metric=True)[1]
+
+def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, gibbs=False, topup=False, topupConfig=None, topupOnlyFirstB0=False, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], static_files_path=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,5,1,'trilinear'], olrep=[False, 4, 250, 'sw'], eddy_additional_arg="", qc_reg=True, core_count=1, niter=5, report=True, slspec_gc_path=None):
     """ Performs data preprocessing on a single subject. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
     denoising, gibbs ringing correction, susceptibility field estimation, EC-induced distortions and motion correction, bias field correction.
     The results are stored in the preprocessing subfolder of the study subject <folder_path>/subjects/<subjects_ID>/dMRI/preproc.
@@ -352,8 +356,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             # Identify indices of b0 volumes
             b0_indices = [idx for idx, bval in enumerate(bvals) if bval == 0]
 
-            if not b0_indices:
-                print("No b0 volumes found in dMRI.")
+            if not b0_indices or topupOnlyFirstB0:
+                if not b0_indices:
+                    print("No b0 volumes found in dMRI.")
+                else:
+                    print("Only using the first b0 volume for topup.")
                 b0_indices = [0]
 
             # Extract and concatenate non-sequential b0 volumes
