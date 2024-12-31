@@ -1412,16 +1412,14 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 "%d.%b %Y %H:%M:%S") + ": Starting Eddy QC_REG for patient %s with multicore enabled \n" % p)
             f.close()
             from concurrent.futures import ProcessPoolExecutor
-            for i in range(np.shape(preproc_data)[3]):
-                #print('current iteration : ', i, end="\r")
-                volume.append(i)
 
-            def motion_raw_transform(i):
-                return affreg.optimize(np.copy(S0s_raw[..., 0]), np.copy(bet_data[..., i]), transform, params0, bet_affine,
-                                        bet_affine, ret_metric=True)[1]
-            with ProcessPoolExecutor(max_workers=int(core_count*0.8)) as executor:
-                for r in executor.map(motion_raw_transform, range(np.shape(preproc_data)[3])):
-                    motion_raw.append(r)
+            volume = list(range(np.shape(preproc_data)[3]))
+            # Process motion_raw using the refined motion_transform function
+            with ProcessPoolExecutor(max_workers=int(core_count * 0.8)) as executor:
+                motion_raw = list(executor.map(
+                    lambda k: motion_transform(S0s_raw[..., 0], bet_data[..., k], transform, params0, bet_affine, affreg),
+                    volume
+                ))
 
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_raw for patient %s" % p)
@@ -1430,12 +1428,13 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_raw for patient %s \n" % p)
             f.close()
 
-            def motion_preproc_transform(i):
-                return affreg.optimize(np.copy(S0s_preproc[..., 0]), np.copy(preproc_data[..., i]), transform, params0,
-                                        preproc_affine, preproc_affine, ret_metric=True)[1]
-            with ProcessPoolExecutor(max_workers=int(core_count*0.8)) as executor:
-                for r in executor.map(motion_preproc_transform, range(np.shape(preproc_data)[3])):
-                    motion_proc.append(r)
+            # Process motion_proc using the refined motion_transform function
+            with ProcessPoolExecutor(max_workers=int(core_count * 0.8)) as executor:
+                motion_proc = list(executor.map(
+                    lambda k: motion_transform(S0s_preproc[..., 0], preproc_data[..., k], transform, params0,
+                                               preproc_affine, affreg),
+                    volume
+                ))
 
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_preproc for patient %s" % p)
