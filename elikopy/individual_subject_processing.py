@@ -14,8 +14,9 @@ import functools
 print = functools.partial(print, flush=True)
 
 
-def motion_transform_wrapper(i, S0s, data, transform, params0, affine, affreg):
+def motion_transform_wrapper(i, S0s, data, params0, affine, affreg):
     """Wrapper function for motion_transform to handle a single volume."""
+    transform = RigidTransform3D()  # Reinitialize RigidTransform3D in each worker
     return motion_transform(S0s, data[..., i], transform, params0, affine, affreg)
 
 def motion_transform(S0s, data_i, transform, params0, affine, affreg):
@@ -1425,7 +1426,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                     volume,
                     [S0s_raw[..., 0]] * len(volume),
                     [bet_data] * len(volume),
-                    [transform] * len(volume),
                     [params0] * len(volume),
                     [bet_affine] * len(volume),
                     [affreg] * len(volume)
@@ -1446,7 +1446,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                     volume,
                     [S0s_preproc[..., 0]] * len(volume),
                     [preproc_data] * len(volume),
-                    [transform] * len(volume),
                     [params0] * len(volume),
                     [preproc_affine] * len(volume),
                     [affreg] * len(volume)
