@@ -264,7 +264,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             imain_tot = nifti_path
 
         if denoising:
-            b0_reverse_path = denoising_path + '/' + patient_path + '_b0_reverse_mppca.nii.gz'
+            b0_reverse_path = denoising_path + '/' + patient_path + '_b0_reverse_mppca.nii.gz' # Only if b0 reverse is 4D data
+            if not os.path.exists(b0_reverse_path):
+                b0_reverse_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_b0_reverse.nii.gz'
         else:
             b0_reverse_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_b0_reverse.nii.gz'
 
