@@ -14,6 +14,10 @@ import functools
 print = functools.partial(print, flush=True)
 
 
+def motion_transform_wrapper(i, S0s, data, transform, params0, affine, affreg):
+    """Wrapper function for motion_transform to handle a single volume."""
+    return motion_transform(S0s, data[..., i], transform, params0, affine, affreg)
+
 def motion_transform(S0s, data_i, transform, params0, affine, affreg):
     return affreg.optimize(np.copy(S0s), np.copy(data_i), transform, params0,
                            affine, affine, ret_metric=True)[1]
@@ -1414,12 +1418,19 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             from concurrent.futures import ProcessPoolExecutor
 
             volume = list(range(np.shape(preproc_data)[3]))
-            # Process motion_raw using the refined motion_transform function
+            # Process motion_raw using the wrapper function
             with ProcessPoolExecutor(max_workers=int(core_count * 0.8)) as executor:
                 motion_raw = list(executor.map(
-                    lambda k: motion_transform(S0s_raw[..., 0], bet_data[..., k], transform, params0, bet_affine, affreg),
-                    volume
+                    motion_transform_wrapper,
+                    volume,
+                    [S0s_raw[..., 0]] * len(volume),
+                    [bet_data] * len(volume),
+                    [transform] * len(volume),
+                    [params0] * len(volume),
+                    [bet_affine] * len(volume),
+                    [affreg] * len(volume)
                 ))
+
 
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
                 "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_raw for patient %s" % p)
@@ -1428,12 +1439,17 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                 "%d.%b %Y %H:%M:%S") + ": End of QC_REG motion_raw for patient %s \n" % p)
             f.close()
 
-            # Process motion_proc using the refined motion_transform function
+            # Process motion_proc using the wrapper function
             with ProcessPoolExecutor(max_workers=int(core_count * 0.8)) as executor:
                 motion_proc = list(executor.map(
-                    lambda k: motion_transform(S0s_preproc[..., 0], preproc_data[..., k], transform, params0,
-                                               preproc_affine, affreg),
-                    volume
+                    motion_transform_wrapper,
+                    volume,
+                    [S0s_preproc[..., 0]] * len(volume),
+                    [preproc_data] * len(volume),
+                    [transform] * len(volume),
+                    [params0] * len(volume),
+                    [preproc_affine] * len(volume),
+                    [affreg] * len(volume)
                 ))
 
             print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
