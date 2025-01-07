@@ -59,6 +59,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     """
 
     in_reslice = reslice
+    curr_dmri = None
     assert starting_state in (None,"None", "denoising", "gibbs", "topup", "eddy", "biasfield", "report", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup"), 'invalid starting state!'
     if starting_state == "denoising":
         assert denoising == True, 'if starting_state is denoising, denoising must be True!'
