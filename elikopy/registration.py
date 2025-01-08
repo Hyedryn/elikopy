@@ -271,6 +271,7 @@ def regToT1fromB0FSL(reg_path, T1_subject, DWI_B0_subject, mask_file, metrics_di
         cmd = f"epi_reg --epi={DWI_B0_subject} --t1={T1_subject_raw} --t1brain={T1_brain_subject} --out={b0fsl_reg_path}/{p}_B0toT1 "
         cmd_part2 = f"c3d_affine_tool -ref {T1_subject_raw} -src {DWI_B0_subject} {b0fsl_reg_path}/{p}_B0toT1.mat -fsl2ras -oitk {b0fsl_reg_path}/{p}_B0toT1_ANTS.txt -o {b0fsl_reg_path}/{p}_B0toT1_ANTS.mat"
         cmd += " && " + cmd_part2
+        print("Running command (B0FSL): ", cmd)
         import subprocess
         process = subprocess.Popen(cmd, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = process.communicate()
