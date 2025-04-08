@@ -4,7 +4,6 @@ import shutil
 import json
 import sys
 import numpy as np
-import math
 from scipy.ndimage.morphology import binary_dilation
 from dipy.align.transforms import RigidTransform3D
 import subprocess
@@ -19,9 +18,11 @@ def motion_transform_wrapper(i, S0s, data, params0, affine, affreg):
     transform = RigidTransform3D()  # Reinitialize RigidTransform3D in each worker
     return motion_transform(S0s, data[..., i], transform, params0, affine, affreg)
 
+
 def motion_transform(S0s, data_i, transform, params0, affine, affreg):
     return affreg.optimize(np.copy(S0s), np.copy(data_i), transform, params0,
                            affine, affine, ret_metric=True)[1]
+
 
 def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoising=False, gibbs=False, topup=False, topupConfig=None, topupOnlyFirstB0=False, forceSynb0DisCo=False, useGPUsynb0DisCo=False, eddy=False, biasfield=False, biasfield_bsplineFitting=[100,3], biasfield_convergence=[1000,0.001], static_files_path=None, starting_state=None, bet_median_radius=2, bet_numpass=1, bet_dilate=2, cuda=False, cuda_name="eddy_cuda10.1", s2v=[0,8,1,'trilinear'], fwhm='10,8,4,2,0,0,0,0', olrep=[False, 4, 250, 'sw'], eddy_additional_arg="", qc_reg=True, core_count=1, niter=8, report=True, slspec_gc_path=None):
     """ Performs data preprocessing on a single subject. By default only the brain extraction is enabled. Optional preprocessing steps include : reslicing,
@@ -101,7 +102,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         brain_extracted_mask_path = folder_path + '/subjects/' + patient_path + "/T1/" + patient_path + '_T1_brain_mask.nii.gz'
         if not os.path.exists(brain_extracted_T1_path):
             cmd = f"mri_synth_strip -i {anat_path} -o {brain_extracted_T1_path} -m {brain_extracted_mask_path} "
-            import subprocess
             process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output, error = process.communicate()
             print(output)
@@ -117,11 +117,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     from dipy.segment.mask import median_otsu
 
     nifti_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.nii.gz'
-    if (starting_state == None):
+    if starting_state is None:
         data, affine, voxel_size = load_nifti(nifti_path, return_voxsize=True)
         curr_dmri = data
     reslice_path = folder_path + '/subjects/' + patient_path + "/dMRI/preproc/reslice"
-    if reslice and starting_state == None:
+    if reslice and starting_state is None:
         makedir(reslice_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         from dipy.align.reslice import reslice
@@ -168,7 +168,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     denoising_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/mppca'
     denoising_ext = '_mppca.nii.gz'
 
-
     if denoising and starting_state!="gibbs" and starting_state!="eddy" and (starting_state not in ("topup", "topup_synb0DisCo_Registration", "topup_synb0DisCo_Inference", "topup_synb0DisCo_Apply", "topup_synb0DisCo_topup")) and starting_state!="biasfield" and starting_state!="report":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of denoising for patient %s \n" % p)
@@ -180,7 +179,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Denoising launched for patient %s \n" % p)
 
-        import subprocess
         bashCommand = "dwidenoise -nthreads " + str(core_count) + " " + nifti_path + \
               " " + denoising_path + '/' + patient_path + '_mppca.nii.gz' +\
               " -noise " + denoising_path + '/' + patient_path + '_sigmaNoise.nii.gz -force'
@@ -202,11 +200,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             output, error = process.communicate()
         denoised, _ = load_nifti(denoising_path + '/' + patient_path + '_mppca.nii.gz')
 
-
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": Denoising finished for patient %s \n" % p)
         f.close()
-
 
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of denoising for patient %s \n" % p)
@@ -257,7 +253,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     topup_path = folder_path + '/subjects/' + patient_path + "/dMRI/preproc/topup"
     if topup and starting_state!="eddy" and starting_state!="biasfield" and starting_state!="report":
 
-        import subprocess
         #cmd = 'topup --imain=all_my_b0_images.nii --datain=acquisition_parameters.txt --config=b02b0.cnf --out=my_output"'
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Beginning of topup for patient %s \n" % p)
@@ -282,7 +277,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         else:
             b0_reverse_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_b0_reverse.nii.gz'
 
-        multiple_encoding=False
+        multiple_encoding = False
         topup_log = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/topup/topup_logs.txt", "a+")
 
         with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt') as f:
@@ -297,28 +292,28 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             with open(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt') as f:
                 topup_acq = [[float(x) for x in line2.split()] for line2 in f]
 
-        #Find all the b0 to extract.
+        # Find all the b0 to extract.
         current_index = 0
-        all_index ={}
-        i=1
-        roi=[]
+        all_index = {}
+        i = 1
+        roi = []
         for ind in topup_index:
-            if ind!=current_index and ind not in all_index:
+            if ind != current_index and ind not in all_index:
                 roi.append(i)
                 fslroi = "fslroi " + imain_tot + " " + topup_path + "/b0_"+str(i)+".nii.gz "+str(i-1)+" 1"
                 process = subprocess.Popen(fslroi, universal_newlines=True, shell=True, stdout=topup_log,
                                            stderr=subprocess.STDOUT)
                 output, error = process.communicate()
                 print("B0 of index" + str(i) + " extracted!")
-            current_index=ind
-            all_index[ind] = all_index.get(ind,0) + 1
-            i=i+1
+            current_index = ind
+            all_index[ind] = all_index.get(ind, 0) + 1
+            i = i+1
 
-        #Merge b0
+        # Merge b0
         if len(roi) == 1:
             shutil.copyfile(topup_path + "/b0_"+str(roi[0])+".nii.gz", topup_path + "/b0.nii.gz")
         else:
-            roi_to_merge=""
+            roi_to_merge = ""
             for r in roi:
                 roi_to_merge = roi_to_merge + " " + topup_path +"/b0_" + str(r) + ".nii.gz"
             print("The following roi will be merged: " + roi_to_merge)
@@ -327,20 +322,20 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
                                        stderr=subprocess.STDOUT)
             output, error = process.communicate()
 
-        #Check if multiple or single encoding direction
-        curr_x=0.0
-        curr_y=0.0
-        curr_z=0.0
-        first=True
+        # Check if multiple or single encoding direction
+        curr_x = 0.0
+        curr_y = 0.0
+        curr_z = 0.0
+        first = True
         print("Topup acq parameters:")
         print(topup_acq)
         for acq in topup_acq:
             if not first and (curr_x!=acq[1] or curr_y!=acq[2] or curr_z!=acq[3]):
-                multiple_encoding=True
-            first=False
-            curr_x=acq[1]
-            curr_y=acq[2]
-            curr_z=acq[3]
+                multiple_encoding = True
+            first = False
+            curr_x = acq[1]
+            curr_y = acq[2]
+            curr_z = acq[3]
 
         if multiple_encoding and not forceSynb0DisCo:
             makedir(topup_path, folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
@@ -352,7 +347,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             if np.any([x%2!=0 for x in curr_dmri.shape[:3]]) and topupConfig is None:
                 topupConfig = 'b02b0_1.cnf'
             topupConfig = 'b02b0.cnf' if topupConfig is None else topupConfig
-
 
             # Extract b0s from main file:
 
@@ -504,7 +498,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             # wait until apply topup finish
             output, error = process2.communicate()
 
-
         topup_log.close()
 
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -513,7 +506,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": End of topup for patient %s \n" % p)
         f.close()
-
 
         ## Compute pre eddy/biasfield mask
         gc.collect()
@@ -529,13 +521,11 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         topup_corr = None
         gc.collect()
 
-
         # Step 1 : dwi2mask
         bvec_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bvec'
         bval_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval'
         dwi2mask_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_space-dwi_type-dwi2mask_brainmask.nii.gz'
         cmd = f"dwi2mask -fslgrad {bvec_path} {bval_path} {topup_corr_path} {dwi2mask_path} -force "
-        import subprocess
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": dwi2mask launched for patient %s \n" % p + " with bash command " + cmd)
         f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
@@ -611,7 +601,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         else:
             eddycmd = "export OMP_NUM_THREADS="+str(core_count)+" ; export FSLPARALLEL="+str(core_count)+" ; eddy"
 
-
         if s2v[0] != 0:
             slspec_path = folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'slspec.txt'
             if slspec_gc_path is not None and os.path.isdir(slspec_gc_path):
@@ -646,7 +635,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         if topup:
             bashCommand = bashCommand + ' --topup="' + folder_path + '/subjects/' + patient_path + '/dMRI/preproc/topup/' + patient_path + '_topup_estimate"'
 
-        import subprocess
         bashCommand = bashCommand + " " + eddy_additional_arg
         bashcmd = bashCommand.split()
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
@@ -683,10 +671,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/eddy/' + patient_path + "_eddy_corr.eddy_rotated_bvecs",
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
 
-
     if biasfield and starting_state!="report":
 
-        #import SimpleITK as sitk
+        # import SimpleITK as sitk
         makedir(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/biasfield/", folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", log_prefix)
 
         if eddy:
@@ -708,7 +695,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/tmp',
             core_count)
 
-        import subprocess
         bashcmd = bashCommand.split()
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Bias Field launched for patient %s \n" % p + " with bash command " + bashCommand)
@@ -727,7 +713,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
         shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/preproc/biasfield/' + patient_path + '_biasfield_corr.nii.gz',
             folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz')
-
 
         if not eddy:
             shutil.copyfile(folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + "_raw_dmri.bval",
@@ -768,7 +753,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     bval_path = folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc.bval'
     dwi2mask_path = folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_space-dwi_type-dwi2mask_brainmask.nii.gz'
     cmd = f"dwi2mask -fslgrad {bvec_path} {bval_path} {preproc_path} {dwi2mask_path} -force"
-    import subprocess
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": dwi2mask launched for patient %s \n" % p + " with bash command " + cmd)
     f = open(folder_path + '/subjects/' + patient_path + "/dMRI/preproc/preproc_logs.txt", "a+")
@@ -799,9 +783,9 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     # Step 3 : median otsu on preprocess data
     preproc, affine = load_nifti(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + '_dmri_preproc_nomask.nii.gz')
-    preproc_masked, mask = median_otsu(preproc, median_radius=2, numpass=1, vol_idx=range(0, np.shape(preproc)[3]), dilate=2)
+    preproc_masked, mask = median_otsu(preproc, median_radius=2, numpass=1, vol_idx=range(0, np.shape(preproc)[3]), dilate=bet_dilate)
     mask = clean_mask(mask)
-    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_type-otsu_dilate-2_brainmask.nii.gz',
+    save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_type-otsu_dilate-'+str(bet_dilate)+'_brainmask.nii.gz',
                mask.astype(np.float32), affine)
 
     # Step 4: Apply all masks to preprocess data
@@ -826,8 +810,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     save_nifti(folder_path + '/subjects/' + patient_path + '/masks/' + patient_path + '_brain_mask_dilated.nii.gz',
                full_mask_inclusive.astype(np.float32), affine)
 
-
-
     if not report:
         update_status(folder_path, patient_path, "preproc")
         return
@@ -841,7 +823,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
     # ==================================================================================================================
 
     """Imports"""
-    from dipy.io.image import load_nifti, load_nifti_data
+    from dipy.io.image import load_nifti
     from dipy.io import read_bvals_bvecs
     from dipy.core.gradients import gradient_table
     import matplotlib
@@ -1163,7 +1145,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
 
     if bool_mppca or bool_patch2self:
 
-        # 1) DIPY SNR estimation =========================================================================
+        # 1) DIPY SNR estimation ===============================================
 
         tenmodel = dti.TensorModel(gtab_raw)
         _, maskSNR = median_otsu(raw_data, vol_idx=[0])
@@ -1224,7 +1206,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
         plt.savefig(qc_path + "/dipyNoise.jpg", dpi=300, bbox_inches='tight')
         list_images.append([qc_path + "/dipyNoise.jpg"])
 
-        # 2) MPPCA sigma + SNR estimation + before/after residual ==========================================
+        # 2) MPPCA sigma + SNR estimation + before/after residual ==============
 
         if bool_patch2self:
             denoising_data = patch2self_data
@@ -1277,7 +1259,7 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             list_images.append([qc_path + "/mppcaSigma.jpg"])
 
 
-        # 3) tSNR estimation ===============================================================================
+        # 3) tSNR estimation ===================================================
 
         for i in range(len(list_bval)):
             shell_mask = np.logical_and(bval > list_bval[i] - 50, bval < list_bval[i] + 50)
@@ -1603,7 +1585,6 @@ def preproc_solo(folder_path, p, reslice=False, reslice_addSlice=False, denoisin
             else:
                 bashCommand = 'eddy_quad ' + preproc_path + 'eddy/' + patient_path + '_eddy_corr -idx "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'index.txt" -par "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + 'acqparams.txt" -m "' + mask_path + '" -b "' + folder_path + '/subjects/' + patient_path + '/dMRI/raw/' + patient_path + '_raw_dmri.bval"'
 
-        import subprocess
         bashcmd = bashCommand.split()
         qc_log = open(qc_path + "/qc_logs.txt", "a+")
         process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True, stdout=qc_log,
@@ -1656,7 +1637,6 @@ def dti_solo(folder_path, p, maskType="brain_mask_dilated",
     data, affine = load_nifti(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.nii.gz")
 
-
     mask_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_' + maskType + '.nii.gz'
     if os.path.isfile(mask_path):
         mask, _ = load_nifti(mask_path)
@@ -1666,6 +1646,7 @@ def dti_solo(folder_path, p, maskType="brain_mask_dilated",
     bvals, bvecs = read_bvals_bvecs(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
+
     # Remove shells >2000================================
     if not use_all_shells:
         indexes = np.argwhere(bvals < 2000+10)
@@ -1724,7 +1705,6 @@ def dti_solo(folder_path, p, maskType="brain_mask_dilated",
     f.write("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting QC %s \n" % p)
     f.close()
-
 
     if report:
 
@@ -1898,7 +1878,6 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
     from dipy.align.transforms import (TranslationTransform3D, RigidTransform3D, AffineTransform3D)
     from dipy.segment.tissue import TissueClassifierHMRF
     from dipy.io.image import load_nifti, save_nifti
-    import subprocess
     from dipy.denoise.gibbs import gibbs_removal
     from dipy.data import get_sphere
     import dipy.reconst.shm as shm
@@ -1925,7 +1904,6 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
                     "%d.%b %Y %H:%M:%S") + ": T1 Brain extraction for patient %s (mri_synth_strip) \n" % p)
                 cmd = f"mri_synth_strip -i {anat_path} -o {brain_extracted_T1_path} -m {brain_extracted_mask_path} "
                 print("[" + log_prefix + "] " + datetime.datetime.now().strftime("%d.%b %Y %H:%M:%S") + ": " + cmd)
-                import subprocess
                 process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
                 output, error = process.communicate()
@@ -2038,8 +2016,6 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
         white_mask[white_mask >= 0.01] = 1
         white_mask[white_mask < 0.01] = 0
 
-
-
         # transform the white matter mask ======================================
         white_mask = affine.transform(white_mask)
         white_mask[white_mask != 0] = 1
@@ -2060,6 +2036,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
 
         wm_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_wm_mask_FSL_T1.nii.gz'
         seg_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_segmentation_FSL_T1.nii.gz'
+    
     elif maskType == "wm_mask_AP":
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": Mask done from AP %s \n" % p)
@@ -2286,7 +2263,6 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
         os.remove(folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
         os.rename(folder_path + '/subjects/' + patient_path + '/quality_control_wm.pdf',folder_path + '/subjects/' + patient_path + '/quality_control.pdf')
 
-
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Successfully processed patient %s \n" % p)
     f = open(folder_path + '/subjects/' + patient_path + "/masks/wm_logs.txt", "a+")
@@ -2295,6 +2271,7 @@ def white_mask_solo(folder_path, p, maskType, corr_gibbs=True, core_count=1, deb
     f.close()
 
     update_status(folder_path, patient_path, maskType)
+
 
 def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.e-9, lambda_par_diff=1.7e-9, use_amico=False,core_count=1):
     """ Computes the NODDI metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/noddi/.
@@ -2310,7 +2287,6 @@ def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.
     print("[NODDI SOLO] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI processing for patient %s \n" % p)
 
-    import numpy as np
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
 
@@ -2350,7 +2326,6 @@ def noddi_solo(folder_path, p, maskType="brain_mask_dilated", lambda_iso_diff=3.
     bvals, bvecs = read_bvals_bvecs(
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bval",
         folder_path + '/subjects/' + patient_path + '/dMRI/preproc/' + patient_path + "_dmri_preproc.bvec")
-
 
     # load the mask
     mask_path = folder_path + '/subjects/' + patient_path + "/masks/" + patient_path + '_' + maskType + '.nii.gz'
@@ -2555,9 +2530,7 @@ def noddi_amico_solo(folder_path, p, maskType="brain_mask_dilated"):
     print("[NODDI AMICO SOLO] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual NODDI AMICO processing for patient %s \n" % p)
 
-    import numpy as np
-    from dipy.io.image import load_nifti, save_nifti
-    from dipy.io.gradients import read_bvals_bvecs
+    from dipy.io.image import load_nifti
 
     log_prefix = "NODDI AMICO SOLO"
 
@@ -2622,7 +2595,6 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
     assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
                         "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
 
-
     diamond_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond"
     makedir(diamond_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/diamond/diamond_logs.txt",
             log_prefix)
@@ -2670,7 +2642,6 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
         else:
             bashCommand = bashCommand + customDiamond
 
-        import subprocess
         bashcmd = bashCommand.split()
         print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
             "%d.%b %Y %H:%M:%S") + ": crlDCIEstimate launched for patient %s \n" % p + " with bash command " + bashCommand)
@@ -2685,7 +2656,6 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
 
         output, error = process.communicate()
         diamond_log.close()
-
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
@@ -2721,10 +2691,10 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
                 R2[i, j, k] = np.corrcoef(data[i, j, k, :], reconstructed[i, j, k, :])[0, 1] ** 2
 
     fig, axs = plt.subplots(2, 1, figsize=(2, 1))
-    fig.suptitle('Elikopy : Quality control report - DIAMOND', fontsize=50)
+    fig.suptitle('Elikopy : Quality control report - DIAMOND', fontsize=50);
     axs[0].set_axis_off()
     axs[1].set_axis_off()
-    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight')
 
     fig, axs = plt.subplots(2, 1, figsize=(12, 8))
     sl = np.shape(mse)[2] // 2
@@ -2846,6 +2816,7 @@ def diamond_solo(folder_path, p, core_count=4, reportOnly=False, maskType="brain
         f.close()
 
     update_status(folder_path, patient_path, "diamond")
+
 
 def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_dilated",
             report=True, csf_mask=True, ear_mask=False, peaksType="MSMT-CSD",
@@ -3079,10 +3050,10 @@ def mf_solo(folder_path, p, dictionary_path, core_count=1, maskType="brain_mask_
             fvf_list.append(img_mf_fvf.get_fdata())
 
         frac = frac + 1
-    
-    peaks=np.stack(peaks_list,axis=-1)
-    frac=np.stack(frac_list,axis=-1)
-    fvf=np.stack(fvf_list,axis=-1)
+
+    peaks = np.stack(peaks_list, axis=-1)
+    frac = np.stack(frac_list, axis=-1)
+    fvf = np.stack(fvf_list, axis=-1)
     if len(frac_list) > 0 and len(peaks_list) > 0:
         RGB_peaks_frac = unravel.utils.peaks_to_RGB(peaks, frac, order=color_order)
         save_nifti(mf_path + '/' + patient_path + filename+'_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, img_mf_frac.affine)
@@ -3323,25 +3294,14 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
                 normPeaks0[i, j, k, :] = normPeaks0[i, j, k, :] / norm
                 norm = np.sqrt(np.sum(normPeaks1[i, j, k, :] ** 2))
                 normPeaks1[i, j, k, :] = normPeaks1[i, j, k, :] / norm
-    mu1 = normPeaks0
-    mu2 = normPeaks1
     peaks1 = csd_peaks.peak_dirs[..., 0, :]
     peaks2 = csd_peaks.peak_dirs[..., 1, :]
     frac1 = csd_peaks.peak_values[..., 0]
     frac2 = csd_peaks.peak_values[..., 1]
 
-
     # Export pseudo tensor
-    frac = 0
-    frac_list = []
-    peaks_list = []
-    fvf_list = []
     import nibabel as nib
     from elikopy.utils import peak_to_tensor
-
-    peaks_1_2 = np.concatenate((peaks1,peaks2))
-    frac_1_2 = np.concatenate((frac1,frac2))
-
 
     img_mf_peaks = nib.load(odf_csd_path + '/' + patient_path + '_CSD_peaks.nii.gz')
     img_mf_frac = nib.load(odf_csd_path + '/' + patient_path + '_CSD_values.nii.gz')
@@ -3375,7 +3335,6 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     RGB_peak_frac = unravel.utils.peaks_to_RGB(peaks2, frac2)
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
-
     RGB_peaks = unravel.utils.peaks_to_RGB(np.stack([peaks1, peaks2],axis=-1))
     save_nifti(odf_csd_path + '/' + patient_path + '_CSD_peak_tot_RGB.nii.gz', RGB_peaks, affine)
     RGB_peaks_frac = unravel.utils.peaks_to_RGB(np.stack([peaks1, peaks2],axis=-1),
@@ -3391,6 +3350,7 @@ def odf_csd_solo(folder_path, p, num_peaks=2, peaks_threshold = .25, CSD_bvalue=
     f.close()
 
     update_status(folder_path, patient_path, "odf_csd")
+
 
 def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold = 0.25, report=True, maskType="brain_mask_dilated"):
     """Perform MSMT CSD odf computation and store the data in the <folder_path>/subjects/<subjects_ID>/dMRI/ODF/MSMT-CSD/.
@@ -3439,8 +3399,6 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
                   dwi2response_cmd + \
                   dwi2fod_cmd
 
-
-    import subprocess
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": mrtrix ODF MSMT-CSD launched for patient %s \n" % p + " with bash command " + bashCommand)
 
@@ -3505,12 +3463,12 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
 
     import unravel.utils
 
-    RGB_peak = unravel.utils.peaks_to_RGB(peaks_1_2[:,:,:,0:3])
+    RGB_peak = unravel.utils.peaks_to_RGB(peaks_1_2[:, :, :, 0:3])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB.nii.gz', RGB_peak, affine)
     RGB_peak_frac = unravel.utils.peaks_to_RGB(peaks_1_2[:,:,:,0:3], frac_1_2[:, :, :, 0])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f1_RGB_frac.nii.gz', RGB_peak_frac, affine)
 
-    RGB_peak = unravel.utils.peaks_to_RGB(peaks_1_2[:,:,:,3:6])
+    RGB_peak = unravel.utils.peaks_to_RGB(peaks_1_2[:, :, :, 3:6])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB.nii.gz', RGB_peak, affine)
     RGB_peak_frac = unravel.utils.peaks_to_RGB(peaks_1_2[:,:,:,3:6], frac_1_2[:, :, :, 1])
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_f2_RGB_frac.nii.gz', RGB_peak_frac, affine)
@@ -3521,7 +3479,6 @@ def odf_msmtcsd_solo(folder_path, p, core_count=1, num_peaks=2, peaks_threshold 
     RGB_peaks_frac = unravel.utils.peaks_to_RGB(np.stack([peaks_1_2[:,:,:,0:3], peaks_1_2[:,:,:,3:6]],axis=-1),
                                                 np.stack([frac_1_2[:, :, :, 0], frac_1_2[:, :, :, 1]],axis=-1))
     save_nifti(odf_msmtcsd_path + '/' + patient_path + '_MSMT-CSD_peak_tot_RGB_frac.nii.gz', RGB_peaks_frac, affine)
-
 
     print("[" + log_prefix + "] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Starting quality control %s \n" % p)
@@ -3547,7 +3504,6 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
     print("[IVIM SOLO] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual ivim processing for patient %s \n" % p)
 
-    import numpy as np
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
 
@@ -3556,9 +3512,6 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
 
     ivim_path = folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim"
     makedir(ivim_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/ivim/ivim_logs.txt", log_prefix)
-
-    from dmipy.core.modeling_framework import MultiCompartmentModel
-    from dmipy.signal_models.gaussian_models import G1Ball
 
     assert maskType in ["brain_mask_dilated", "brain_mask", "wm_mask_MSMT", "wm_mask_AP", "wm_mask_FSL_T1",
                         "wm_mask_Freesurfer_T1"], "The mask parameter must be one of the following : brain_mask_dilated, brain_mask, wm_mask_MSMT, wm_mask_AP, wm_mask_FSL_T1, wm_mask_Freesurfer_T1"
@@ -3601,16 +3554,16 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
     # fit the model to the data
     ivim_fit_Dfixed = ivim_mod.fit(acquisition_scheme=acq_scheme_dmipy, data=data, mask=mask, use_parallel_processing=True, number_of_processors=core_count)
 
-    #from dipy.reconst.ivim import IvimModel
-    #ivimmodel_dipy = IvimModel(gtab_dipy)
-    #ivim_fit_dipy = ivimmodel_dipy.fit(data)
+    # from dipy.reconst.ivim import IvimModel
+    # ivimmodel_dipy = IvimModel(gtab_dipy)
+    # ivim_fit_dipy = ivimmodel_dipy.fit(data)
 
     # exctract the metrics
     fitted_parameters = ivim_fit_Dfixed.fitted_parameters
 
-    D_diffBall = fitted_parameters["G1Ball_1_lambda_iso"] # DiffusionBall diffusitivy
-    f_BloodBall = fitted_parameters["partial_volume_0"] # BloodBall fraction
-    f_DiffusionBall = fitted_parameters["partial_volume_1"] # DiffusionBall fraction
+    D_diffBall = fitted_parameters["G1Ball_1_lambda_iso"]  # DiffusionBall diffusitivy
+    f_BloodBall = fitted_parameters["partial_volume_0"]  # BloodBall fraction
+    f_DiffusionBall = fitted_parameters["partial_volume_1"]  # DiffusionBall fraction
     mse = ivim_fit_Dfixed.mean_squared_error(data)
     R2 = ivim_fit_Dfixed.R2_coefficient_of_determination(data)
 
@@ -3640,7 +3593,7 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
     fig.suptitle('Elikopy : Quality control report - IVIM', fontsize=50)
     axs[0].set_axis_off()
     axs[1].set_axis_off()
-    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight');
+    plt.savefig(qc_path + "/title.jpg", dpi=300, bbox_inches='tight')
 
     fig, axs = plt.subplots(2, 1, figsize=(12, 8))
     sl = np.shape(mse)[2] // 2
@@ -3713,7 +3666,6 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
             self.add_page()
             self.page_body(images)
 
-
     pdf = PDF()
     pdf.print_page(elem)
     pdf.output(qc_path + '/qc_report.pdf', 'F');
@@ -3742,10 +3694,10 @@ def ivim_solo(folder_path, p, core_count=1, G1Ball_2_lambda_iso=7e-9, G1Ball_1_l
     update_status(folder_path, patient_path, "ivim")
 
 
-def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
-                  max_angle:int=15, cutoff:float=0.1, msmtCSD:bool=True,
-                  output_filename:str='tractogram',core_count:int=1,
-                  maskType:str="brain_mask",save_as_trk=False):
+def tracking_solo(folder_path: str, p: str, streamline_number: int = 100000,
+                  max_angle: int = 15, cutoff: float = 0.1, msmtCSD: bool = True,
+                  output_filename: str = 'tractogram', core_count: int = 1,
+                  maskType: str = "brain_mask", save_as_trk: bool = False):
     """ Computes the whole brain tractogram of a single patient based on the fod obtained from msmt-CSD.
 
     :param folder_path: the path to the root directory.
@@ -3794,13 +3746,13 @@ def tracking_solo(folder_path:str, p:str, streamline_number:int=100000,
     if not os.path.isdir(tracking_path):
         os.mkdir(tracking_path)
 
-    bashCommand=('tckgen -nthreads ' + str(core_count) + ' ' + odf_file_path +' '+ output_file+
-                 ' -seed_image ' +seed_path+
-                 ' -select ' +str(streamline_number)+
-                 ' -angle ' +str(max_angle)+
-                 ' -cutoff ' +str(cutoff)+
-                 ' -mask ' +mask_path+
-                 ' -force')
+    bashCommand = ('tckgen -nthreads ' + str(core_count) + ' ' + odf_file_path +' '+ output_file+
+                   ' -seed_image ' +seed_path+
+                   ' -select ' +str(streamline_number)+
+                   ' -angle ' +str(max_angle)+
+                   ' -cutoff ' +str(cutoff)+
+                   ' -mask ' +mask_path+
+                   ' -force')
 
     tracking_log = open(tracking_path+"tractography_logs.txt", "a+")
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True,
@@ -3854,11 +3806,11 @@ def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
     input_file = tracking_path+patient_path+'_'+input_filename+'.tck'
     output_file = tracking_path+patient_path+'_'+input_filename+'_sift.tck'
 
-    bashCommand=('tcksift ' + input_file + ' ' + odf_file_path + ' ' +
-                 output_file +
-                 ' -nthreads ' + str(core_count) +
-                 ' -term_number ' + str(streamline_number) +
-                 ' -force')
+    bashCommand = ('tcksift ' + input_file + ' ' + odf_file_path + ' ' +
+                   output_file +
+                   ' -nthreads ' + str(core_count) +
+                   ' -term_number ' + str(streamline_number) +
+                   ' -force')
 
     sift_log = open(tracking_path+"sift_logs.txt", "a+")
     process = subprocess.Popen(bashCommand, universal_newlines=True, shell=True,
@@ -3874,7 +3826,7 @@ def sift_solo(folder_path: str, p: str, streamline_number: int = 100000,
     update_status(folder_path, patient_path, "siftComputation")
 
 
-def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.035, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9],TumorCells_Dconst=0.9e-9):
+def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.035, G1Ball_1_lambda_iso=0.9e-9, C1Stick_1_lambda_par=[3.05e-9, 10e-9], TumorCells_Dconst=0.9e-9):
     """ Computes the verdict metrics for a single. The outputs are available in the directories <folder_path>/subjects/<subjects_ID>/dMRI/microstructure/verdict/.
 
     :param folder_path: the path to the root directory.
@@ -3886,7 +3838,6 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
     print("[verdict SOLO] " + datetime.datetime.now().strftime(
         "%d.%b %Y %H:%M:%S") + ": Beginning of individual verdict processing for patient %s \n" % p)
 
-    import numpy as np
     from dipy.io.image import load_nifti, save_nifti
     from dipy.io.gradients import read_bvals_bvecs
 
@@ -3897,13 +3848,7 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
     makedir(verdict_path, folder_path + '/subjects/' + patient_path + "/dMRI/microstructure/verdict/verdict_logs.txt", log_prefix)
 
     from dmipy.core.modeling_framework import MultiCompartmentModel
-    from dmipy.signal_models.gaussian_models import G1Ball
-
-
-    # initialize the compartments model and build the verdict model
-    from dmipy.core.modeling_framework import MultiCompartmentModel
     from dmipy.signal_models import sphere_models, cylinder_models, gaussian_models
-    from dmipy.signal_models.gaussian_models import G1Ball
 
     sphere = sphere_models.S4SphereGaussianPhaseApproximation(diffusion_constant=TumorCells_Dconst)
     ball = gaussian_models.G1Ball()
@@ -3940,7 +3885,7 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
     fitted_parameters = verdict_fit.fitted_parameters
 
     diff_stick = fitted_parameters["C1Stick_1_lambda_par"] # Vascular Stick parallel diffusivity
-    mu_vascular = fitted_parameters["C1Stick_1_mu"] #Vascular Stick Angle
+    mu_vascular = fitted_parameters["C1Stick_1_mu"] # Vascular Stick Angle
     tumor_cells_diameter = fitted_parameters["S4SphereGaussianPhaseApproximation_1_diameter"] #Tumor Cells diameter
 
     f_tumor_cells = fitted_parameters["partial_volume_0"]  # Tumor Cells fraction
@@ -4006,7 +3951,6 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
     fig.colorbar(im1, ax=axs[1], orientation='horizontal');
     plt.tight_layout()
     plt.savefig(qc_path + "/error.jpg", dpi=300, bbox_inches='tight');
-
 
     """Save as a pdf"""
 
@@ -4079,7 +4023,8 @@ def verdict_solo(folder_path, p, core_count=1, small_delta=0.003, big_delta=0.03
 
     update_status(folder_path, patient_path, "verdict")
 
-def report_solo(folder_path,patient_path, slices=None, short=False):
+
+def report_solo(folder_path, patient_path, slices=None, short=False):
     """ Legacy report function.
 
     :param folder_path: path to the root directory.
@@ -4089,7 +4034,7 @@ def report_solo(folder_path,patient_path, slices=None, short=False):
     """
 
     report_path = folder_path + '/subjects/' + patient_path + "/report/raw/"
-    log_prefix="Individual Report"
+    log_prefix = "Individual Report"
     makedir(report_path, folder_path + "/logs.txt", log_prefix)
     report_log = open(report_path + "report_logs.txt", "a+")
 
@@ -4103,8 +4048,6 @@ def report_solo(folder_path,patient_path, slices=None, short=False):
     pdf.cell(0, 10, "Individual report for subject "+patient_path, 0, 2, 'C')
     pdf.cell(0, 5, '', 0, 1, 'C')
     pdf.set_font('arial', 'B', 12)
-
-
 
     image=[]
     if not short and os.path.exists(folder_path + '/subjects/' + patient_path + "/dMRI/raw/"+patient_path+"_raw_dmri" + ".nii.gz"):
@@ -4185,9 +4128,7 @@ def report_solo(folder_path,patient_path, slices=None, short=False):
         pdf.image(report_path + pre + "_z.png", x=None, y=None, w=190, h=0, type='', link='')
         pdf.add_page()
 
-
     pdf.output(folder_path + '/subjects/' + patient_path + "/report/report_"+patient_path+".pdf", 'F')
-
 
 
 def clean_study_solo(folder_path, p):
@@ -4235,13 +4176,11 @@ def clean_study_solo(folder_path, p):
         except OSError:
             print("Error while deleting file")
 
-
     # Delete all the intermediate files of the T1 folder
     if os.path.exists(os.path.join(subject_main_path, "T1")):
         shutil.rmtree(os.path.join(subject_main_path, "T1", patient_path + "_T1_gibbscorrected.nii.gz"))
         shutil.rmtree(os.path.join(subject_main_path, "T1", patient_path + "_T1_corr_projected.nii.gz"))
         shutil.rmtree(os.path.join(subject_main_path, "T1", patient_path + "_T1_brain.nii.gz"))
-
 
     # delete slurm files in masks folder
     slurmList = glob.glob(os.path.join(subject_main_path, "masks") + '/slurm-*', recursive=True)
@@ -4252,7 +4191,6 @@ def clean_study_solo(folder_path, p):
         except OSError:
             print("Error while deleting file")
 
-
     # delete slurm files in CSD folder
     slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "ODF", "CSD") + '/slurm-*', recursive=True)
     # Iterate over the list of filepaths & remove each file.
@@ -4261,7 +4199,6 @@ def clean_study_solo(folder_path, p):
             os.remove(slurmfilePath)
         except OSError:
             print("Error while deleting file")
-
 
     # delete slurm files in MSMT-CSD folder
     slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "ODF", "MSMT-CSD") + '/slurm-*', recursive=True)
@@ -4281,17 +4218,13 @@ def clean_study_solo(folder_path, p):
         except OSError:
             print("Error while deleting file")
 
-
     # Delete all the intermediate files of the diamond folder
     if os.path.exists(os.path.join(subject_main_path, "dMRI", "microstructure", "diamond")):
         shutil.rmtree(os.path.join(subject_main_path, "dMRI", "microstructure", "diamond", patient_path + "_diamond_residuals.nii.gz"))
 
-
     # Delete all the intermediate files of the dti folder
     if os.path.exists(os.path.join(subject_main_path, "dMRI", "microstructure", "dti")):
         shutil.rmtree(os.path.join(subject_main_path, "dMRI", "microstructure", "dti", patient_path + "_residual.nii.gz"))
-
-
 
     # delete slurm files in dti folder
     slurmList = glob.glob(os.path.join(subject_main_path, "dMRI", "microstructure", "dti") + '/slurm-*', recursive=True)
