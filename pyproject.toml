@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "elikopy"
-version = "0.4.5"
+version = "0.4.6"
 description = "A set of tools for analysing dMRI"
 authors = [
     "qdessain <quentin.dessain@uclouvain.be>",
