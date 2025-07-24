@@ -36,7 +36,16 @@
   - _Requirements: 3.1, 3.2, 3.3_
 
 - [ ] 4. Implement comprehensive data validation system
-- [ ] 4.1 Create DataValidator class for input validation
+- [x] 4.1 Create DataValidator class for input validation
+
+
+
+
+
+
+
+
+
   - Implement DWI data integrity validation (file formats, dimensions, gradients)
   - Add bvals/bvecs validation with gradient table checks
   - Create BIDS compliance validation with detailed error reporting
