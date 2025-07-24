@@ -361,58 +361,39 @@ class DataValidator:
         Returns:
             ValidationResult object
         """
-        result = ValidationResult()
+        # Import here to avoid circular imports
+        from elikopy.utils.validation import ParameterValidator
+        
+        # Use the new comprehensive parameter validator
+        param_validator = ParameterValidator()
         
         # Validate based on processing type
         if 'processing_type' not in params:
+            result = ValidationResult()
             result.add_error("Missing required parameter: processing_type")
             return result
         
         processing_type = params['processing_type']
         
-        if processing_type == 'dti':
-            # Validate DTI parameters
-            if 'fit_method' in params:
-                if params['fit_method'] not in ['WLS', 'OLS', 'NLLS']:
-                    result.add_error(f"Invalid fit_method: {params['fit_method']}")
-            
-            if 'mask_threshold' in params:
-                if not 0 <= params['mask_threshold'] <= 1:
-                    result.add_error(f"mask_threshold must be between 0 and 1, got {params['mask_threshold']}")
+        # Remove processing_type from params for validation
+        validation_params = {k: v for k, v in params.items() if k != 'processing_type'}
         
-        elif processing_type == 'noddi':
-            # Validate NODDI parameters
-            if 'fit_method' in params:
-                if params['fit_method'] not in ['amico', 'noddi-python']:
-                    result.add_error(f"Invalid fit_method: {params['fit_method']}")
+        # Use the comprehensive parameter validator
+        validation_result = param_validator.validate_processing_parameters(
+            processing_type, validation_params
+        )
         
-        elif processing_type == 'csd':
-            # Validate CSD parameters
-            if 'response_method' in params:
-                if params['response_method'] not in ['tournier', 'tax', 'dhollander']:
-                    result.add_error(f"Invalid response_method: {params['response_method']}")
-            
-            if 'sh_order' in params:
-                if not 2 <= params['sh_order'] <= 12 or params['sh_order'] % 2 != 0:
-                    result.add_error(f"sh_order must be an even number between 2 and 12, got {params['sh_order']}")
+        # Convert to our ValidationResult format
+        result = ValidationResult()
         
-        elif processing_type == 'tracking':
-            # Validate tracking parameters
-            if 'algorithm' in params:
-                if params['algorithm'] not in ['deterministic', 'probabilistic']:
-                    result.add_error(f"Invalid algorithm: {params['algorithm']}")
-            
-            if 'step_size' in params:
-                if params['step_size'] <= 0:
-                    result.add_error(f"step_size must be positive, got {params['step_size']}")
-            
-            if 'max_angle' in params:
-                if not 0 <= params['max_angle'] <= 90:
-                    result.add_error(f"max_angle must be between 0 and 90, got {params['max_angle']}")
-            
-            if 'min_length' in params and 'max_length' in params:
-                if params['min_length'] >= params['max_length']:
-                    result.add_error(f"min_length ({params['min_length']}) must be less than max_length ({params['max_length']})")
+        for error in validation_result.errors:
+            result.add_error(error.message)
+        
+        for warning in validation_result.warnings:
+            result.add_warning(warning.message)
+        
+        for suggestion in validation_result.suggestions:
+            result.add_info(suggestion)
         
         return result
     
