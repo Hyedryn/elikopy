@@ -1,0 +1,44 @@
+study_name: hpc_study
+dti:
+  fit_method: WLS
+  mask_threshold: 0.2
+  compute_metrics:
+  - FA
+  - MD
+  - AD
+  - RD
+noddi:
+  fit_method: amico
+  mask_threshold: 0.2
+  compute_metrics:
+  - ICVF
+  - ODI
+  - ISOVF
+tracking:
+  algorithm: probabilistic
+  step_size: 0.5
+  max_angle: 30.0
+  min_length: 20.0
+  max_length: 200.0
+  num_seeds: 50000
+  seed_mask: wm
+  apply_sift: true
+  sift_term_count: 10000
+connectivity:
+  atlas: schaefer200
+  measure: count
+  normalize: true
+scheduler:
+  type: slurm
+  cpus_per_task: 8
+  mem_per_cpu: 8
+  time_limit: '48:00:00'
+  partition: compute
+  account: null
+  use_gpu: false
+  gpu_count: 0
+output:
+  derivatives_name: elikopy
+  save_intermediates: true
+  compress_outputs: true
+  verbose_logging: true

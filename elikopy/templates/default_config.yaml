@@ -1,0 +1,66 @@
+study_name: elikopy_study
+preprocessing:
+  denoise: true
+  gibbs_correction: true
+  motion_correction: true
+  eddy_correction: true
+  bias_correction: true
+dti:
+  fit_method: WLS
+  mask_threshold: 0.2
+  compute_metrics:
+  - FA
+  - MD
+  - AD
+  - RD
+noddi:
+  fit_method: amico
+  mask_threshold: 0.2
+  compute_metrics:
+  - ICVF
+  - ODI
+  - ISOVF
+csd:
+  response_method: tournier
+  sh_order: 8
+  mask_threshold: 0.2
+  multi_shell: false
+msmt_csd:
+  response_method: dhollander
+  sh_order: 8
+  mask_threshold: 0.2
+tracking:
+  algorithm: deterministic
+  step_size: 0.5
+  max_angle: 30.0
+  min_length: 20.0
+  max_length: 200.0
+  num_seeds: 10000
+  seed_mask: wm
+  apply_sift: true
+  sift_term_count: 5000
+connectivity:
+  atlas: aal
+  measure: count
+  normalize: true
+fingerprinting:
+  dictionary_path: null
+  mask_threshold: 0.2
+  compute_metrics:
+  - fvf
+  - diameter
+  - orientation
+scheduler:
+  type: slurm
+  cpus_per_task: 4
+  mem_per_cpu: 4
+  time_limit: '24:00:00'
+  partition: null
+  account: null
+  use_gpu: false
+  gpu_count: 0
+output:
+  derivatives_name: elikopy
+  save_intermediates: false
+  compress_outputs: true
+  verbose_logging: false
