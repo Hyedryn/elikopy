@@ -227,7 +227,7 @@ class BIDSHandler(BIDSComponent):
             'subject': subject_id,
             'datatype': 'dwi',
             'suffix': 'dwi',
-            'desc': 'preproc',
+            'space': 'ACPC',  # QSIPrep outputs are in ACPC space
             'extension': '.nii.gz'
         }
         
@@ -261,16 +261,16 @@ class BIDSHandler(BIDSComponent):
             
             # Get associated bval/bvec files
             bval_query = query_params.copy()
-            bval_query.update({'suffix': 'dwi', 'extension': '.bval'})
+            bval_query.update({'extension': '.bval'})
             bval_files = self._qsiprep_layout.get(**bval_query)
             
             bvec_query = query_params.copy()
-            bvec_query.update({'suffix': 'dwi', 'extension': '.bvec'})
+            bvec_query.update({'extension': '.bvec'})
             bvec_files = self._qsiprep_layout.get(**bvec_query)
             
             # Get JSON sidecar
             json_query = query_params.copy()
-            json_query.update({'suffix': 'dwi', 'extension': '.json'})
+            json_query.update({'extension': '.json'})
             json_files = self._qsiprep_layout.get(**json_query)
             
             # Find matching bval/bvec files (same entities)
@@ -358,7 +358,7 @@ class BIDSHandler(BIDSComponent):
             'subject': subject_id,
             'datatype': 'anat',
             'suffix': 'T1w',
-            'desc': 'preproc',
+            'space': 'ACPC',  # QSIPrep outputs are in ACPC space
             'extension': '.nii.gz'
         }
         
@@ -384,7 +384,7 @@ class BIDSHandler(BIDSComponent):
             
             # Get JSON sidecar
             json_query = query_params.copy()
-            json_query.update({'suffix': 'T1w', 'extension': '.json'})
+            json_query.update({'extension': '.json'})
             json_files = self._qsiprep_layout.get(**json_query)
             
             # Find matching JSON file

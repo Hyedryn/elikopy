@@ -14,12 +14,19 @@
   - _Requirements: 6.4_
 
 - [x] 3. Create QSIPrep data handling foundation
+
+
+
+
+
 - [x] 3.1 Implement BIDSHandler class for qsiprep derivatives access using pybids
+
   - Write BIDSHandler class with pybids integration for qsiprep derivatives
   - Implement flexible query methods for preprocessed DWI files with support for all BIDS entities
   - Add support for multi-session, multi-run, and other BIDS entities
   - Create unit tests for pybids-based derivatives parsing
   - _Requirements: 2.1, 2.2, 2.3_
+
 
 - [x] 3.2 Implement BIDS derivatives management
   - Create derivatives.py module for BIDS-compliant output structure
