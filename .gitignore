@@ -135,17 +135,4 @@ tests/s16858/
 .idea/python_dti.iml
 
 .idea/
-/tests/
-
-Simu_file/
-Tractography/
-docs2/
-
-diamond_cmd.txt
-
-diamond_param.txt
-
-test/
-
-test_eddy/
 bids_example/
