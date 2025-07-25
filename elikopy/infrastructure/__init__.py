@@ -9,7 +9,7 @@ This module handles infrastructure concerns:
 - Exception hierarchy: Comprehensive error handling
 """
 
-from elikopy.infrastructure.scheduler import JobScheduler
+from elikopy.infrastructure.scheduler import JobScheduler, JobID, JobStatus, ProcessingJob
 from elikopy.infrastructure.file_manager import FileManager
 from elikopy.infrastructure.logging import ElikopyLogger, LoggingConfig, get_logger, configure_logging
 from elikopy.infrastructure.exceptions import (
@@ -22,6 +22,9 @@ from elikopy.infrastructure.exceptions import (
 __all__ = [
     # Job scheduling
     'JobScheduler',
+    'JobID',
+    'JobStatus',
+    'ProcessingJob',
     
     # File management
     'FileManager',

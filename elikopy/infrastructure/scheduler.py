@@ -2,11 +2,109 @@
 JobScheduler class - HPC/SLURM job management
 """
 
+
+@dataclass
+class ProcessingJob:
+    """Class representing a processing job configuration"""
+    
+    name: str
+    script_path: Path
+    script_args: List[str] = field(default_factory=list)
+    cpus_per_task: int = 1
+    mem_per_cpu: int = 4  # GB
+    time_limit: str = "24:00:00"
+    use_gpu: bool = False
+    gpu_count: int = 0
+    dependencies: List[str] = field(default_factory=list)
+    partition: Optional[str] = None
+    account: Optional[str] = None
+    output_file: Optional[str] = None
+    error_file: Optional[str] = None
+    environment_vars: Dict[str, str] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert ProcessingJob to dictionary format
+        
+        Returns:
+            Dictionary representation of the job
+        """
+        return {
+            "name": self.name,
+            "script_path": str(self.script_path),
+            "script_args": self.script_args,
+            "cpus_per_task": self.cpus_per_task,
+            "mem_per_cpu": self.mem_per_cpu,
+            "time_limit": self.time_limit,
+            "use_gpu": self.use_gpu,
+            "gpu_count": self.gpu_count,
+            "dependencies": self.dependencies,
+            "partition": self.partition,
+            "account": self.account,
+            "output_file": self.output_file,
+            "error_file": self.error_file,
+            "environment_vars": self.environment_vars
+        }
+
 import os
 import subprocess
 import time
+import json
+import pickle
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
+from datetime import datetime
+from dataclasses import dataclass, field
+from dataclasses import dataclass, field
+
+
+@dataclass
+class ProcessingJob:
+    """Class representing a processing job"""
+    
+    name: str
+    script_path: Path
+    script_args: List[str] = field(default_factory=list)
+    working_dir: Optional[Path] = None
+    output_file: Optional[str] = None
+    error_file: Optional[str] = None
+    cpus_per_task: int = 1
+    mem_per_cpu: int = 4  # GB
+    time_limit: str = "24:00:00"
+    partition: Optional[str] = None
+    account: Optional[str] = None
+    use_gpu: bool = False
+    gpu_count: int = 0
+    dependencies: List[str] = field(default_factory=list)
+    environment_vars: Dict[str, str] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert job to dictionary for scheduler submission"""
+        job_dict = {
+            "name": self.name,
+            "script_path": str(self.script_path),
+            "script_args": self.script_args,
+            "cpus_per_task": self.cpus_per_task,
+            "mem_per_cpu": self.mem_per_cpu,
+            "time_limit": self.time_limit,
+            "use_gpu": self.use_gpu,
+            "gpu_count": self.gpu_count,
+            "dependencies": self.dependencies
+        }
+        
+        if self.working_dir:
+            job_dict["working_dir"] = str(self.working_dir)
+        if self.output_file:
+            job_dict["output_file"] = self.output_file
+        if self.error_file:
+            job_dict["error_file"] = self.error_file
+        if self.partition:
+            job_dict["partition"] = self.partition
+        if self.account:
+            job_dict["account"] = self.account
+        if self.environment_vars:
+            job_dict["environment_vars"] = self.environment_vars
+            
+        return job_dict
 
 
 class JobID:
@@ -84,15 +182,21 @@ class JobScheduler:
         except (subprocess.SubprocessError, FileNotFoundError):
             raise RuntimeError("SLURM is not available on this system")
     
-    def submit_job(self, job_config: Dict[str, Any]) -> JobID:
+    def submit_job(self, job: Union[ProcessingJob, Dict[str, Any]]) -> JobID:
         """Submit processing job
         
         Args:
-            job_config: Job configuration
+            job: ProcessingJob object or job configuration dictionary
             
         Returns:
             JobID object
         """
+        # Convert ProcessingJob to dictionary if needed
+        if isinstance(job, ProcessingJob):
+            job_config = job.to_dict()
+        else:
+            job_config = job
+            
         if self.scheduler_type == "slurm":
             return self._submit_slurm_job(job_config)
         else:
@@ -438,3 +542,202 @@ class JobScheduler:
                 time.sleep(poll_interval)
         
         return final_statuses
+    
+    def create_checkpoint(self, job_id: Union[JobID, str], 
+                         checkpoint_data: Dict[str, Any],
+                         checkpoint_dir: Optional[Path] = None) -> Path:
+        """Create checkpoint for job
+        
+        Args:
+            job_id: JobID object or job ID string
+            checkpoint_data: Data to checkpoint
+            checkpoint_dir: Directory to store checkpoint (optional)
+            
+        Returns:
+            Path to checkpoint file
+        """
+        # Normalize job ID
+        if isinstance(job_id, JobID):
+            job_id_str = job_id.job_id
+        else:
+            job_id_str = job_id
+        
+        # Set default checkpoint directory
+        if checkpoint_dir is None:
+            checkpoint_dir = Path.cwd() / "checkpoints"
+        
+        # Create checkpoint directory if it doesn't exist
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create checkpoint file path
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        checkpoint_file = checkpoint_dir / f"checkpoint_{job_id_str}_{timestamp}.pkl"
+        
+        # Add metadata to checkpoint data
+        checkpoint_data_with_meta = {
+            "job_id": job_id_str,
+            "timestamp": timestamp,
+            "scheduler_type": self.scheduler_type,
+            "data": checkpoint_data
+        }
+        
+        # Save checkpoint
+        try:
+            with open(checkpoint_file, "wb") as f:
+                pickle.dump(checkpoint_data_with_meta, f)
+            
+            # Also save a JSON metadata file for easier inspection
+            metadata_file = checkpoint_file.with_suffix(".json")
+            metadata = {
+                "job_id": job_id_str,
+                "timestamp": timestamp,
+                "scheduler_type": self.scheduler_type,
+                "checkpoint_file": str(checkpoint_file),
+                "data_keys": list(checkpoint_data.keys()) if isinstance(checkpoint_data, dict) else []
+            }
+            
+            with open(metadata_file, "w") as f:
+                json.dump(metadata, f, indent=2)
+            
+            return checkpoint_file
+        except Exception as e:
+            raise RuntimeError(f"Failed to create checkpoint: {e}")
+    
+    def load_checkpoint(self, checkpoint_file: Path) -> Dict[str, Any]:
+        """Load checkpoint data
+        
+        Args:
+            checkpoint_file: Path to checkpoint file
+            
+        Returns:
+            Checkpoint data
+        """
+        try:
+            with open(checkpoint_file, "rb") as f:
+                checkpoint_data = pickle.load(f)
+            
+            # Validate checkpoint format
+            if not isinstance(checkpoint_data, dict) or "data" not in checkpoint_data:
+                raise ValueError("Invalid checkpoint format")
+            
+            return checkpoint_data["data"]
+        except Exception as e:
+            raise RuntimeError(f"Failed to load checkpoint: {e}")
+    
+    def list_checkpoints(self, checkpoint_dir: Optional[Path] = None,
+                        job_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List available checkpoints
+        
+        Args:
+            checkpoint_dir: Directory to search for checkpoints (optional)
+            job_id: Filter by job ID (optional)
+            
+        Returns:
+            List of checkpoint metadata
+        """
+        # Set default checkpoint directory
+        if checkpoint_dir is None:
+            checkpoint_dir = Path.cwd() / "checkpoints"
+        
+        if not checkpoint_dir.exists():
+            return []
+        
+        checkpoints = []
+        
+        # Search for checkpoint metadata files
+        pattern = f"checkpoint_{job_id}_*.json" if job_id else "checkpoint_*.json"
+        
+        for metadata_file in checkpoint_dir.glob(pattern):
+            try:
+                with open(metadata_file, "r") as f:
+                    metadata = json.load(f)
+                
+                # Check if corresponding pickle file exists
+                checkpoint_file = Path(metadata["checkpoint_file"])
+                if checkpoint_file.exists():
+                    checkpoints.append(metadata)
+            except Exception:
+                # Skip invalid metadata files
+                continue
+        
+        # Sort by timestamp (newest first)
+        checkpoints.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        return checkpoints
+    
+    def resume_from_checkpoint(self, checkpoint_file: Path,
+                              job_config: Dict[str, Any]) -> JobID:
+        """Resume job from checkpoint
+        
+        Args:
+            checkpoint_file: Path to checkpoint file
+            job_config: Job configuration for resumed job
+            
+        Returns:
+            JobID of resumed job
+        """
+        # Load checkpoint data
+        checkpoint_data = self.load_checkpoint(checkpoint_file)
+        
+        # Update job config with checkpoint data
+        resumed_job_config = job_config.copy()
+        resumed_job_config["checkpoint_data"] = checkpoint_data
+        resumed_job_config["is_resume"] = True
+        
+        # Add resume flag to job name
+        original_name = resumed_job_config.get("name", "elikopy_job")
+        resumed_job_config["name"] = f"{original_name}_resume"
+        
+        # Submit resumed job
+        return self.submit_job(resumed_job_config)
+    
+    def cleanup_checkpoints(self, checkpoint_dir: Optional[Path] = None,
+                           max_age_days: int = 30,
+                           job_id: Optional[str] = None) -> int:
+        """Clean up old checkpoints
+        
+        Args:
+            checkpoint_dir: Directory to clean up (optional)
+            max_age_days: Maximum age of checkpoints to keep in days
+            job_id: Clean up checkpoints for specific job ID (optional)
+            
+        Returns:
+            Number of checkpoints cleaned up
+        """
+        # Set default checkpoint directory
+        if checkpoint_dir is None:
+            checkpoint_dir = Path.cwd() / "checkpoints"
+        
+        if not checkpoint_dir.exists():
+            return 0
+        
+        cleaned_count = 0
+        cutoff_time = datetime.now().timestamp() - (max_age_days * 24 * 3600)
+        
+        # Get list of checkpoints
+        checkpoints = self.list_checkpoints(checkpoint_dir, job_id)
+        
+        for checkpoint_meta in checkpoints:
+            try:
+                # Parse timestamp
+                timestamp_str = checkpoint_meta["timestamp"]
+                checkpoint_time = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S").timestamp()
+                
+                # Check if checkpoint is old enough to clean up
+                if checkpoint_time < cutoff_time:
+                    # Remove checkpoint files
+                    checkpoint_file = Path(checkpoint_meta["checkpoint_file"])
+                    metadata_file = checkpoint_file.with_suffix(".json")
+                    
+                    if checkpoint_file.exists():
+                        checkpoint_file.unlink()
+                    
+                    if metadata_file.exists():
+                        metadata_file.unlink()
+                    
+                    cleaned_count += 1
+            except Exception:
+                # Skip problematic checkpoints
+                continue
+        
+        return cleaned_count
