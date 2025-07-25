@@ -75,7 +75,9 @@
   - Write unit tests for file operations
   - _Requirements: 4.3, 1.3_
 
-- [ ] 7. Create HPC job scheduling infrastructure
+- [x] 7. Create HPC job scheduling infrastructure
+
+
 
 
 

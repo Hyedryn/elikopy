@@ -8,7 +8,6 @@ This directory contains pre-configured templates for common ElikoPy use cases.
 Complete configuration with all processing options and their default values. Use this as a starting point for comprehensive diffusion MRI analysis.
 
 **Includes:**
-- All preprocessing options
 - DTI, NODDI, CSD, and MSMT-CSD processing
 - Tractography and connectivity analysis
 - Microstructure fingerprinting (requires dictionary)

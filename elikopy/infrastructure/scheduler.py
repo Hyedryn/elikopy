@@ -2,49 +2,6 @@
 JobScheduler class - HPC/SLURM job management
 """
 
-
-@dataclass
-class ProcessingJob:
-    """Class representing a processing job configuration"""
-    
-    name: str
-    script_path: Path
-    script_args: List[str] = field(default_factory=list)
-    cpus_per_task: int = 1
-    mem_per_cpu: int = 4  # GB
-    time_limit: str = "24:00:00"
-    use_gpu: bool = False
-    gpu_count: int = 0
-    dependencies: List[str] = field(default_factory=list)
-    partition: Optional[str] = None
-    account: Optional[str] = None
-    output_file: Optional[str] = None
-    error_file: Optional[str] = None
-    environment_vars: Dict[str, str] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert ProcessingJob to dictionary format
-        
-        Returns:
-            Dictionary representation of the job
-        """
-        return {
-            "name": self.name,
-            "script_path": str(self.script_path),
-            "script_args": self.script_args,
-            "cpus_per_task": self.cpus_per_task,
-            "mem_per_cpu": self.mem_per_cpu,
-            "time_limit": self.time_limit,
-            "use_gpu": self.use_gpu,
-            "gpu_count": self.gpu_count,
-            "dependencies": self.dependencies,
-            "partition": self.partition,
-            "account": self.account,
-            "output_file": self.output_file,
-            "error_file": self.error_file,
-            "environment_vars": self.environment_vars
-        }
-
 import os
 import subprocess
 import time

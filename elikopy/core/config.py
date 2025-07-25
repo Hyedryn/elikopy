@@ -16,35 +16,6 @@ class ConfigValidationError(Exception):
     """Exception raised when configuration validation fails"""
     pass
 
-
-@dataclass
-class PreprocessingConfig:
-    """Configuration for preprocessing steps
-    
-    Attributes:
-        denoise: Enable denoising step
-        gibbs_correction: Enable Gibbs ringing correction
-        motion_correction: Enable motion correction
-        eddy_correction: Enable eddy current correction
-        bias_correction: Enable bias field correction
-    """
-    denoise: bool = True
-    gibbs_correction: bool = True
-    motion_correction: bool = True
-    eddy_correction: bool = True
-    bias_correction: bool = True
-    
-    def validate(self) -> List[str]:
-        """Validate preprocessing configuration
-        
-        Returns:
-            List of validation error messages
-        """
-        errors = []
-        # All preprocessing options are boolean, so basic type checking is sufficient
-        return errors
-    
-
 @dataclass
 class DTIConfig:
     """Configuration for DTI processing
@@ -437,7 +408,6 @@ class OutputConfig:
 class ElikopyConfig:
     """Main configuration class for ElikoPy"""
     study_name: str = "elikopy_study"
-    preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
     dti: DTIConfig = field(default_factory=DTIConfig)
     noddi: NODDIConfig = field(default_factory=NODDIConfig)
     csd: CSDConfig = field(default_factory=CSDConfig)
@@ -612,7 +582,6 @@ class ElikopyConfig:
             errors.append("study_name cannot be empty")
         
         # Validate each configuration section
-        errors.extend(self.preprocessing.validate())
         errors.extend(self.dti.validate())
         errors.extend(self.noddi.validate())
         errors.extend(self.csd.validate())
@@ -695,7 +664,7 @@ class ElikopyConfig:
             processing_types = ['dti']
         
         # Validate processing types
-        valid_types = ['preprocessing', 'dti', 'noddi', 'csd', 'msmt_csd', 
+        valid_types = ['dti', 'noddi', 'csd', 'msmt_csd',
                       'tracking', 'connectivity', 'fingerprinting']
         invalid_types = [t for t in processing_types if t not in valid_types]
         if invalid_types:
@@ -769,7 +738,6 @@ class ElikopyConfig:
         return {
             'study_name': self.study_name,
             'enabled_processing': {
-                'preprocessing': True,  # Always enabled
                 'dti': True,  # Always available
                 'noddi': True,  # Always available
                 'csd': True,  # Always available

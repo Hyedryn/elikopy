@@ -133,7 +133,7 @@ Examples:
         '--processing',
         dest='processing_types',
         nargs='+',
-        choices=['preprocessing', 'dti', 'noddi', 'csd', 'msmt_csd', 
+        choices=['dti', 'noddi', 'csd', 'msmt_csd',
                 'tracking', 'connectivity', 'fingerprinting'],
         help='Processing types to include in minimal template'
     )

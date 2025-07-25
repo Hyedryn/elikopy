@@ -1,10 +1,4 @@
 study_name: elikopy_study
-preprocessing:
-  denoise: true
-  gibbs_correction: true
-  motion_correction: true
-  eddy_correction: true
-  bias_correction: true
 dti:
   fit_method: WLS
   mask_threshold: 0.2
