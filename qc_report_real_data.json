@@ -1,7 +1,7 @@
 {
   "report_info": {
     "generated_by": "elikopy QsiPrepAdapter",
-    "generation_time": "2025-07-25T08:54:39",
+    "generation_time": "2025-07-26T10:30:31",
     "qsiprep_directory": "bids_example\\derivatives\\qsiprep",
     "subject": "sub-01",
     "session": "ses-01"

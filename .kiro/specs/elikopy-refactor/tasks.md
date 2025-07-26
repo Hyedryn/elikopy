@@ -149,38 +149,41 @@
   - Write unit tests for fingerprinting processing
   - _Requirements: 1.1, 3.5_
 
-- [ ] 13. Implement tractography and connectivity analysis
+- [x] 13. Implement tractography and connectivity analysis
 - [x] 13.1 Create TrackingProcessor class
   - Implement streamline generation with different algorithms
   - Add SIFT filtering and streamline optimization
   - Create BIDS-compliant tractography output
   - Write unit tests for tractography processing
   - _Requirements: 1.1, 3.5_
-
-- [ ] 13.2 Implement connectivity matrix extraction
+- [x] 13.2 Implement connectivity matrix extraction
   - Create ConnectivityProcessor class with atlas registration
   - Add streamline-atlas intersection computation
   - Implement connectivity matrix generation and export
   - Write unit tests for connectivity analysis
   - _Requirements: 1.1, 3.5_
 
-- [ ] 14. Create processing orchestration system
-- [ ] 14.1 Implement ElikopyProcessor class
+- [-] 14. Create processing orchestration system
+- [x] 14.1 Implement ElikopyProcessor class
   - Create processing orchestration with pipeline management
   - Add input validation and processing configuration
   - Implement parallel processing and job submission
   - Write unit tests for processing orchestration
   - _Requirements: 1.1, 5.1, 5.3_
 
-- [ ] 14.2 Add checkpoint and resume functionality
+- [x] 14.2 Add checkpoint and resume functionality
   - Implement processing state persistence
   - Add resume capabilities for interrupted processing
   - Create progress tracking and status reporting
   - Write unit tests for checkpoint/resume functionality
   - _Requirements: 5.4, 4.2_
+-
 
 - [ ] 15. Refactor and integrate existing utilities
-- [ ] 15.1 Refactor image processing utilities
+
+- [x] 15.1 Refactor image processing utilities
+
+
   - Move relevant functions from utils.py into utils/image_utils.py
   - Clean up and document image processing functions
   - Add input validation and error handling
