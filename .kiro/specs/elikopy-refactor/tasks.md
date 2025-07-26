@@ -58,16 +58,7 @@
   - Write unit tests for error handling scenarios
   - _Requirements: 4.1, 4.3_
 
-- [ ] 6. Implement file management utilities
-
-
-
-
-
-
-
-
-
+- [x] 6. Implement file management utilities
   - Create FileManager class for safe file operations
   - Add directory structure creation with proper permissions
   - Implement file copying with integrity validation
@@ -76,16 +67,6 @@
   - _Requirements: 4.3, 1.3_
 
 - [x] 7. Create HPC job scheduling infrastructure
-
-
-
-
-
-
-
-
-
-
   - Implement JobScheduler class with SLURM integration
   - Add job submission, monitoring, and cancellation functionality
   - Create job dependency management and resource allocation
@@ -93,30 +74,40 @@
   - Write unit tests for job scheduling (with mocking)
   - _Requirements: 5.1, 5.2, 5.4_
 
-- [ ] 8. Implement core ElikopyStudy class
-- [ ] 8.1 Create main study management class
+- [x] 8. Implement core ElikopyStudy class
+
+
+
+- [x] 8.1 Create main study management class
   - Implement ElikopyStudy class with qsiprep derivatives support
   - Add subject discovery and metadata management
   - Create study initialization from qsiprep outputs
   - Write unit tests for study setup and subject management
   - _Requirements: 2.1, 2.2, 1.4_
 
-- [ ] 9. Create QSIPrep adapter implementation
-- [ ] 9.1 Implement QsiPrepAdapter class
+- [x] 9. Create QSIPrep adapter implementation
+
+
+
+
+
+- [x] 9.1 Implement QsiPrepAdapter class
+
+
   - Create adapter for loading qsiprep preprocessed data
   - Implement methods to extract preprocessed DWI and anatomical data
   - Add metadata extraction and validation
   - Write unit tests for qsiprep adapter
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 9.2 Implement quality control for qsiprep outputs
+- [x] 9.2 Implement quality control for qsiprep outputs
   - Create validation methods for qsiprep outputs
   - Add checks for required files and metadata
   - Implement reporting for preprocessing quality metrics
   - Write unit tests for quality control
   - _Requirements: 2.4, 7.1_
 
-- [ ] 10. Implement DTI processing module
+- [x] 10. Implement DTI processing module
   - Create DTIProcessor class with tensor fitting and metrics computation
   - Add support for different fitting algorithms and masking
   - Implement BIDS-compliant output generation for DTI metrics
@@ -124,14 +115,15 @@
   - _Requirements: 1.1, 3.5_
 
 - [ ] 11. Implement CSD and MSMT-CSD processing
-- [ ] 11.1 Create CSDProcessor class
+- [x] 11.1 Create CSDProcessor class
+
   - Implement single-shell CSD fitting with response function estimation
   - Add peak extraction and ODF computation
   - Create BIDS-compliant output for CSD results
   - Write unit tests for CSD processing
   - _Requirements: 1.1, 3.5_
 
-- [ ] 11.2 Implement MSMT-CSD processing
+- [x] 11.2 Implement MSMT-CSD processing
   - Add multi-shell multi-tissue CSD fitting
   - Implement tissue-specific response function estimation
   - Create separate outputs for WM, GM, and CSF signals
@@ -139,14 +131,18 @@
   - _Requirements: 1.1, 3.5_
 
 - [ ] 12. Create microstructure modeling modules
-- [ ] 12.1 Implement NODDI processing
+
+
+
+
+- [x] 12.1 Implement NODDI processing
   - Create NODDIProcessor class with model fitting
   - Add parameter estimation for ICVF, ODI, and ISOVF
   - Implement BIDS-compliant output generation
   - Write unit tests for NODDI processing
   - _Requirements: 1.1, 3.5_
 
-- [ ] 12.2 Implement microstructure fingerprinting
+- [x] 12.2 Implement microstructure fingerprinting
   - Create MicrostructureFingerprintingProcessor class
   - Add dictionary loading and signal matching algorithms
   - Implement parameter map generation and quality metrics
@@ -154,7 +150,7 @@
   - _Requirements: 1.1, 3.5_
 
 - [ ] 13. Implement tractography and connectivity analysis
-- [ ] 13.1 Create TrackingProcessor class
+- [x] 13.1 Create TrackingProcessor class
   - Implement streamline generation with different algorithms
   - Add SIFT filtering and streamline optimization
   - Create BIDS-compliant tractography output

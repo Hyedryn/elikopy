@@ -1,0 +1,128 @@
+{
+  "report_info": {
+    "generated_by": "elikopy QsiPrepAdapter",
+    "generation_time": "2025-07-25T08:54:39",
+    "qsiprep_directory": "bids_example\\derivatives\\qsiprep",
+    "subject": "sub-01",
+    "session": "ses-01"
+  },
+  "quality_assessment": {
+    "subject": "sub-01",
+    "session": "ses-01",
+    "overall_quality": "acceptable",
+    "quality_score": 0.71,
+    "checks": {
+      "data_completeness": {
+        "status": "warning",
+        "score": 0.9,
+        "details": {
+          "dwi_files_count": 1,
+          "anatomical_files_count": 0,
+          "brain_mask_available": true
+        },
+        "warnings": [
+          "No anatomical files found"
+        ],
+        "errors": []
+      },
+      "dwi_quality": {
+        "status": "warning",
+        "score": 0.9,
+        "details": {
+          "dwi_shape": [
+            80,
+            98,
+            85,
+            167
+          ],
+          "n_volumes": 167,
+          "n_bvals": 8,
+          "unique_bvals": [
+            0.0,
+            1000.0,
+            1995.0,
+            2000.0,
+            2995.0,
+            3000.0,
+            3005.0,
+            5000.0
+          ],
+          "bval_counts": {
+            "0": 7,
+            "1000": 64,
+            "1995": 1,
+            "2000": 31,
+            "2995": 2,
+            "3000": 26,
+            "3005": 4,
+            "5000": 32
+          },
+          "b0_count": 7,
+          "high_bval_count": 160,
+          "signal_stats": {
+            "mean": 185.27259325279596,
+            "std": 306.547046817959,
+            "min": 0.0,
+            "max": 14416.55859375
+          }
+        },
+        "warnings": [
+          "Very high signal values detected (max: 14416.55859375, mean: 185.27259325279596)"
+        ],
+        "errors": []
+      },
+      "anatomical_quality": {
+        "status": "fail",
+        "score": 0.0,
+        "details": {},
+        "warnings": [],
+        "errors": [
+          "Anatomical quality check failed: ElikopyError: Failed to load preprocessed anatomical data for subject sub-01: ElikopyError: No preprocessed anatomical files found for subject sub-01\nOperation: unknown\nSuggestions:\n  - Check input data format and integrity\n  - Verify BIDS compliance if applicable\n  - Ensure all required files are present\nOperation: unknown\nSuggestions:\n  - Check input data format and integrity\n  - Verify BIDS compliance if applicable\n  - Ensure all required files are present"
+        ]
+      },
+      "metadata_quality": {
+        "status": "warning",
+        "score": 0.9,
+        "details": {
+          "qsiprep_version": "1.0.2.dev0+gfc89945.d20250405",
+          "preprocessing_steps": [],
+          "n_preprocessing_steps": 0,
+          "has_acquisition_params": true,
+          "has_software_versions": true
+        },
+        "warnings": [
+          "No preprocessing steps information found"
+        ],
+        "errors": []
+      },
+      "motion_quality": {
+        "status": "warning",
+        "score": 0.8,
+        "details": {
+          "motion_files_found": 0
+        },
+        "warnings": [
+          "No motion parameter files found"
+        ],
+        "errors": []
+      }
+    },
+    "recommendations": [],
+    "warnings": [
+      "No anatomical files found",
+      "Very high signal values detected (max: 14416.55859375, mean: 185.27259325279596)",
+      "No preprocessing steps information found",
+      "No motion parameter files found"
+    ],
+    "errors": [
+      "Anatomical quality check failed: ElikopyError: Failed to load preprocessed anatomical data for subject sub-01: ElikopyError: No preprocessed anatomical files found for subject sub-01\nOperation: unknown\nSuggestions:\n  - Check input data format and integrity\n  - Verify BIDS compliance if applicable\n  - Ensure all required files are present\nOperation: unknown\nSuggestions:\n  - Check input data format and integrity\n  - Verify BIDS compliance if applicable\n  - Ensure all required files are present"
+    ]
+  },
+  "summary": {
+    "overall_quality": "acceptable",
+    "quality_score": 0.71,
+    "total_errors": 1,
+    "total_warnings": 4,
+    "total_recommendations": 0
+  }
+}

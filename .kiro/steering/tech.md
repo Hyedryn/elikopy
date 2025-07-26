@@ -9,6 +9,8 @@
 - **External Integrations**: 
   - microstructure-fingerprinting-rensonnetg (git dependency)
   - unravel-python
+  - mrtrix3
+  - AMICO (git dependency https://github.com/daducci/AMICO)
 
 ## Development Dependencies
 - **Testing**: pytest (inferred from test structure)
