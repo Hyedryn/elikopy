@@ -294,7 +294,7 @@ class ElikopyProcessor(ConfigurableComponent):
                 ProcessingStep(
                     name="tracking",
                     processor_class="TrackingProcessor",
-                    stage=PipelineStage.POSTPROCESSING,
+                    stage=PipelineStage.MODELING,
                     config=self.config.get("tracking", {}),
                     dependencies=["csd_fitting"]
                 )
@@ -312,7 +312,7 @@ class ElikopyProcessor(ConfigurableComponent):
                 ProcessingStep(
                     name="tracking",
                     processor_class="TrackingProcessor",
-                    stage=PipelineStage.POSTPROCESSING,
+                    stage=PipelineStage.MODELING,
                     config=self.config.get("tracking", {}),
                     dependencies=["csd_fitting"]
                 ),
@@ -352,7 +352,7 @@ class ElikopyProcessor(ConfigurableComponent):
                 ProcessingStep(
                     name="tracking",
                     processor_class="TrackingProcessor",
-                    stage=PipelineStage.POSTPROCESSING,
+                    stage=PipelineStage.MODELING,
                     config=self.config.get("tracking", {}),
                     dependencies=["csd_fitting"]
                 ),
@@ -488,7 +488,7 @@ class ElikopyProcessor(ConfigurableComponent):
         # Validate each DWI file
         for dwi_file in subject.dwi_files:
             # Use data validator
-            dwi_validation = self.validator.validate_dwi_data(dwi_file)
+            dwi_validation = self.validator.validate_dwi_data(dwi_file.path, dwi_file.bval_path, dwi_file.bvec_path, dwi_file.json_path)
             errors.extend(dwi_validation.errors)
             warnings.extend(dwi_validation.warnings)
             suggestions.extend(dwi_validation.suggestions)

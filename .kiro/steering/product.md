@@ -20,5 +20,4 @@ ElikoPy is a Python library for diffusion MRI processing and microstructural ana
 - Research groups requiring standardized, reproducible diffusion analysis pipelines
 - HPC users needing scalable diffusion processing workflows
 
-## Current Status
-The library is undergoing comprehensive refactoring to improve modularity, BIDS compliance, and maintainability while preserving existing functionality.
+The library is actively maintained and has undergone comprehensive refactoring to improve modularity, BIDS compliance, and maintainability while preserving existing functionality.

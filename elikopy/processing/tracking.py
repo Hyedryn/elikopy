@@ -110,7 +110,7 @@ class TrackingProcessor(ProcessingComponent, ConfigurableComponent):
     def validate_inputs(self, peaks_data: Optional[Dict[str, Any]] = None,
                        mask: Optional[np.ndarray] = None,
                        dwi_data: Optional[np.ndarray] = None,
-                       affine: Optional[np.ndarray] = None) -> bool:
+                       affine: Optional[np.ndarray] = None, subject: Optional[str] = None) -> bool:
         """
         Validate inputs before processing.
         

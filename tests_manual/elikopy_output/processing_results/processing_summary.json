@@ -1,0 +1,65 @@
+{
+  "processing_summary": {
+    "processing_type": "dti",
+    "pipeline_name": "dti_pipeline",
+    "start_time": "2025-07-26T15:46:04.081415",
+    "end_time": "2025-07-26T15:46:04.084447",
+    "duration_seconds": 0.003032,
+    "status": "completed"
+  },
+  "subject_statistics": {
+    "total_subjects": 1,
+    "successful_subjects": 0,
+    "failed_subjects": 1,
+    "success_rate": 0.0
+  },
+  "pipeline_steps": [
+    {
+      "name": "dti_fitting",
+      "processor_class": "DTIProcessor",
+      "stage": "modeling",
+      "config": {},
+      "dependencies": [],
+      "status": "failed",
+      "start_time": "2025-07-26T15:46:04.083844",
+      "end_time": "2025-07-26T15:46:04.083907",
+      "duration": 6.3e-05,
+      "job_id": null
+    }
+  ],
+  "output_files": {
+    "total_files": 0,
+    "files_by_subject": {
+      "sub-01": []
+    }
+  },
+  "configuration": {},
+  "study_info": {
+    "study_path": "C:\\Users\\quent\\Documents\\elikopy\\tests_manual\\elikopy_output",
+    "bids_root": "C:\\Users\\quent\\Documents\\elikopy\\bids_example",
+    "qsiprep_dir": "C:\\Users\\quent\\Documents\\elikopy\\bids_example\\derivatives\\qsiprep",
+    "derivatives_name": "elikopy",
+    "derivatives_dir": "C:\\Users\\quent\\Documents\\elikopy\\bids_example\\derivatives\\elikopy",
+    "total_subjects": 1,
+    "total_dwi_files": 1,
+    "total_anatomical_files": 0,
+    "sessions_per_subject": {
+      "sub-01": 1
+    },
+    "config_summary": {
+      "study_name": "test_dti_study",
+      "enabled_processing": {
+        "dti": true,
+        "noddi": true,
+        "csd": true,
+        "msmt_csd": true,
+        "tracking": true,
+        "connectivity": true,
+        "fingerprinting": false
+      },
+      "scheduler_type": "local",
+      "output_name": "elikopy",
+      "validation_status": "valid"
+    }
+  }
+}

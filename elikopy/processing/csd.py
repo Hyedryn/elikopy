@@ -113,7 +113,7 @@ class CSDProcessor(ModelProcessor):
                    self.config.response_algorithm)
     
     def validate_inputs(self, dwi_data: np.ndarray, bvals: np.ndarray, 
-                       bvecs: np.ndarray, mask: Optional[np.ndarray] = None) -> bool:
+                       bvecs: np.ndarray, mask: Optional[np.ndarray] = None, subject: Optional[str] = None) -> bool:
         """Validate inputs before processing."""
         try:
             if dwi_data.ndim != 4:

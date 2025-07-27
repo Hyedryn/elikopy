@@ -9,7 +9,7 @@ elikopy/
 ├── infrastructure/ # Job scheduling, logging, file management
 ├── utils/          # Utility functions and helpers
 ├── external/       # External tool integrations
-├── cli/            # Command-line interface
+├── cli/            # Command-line interface (config_cli.py)
 └── templates/      # Configuration templates
 ```
 
@@ -29,6 +29,7 @@ elikopy/
 - `noddi.py` - NODDI microstructural modeling
 - `csd.py` - Constrained spherical deconvolution
 - `fingerprinting.py` - Microstructure fingerprinting
+- `microstructure.py` - General microstructural modeling
 - `tracking.py` - Tractography and streamline generation
 - `connectivity.py` - Connectivity matrix analysis
 - `qsiprep_adapter.py` - QSIPrep output integration
@@ -43,10 +44,18 @@ elikopy/
 - `image_utils.py` - Image processing utilities
 - `validation.py` - Parameter and data validation helpers
 
+## CLI Module (`elikopy/cli/`)
+- `config_cli.py` - Command-line interface for configuration management
+
+## External Module (`elikopy/external/`)
+- Integration point for external tools and libraries
+
 ## Test Structure (`tests/`)
 - Unit tests for each module following `test_<module>.py` naming
-- Integration tests for component interactions
-- Demo scripts for validation and debugging
+- Integration tests for component interactions (`test_integration_real_data.py`)
+- Demo scripts for validation and debugging (`demo_*.py`, `debug_*.py`)
+- Validation demos (`test_validator_demo.py`, `test_parameter_validation_demo.py`)
+- Real data validation tests (`test_real_qsiprep_validation.py`)
 
 ## Configuration Templates (`elikopy/templates/`)
 - `default_config.yaml` - Standard configuration
@@ -54,9 +63,11 @@ elikopy/
 - `minimal_dti_config.yaml` - Minimal DTI processing config
 
 ## Key Files
-- `pyproject.toml` - Poetry package configuration
+- `pyproject.toml` - Poetry package configuration with dependencies and build settings
 - `README.md` - Project documentation
-- BIDS example data in `bids_example/`
+- `bids_example/` - BIDS example dataset for testing and validation
+- `qc_report_real_data.json` - Quality control report for real data validation
+- `gemini.md` - Additional documentation or notes
 
 ## Naming Conventions
 - Classes use PascalCase (e.g., `ElikopyStudy`, `BIDSHandler`)

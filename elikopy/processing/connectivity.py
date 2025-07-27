@@ -107,7 +107,7 @@ class ConnectivityProcessor(ProcessingComponent, ConfigurableComponent):
     
     def validate_inputs(self, streamlines_file: Optional[Path] = None,
                        atlas_data: Optional[AtlasData] = None,
-                       reference_image: Optional[Path] = None) -> bool:
+                       reference_image: Optional[Path] = None, subject: Optional[str] = None) -> bool:
         """
         Validate inputs before processing.
         

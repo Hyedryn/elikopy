@@ -1,0 +1,14 @@
+study_name: test_dti_study
+dti:
+  fit_method: WLS
+  mask_threshold: 0.2
+  compute_metrics:
+  - FA
+  - MD
+  - AD
+  - RD
+scheduler:
+  type: local
+  cpus_per_task: 4
+output:
+  derivatives_name: elikopy
